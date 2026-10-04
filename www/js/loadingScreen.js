@@ -46,9 +46,13 @@ const CSS = `
 @container (max-height:780px){.hh-tag,.hh-chip{display:none}}
 /* --- bottom block --- */
 .hh-bottom{position:absolute;z-index:6;left:0;right:0;bottom:0;padding:0 clamp(18px,6vw,34px) calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;flex-direction:column;align-items:stretch;gap:9px}
-.hh-status{display:flex;justify-content:space-between;align-items:baseline;font-size:clamp(15px,4.2vw,18px);text-shadow:0 2px 0 rgba(10,23,69,.85),0 0 10px rgba(10,23,69,.5);min-height:24px}
-.hh-pct{font-variant-numeric:tabular-nums}
-.hh-root.is-offline .hh-status,.hh-root.is-error .hh-status,.hh-root.is-slow .hh-status{align-self:center;padding:3px 14px;border-radius:999px;background:rgba(10,23,69,.72);gap:14px;backdrop-filter:blur(3px)}
+.hh-status{display:flex;align-items:center;gap:10px;font-size:clamp(15px,4.2vw,18px);text-shadow:0 2px 0 rgba(10,23,69,.85),0 0 10px rgba(10,23,69,.5);min-height:24px}
+.hh-pct{margin-left:auto;font-variant-numeric:tabular-nums}
+.hh-label{display:none}
+.hh-root.is-offline .hh-label,.hh-root.is-slow .hh-label,.hh-root.is-error .hh-label{display:inline}
+.hh-tag,.hh-chip,.hh-tip,.hh-meta{display:none!important}
+.hh-panel h3{display:none}
+.hh-root.is-offline .hh-label,.hh-root.is-error .hh-label,.hh-root.is-slow .hh-label{padding:2px 10px;border-radius:999px;background:rgba(10,23,69,.72);backdrop-filter:blur(3px)}
 .hh-bar{position:relative;height:clamp(26px,7vw,32px);border-radius:999px;background:#0f2358;border:4px solid #fff;box-shadow:0 0 0 3px #0f2358,0 6px 0 3px rgba(10,23,69,.6),inset 0 3px 6px rgba(0,0,0,.5);overflow:hidden}
 .hh-fill{position:absolute;left:0;top:0;bottom:0;width:100%;transform-origin:left center;transform:scaleX(0);border-radius:999px;background:linear-gradient(180deg,#b9ff5a 0%,#5fe02a 55%,#32b81a 100%);box-shadow:inset 0 3px 0 rgba(255,255,255,.55)}
 .hh-fill::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.28) 0 12px,transparent 12px 28px);animation:hh-stripes 1s linear infinite;border-radius:inherit}
@@ -125,7 +129,7 @@ export function connectionLabel(c, measuredMbps) {
 
 export function createScreen(root, opts = {}) {
   injectCss();
-  const { appName = APP_NAME, tagline = APP_TAGLINE, tips = DEFAULT_TIPS, minShowMs = 1600, onDone = () => {}, embedded = false, onCheck = () => {}, onPlayOffline = () => {}, onRetry = () => {} } = opts;
+  const { appName = APP_NAME, tagline = APP_TAGLINE, tips = [], minShowMs = 1600, onDone = () => {}, embedded = false, onCheck = () => {}, onPlayOffline = () => {}, onRetry = () => {} } = opts;
   const [w1, ...rest] = appName.split(' '); const w2 = rest.join(' ');
   root.classList.add('hh-root'); if (embedded) root.classList.add('hh-embedded');
   root.innerHTML = `
@@ -135,20 +139,20 @@ export function createScreen(root, opts = {}) {
       <div class="hh-logo">${BADGE}
         <span class="hh-word hh-w1" data-t="${w1}">${w1}</span>
         ${w2 ? `<span class="hh-word hh-w2" data-t="${w2}!">${w2}!</span>` : ''}
-        <div class="hh-tag">${tagline}</div><div class="hh-chip" hidden></div>
+        <div class="hh-tag" hidden></div><div class="hh-chip" hidden></div>
       </div>
       <div class="hh-bottom">
-        <div class="hh-status" aria-live="polite"><span class="hh-label">Starting engine…</span><span class="hh-pct">0%</span></div>
+        <div class="hh-status" aria-live="polite"><span class="hh-conn"></span><span class="hh-label"></span><span class="hh-pct">0%</span></div>
         <div class="hh-bar"><div class="hh-fill"></div></div>
-        <div class="hh-panel p-offline"><h3>No signal. Bar paused.</h3><p>We'll pick up right where we left off as soon as Wi-Fi or mobile data is back.</p><div class="hh-btns"><button class="hh-btn" data-act="check">Check again</button><button class="hh-btn alt" data-act="offline" hidden>Play offline</button></div></div>
-        <div class="hh-panel p-error"><h3>Can't reach the garage</h3><p class="hh-errmsg">Something went wrong while loading.</p><div class="hh-btns"><button class="hh-btn" data-act="retry">Try again</button></div></div>
-        <div class="hh-meta"><span class="hh-conn"></span><span class="hh-tip"></span></div>
+        <div class="hh-panel p-offline"><h3>No connection</h3><div class="hh-btns"><button class="hh-btn" data-act="check">Retry</button><button class="hh-btn alt" data-act="offline" hidden>Play offline</button></div></div>
+        <div class="hh-panel p-error"><h3>Couldn't load</h3><p class="hh-errmsg" hidden></p><div class="hh-btns"><button class="hh-btn" data-act="retry">Retry</button></div></div>
+        <span class="hh-tip" hidden></span>
       </div>
     </div>`;
   const el = { screen: q(root, '.hh-screen'), box: q(root, '.hh-scenebox'), fx: q(root, '.hh-fx'), fill: q(root, '.hh-fill'), label: q(root, '.hh-label'), pct: q(root, '.hh-pct'), conn: q(root, '.hh-conn'), tip: q(root, '.hh-tip'), chip: q(root, '.hh-chip'), err: q(root, '.hh-errmsg'), offBtn: q(root, '[data-act=offline]'), w1: q(root, '.hh-w1'), w2: q(root, '.hh-w2') };
   root.addEventListener('click', (e) => { const a = e.target && e.target.getAttribute && e.target.getAttribute('data-act'); if (a === 'check') onCheck(); if (a === 'offline') onPlayOffline(); if (a === 'retry') onRetry(); });
 
-  let theme = null, shown = 0, target = 0, raf = 0, destroyed = false, startAt = Date.now(), finished = false, finishing = false, destTimer = 0, tipTimer = 0, tipIdx = Math.floor(Math.random() * tips.length), lastState = null;
+  let theme = null, shown = 0, target = 0, raf = 0, destroyed = false, startAt = Date.now(), finished = false, finishing = false, destTimer = 0, tipTimer = 0, tipIdx = Math.floor(Math.random() * (tips.length || 1)), lastState = null;
 
   function setTheme(t, reason) {
     theme = t;
@@ -159,7 +163,7 @@ export function createScreen(root, opts = {}) {
     clearInterval(destTimer); let di = 0; const dest = q(root, '#hh-dest'); if (dest) destTimer = setInterval(() => { di = (di + 1) % t.sign.length; dest.textContent = t.sign[di]; }, 2200);
   }
   function showTip() { el.tip.style.opacity = 0; setTimeout(() => { if (destroyed) return; tipIdx = (tipIdx + 1) % tips.length; el.tip.textContent = tips[tipIdx]; el.tip.style.opacity = 1; }, 350); }
-  el.tip.textContent = tips[tipIdx]; tipTimer = setInterval(showTip, 4500);
+  if (tips.length) { el.tip.hidden = false; el.tip.textContent = tips[tipIdx]; tipTimer = setInterval(showTip, 4500); }
 
   function frame() {
     raf = requestAnimationFrame(frame);
@@ -169,20 +173,20 @@ export function createScreen(root, opts = {}) {
     if (finished && !finishing && shown >= 0.999 && Date.now() - startAt >= minShowMs) leave();
   }
   function leave() {
-    finishing = true; root.classList.add('is-honk'); el.label.textContent = "Let's go!";
+    finishing = true; root.classList.add('is-honk'); el.label.textContent = '';
     setTimeout(() => { root.classList.remove('is-honk'); root.classList.add('is-leaving'); setTimeout(() => { if (!destroyed) onDone(lastState); }, 900); }, 480);
   }
 
   function update(s) {
     if (destroyed) return; lastState = s; target = Math.max(target, s.progress);
     root.classList.toggle('is-slow', s.status === 'slow'); root.classList.toggle('is-offline', s.status === 'offline'); root.classList.toggle('is-error', s.status === 'error'); root.classList.toggle('is-done', s.status === 'done');
-    if (!finishing) el.label.textContent = s.status === 'offline' ? 'Waiting for a connection…' : s.status === 'error' ? 'Hit a bump in the road' : s.status === 'slow' ? 'Slow connection… still trying' : s.status === 'done' ? 'All set!' : (s.label || 'Loading…');
-    if (s.status === 'error') el.err.textContent = s.error ? 'Something went wrong: ' + s.error : 'Something went wrong while loading.';
+    if (!finishing) el.label.textContent = s.status === 'offline' ? 'No connection' : s.status === 'error' ? 'Couldn\u2019t load' : s.status === 'slow' ? 'Slow connection' : '';
+    
     el.offBtn.hidden = !s.canPlayOffline;
-    const c = connectionLabel(s.connection, s.measuredMbps); el.conn.className = 'hh-conn ' + c.tone; el.conn.innerHTML = ICON[c.icon] + '<span>' + c.text + '</span>';
+    const c = connectionLabel(s.connection, s.measuredMbps); el.conn.className = 'hh-conn ' + c.tone; el.conn.innerHTML = ICON[c.icon]; el.conn.setAttribute('aria-label', c.text); el.conn.title = c.text;
     if (s.status === 'done') finished = true;
   }
-  update({ status: 'loading', progress: 0, label: 'Starting engine…', connection: { online: true, type: 'unknown', quality: 'unknown' }, measuredMbps: null });
+  update({ status: 'loading', progress: 0, label: '', connection: { online: true, type: 'unknown', quality: 'unknown' }, measuredMbps: null });
   raf = requestAnimationFrame(frame);
   return { update, setTheme, destroy() { destroyed = true; cancelAnimationFrame(raf); clearInterval(destTimer); clearInterval(tipTimer); root.innerHTML = ''; root.classList.remove('hh-root', 'is-slow', 'is-offline', 'is-error', 'is-done', 'is-honk', 'is-leaving'); }, getTheme: () => theme };
 }
