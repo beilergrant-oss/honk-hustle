@@ -305,6 +305,7 @@ function renderSettings() {
       <div class="setrow"><div class="tx">Haptics<small>Little taps on your iPhone</small></div>${sw('haptics', s.haptics)}</div>
       <div class="setrow"><div class="tx">Seasonal looks<small>Holiday and seasonal buses on the home screen</small></div>${sw('seasonal', s.seasonal)}</div>
       <div class="setrow"><div class="tx">Open all levels<small>Play any level from the picker (for testing)</small></div>${sw('openLevels', s.openLevels)}</div>
+      <div class="setrow"><div class="tx">Test coins<small>Add 10,000 coins to try the Shop (for testing)</small></div><button class="btn" data-act="testcoins" style="padding:10px 14px">+10,000</button></div>
       <div class="setrow"><div class="tx">Hemisphere<small>Decides which season is on</small></div><select class="sel" data-hemi aria-label="Hemisphere"><option value="north" ${S.profile.hemisphere === 'south' ? '' : 'selected'}>Northern</option><option value="south" ${S.profile.hemisphere === 'south' ? 'selected' : ''}>Southern</option></select></div>
       ${moneyOk() ? `<div class="setrow"><div class="tx">Restore purchases<small>Get back skins and sets you bought before</small></div><button class="btn" data-act="restore" style="padding:10px 14px">Restore</button></div>` : ''}
       <div class="setrow"><div class="tx">Privacy & terms<small>How your data is handled</small></div><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.PRIVACY_URL)}" target="_blank" rel="noopener">Privacy</a><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.TERMS_URL)}" target="_blank" rel="noopener">Terms</a></div>
@@ -327,6 +328,7 @@ document.addEventListener('click', async (e) => {
   if (d.tab) { S.shopTab = d.tab; return renderShop(); }
   if (d.set) { save({ settings: { ...S.profile.settings, [d.set]: !S.profile.settings[d.set] } }); return renderSettings(); }
   if (d.act === 'restore') { try { const r = await restorePurchases(); S.profile = loadProfile(); toast('Purchases restored'); } catch (err) { toast('Nothing to restore'); } return; }
+  if (d.act === 'testcoins') { save({ coins: (S.profile.coins || 0) + 10000 }); sfx.coin(); toast('+10,000 coins'); return renderSettings(); }
   if (d.act === 'reset') return modal({ emoji: '⚠️', title: 'Reset everything?', body: 'This erases your levels, coins, power-ups and skins on this device.', actions: [{ label: 'Erase progress', cls: 'red', onClick: () => { S.profile = resetProfile(); S.areaView = 1; configureSfx(S.profile.settings); go('home'); } }, { label: 'Cancel', cls: 'ghost' }] });
   if (d.buyset) { const r = coinPurchase(S.profile, 'set', setById(d.buyset), { hemisphere: S.profile.hemisphere }); if (r.ok) { save(r.profile); sfx.coin(); toast('Set unlocked!'); } else toast({ 'not-enough-coins': 'Not enough coins yet.', 'not-in-shop': 'Not in the shop right now.', 'already-owned': 'You already own it.' }[r.reason] || 'Could not buy.'); return renderShop(); }
   if (d.equipset) { save({ equippedVehicleSkin: vehicleSkinId(d.equipset), equippedPassengerSkin: passengerSkinId(d.equipset) }); toast('Equipped'); return renderShop(); }
