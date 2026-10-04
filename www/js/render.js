@@ -202,9 +202,10 @@ export function createRenderer(canvas, opts = {}) {
     const wt = [-hl + 0.25 * sc, hl - 0.25 * sc];
     for (const s of [-1, 1]) if (!sideVis(s)) wt.forEach((t) => wheel(t, s));
     const paint = R.look.paint, edge = paint && paint.glow ? paint.trim : undefined;
-    if (paint) {   // skin: the lower body takes the skin's colour, the belt stripe and roof keep the game colour
+    if (paint) {   // skin: the whole bus takes the skin's colours; a thin belt stripe and a roof band keep the game colour for matching
       box(ab(-hl, hl, hw, 0.08, 0.2), paint.body, { edge });
-      box(ab(-hl, hl, hw, 0.2, BODY_H), hex, { edge });
+      box(ab(-hl, hl, hw, 0.2, 0.27), hex, { edge });
+      box(ab(-hl, hl, hw, 0.27, BODY_H), paint.body, { edge });
       box(ab(hl - 0.05 * sc, hl + 0.012, hw * 1.03, 0.1, 0.26), paint.trim, { edge });
       box(ab(-hl - 0.012, -hl + 0.05 * sc, hw * 1.03, 0.1, 0.26), paint.trim, { edge });
     } else box(ab(-hl, hl, hw, 0.08, BODY_H), hex);
@@ -213,11 +214,12 @@ export function createRenderer(canvas, opts = {}) {
     const nose = ab(hl - 0.01, hl + 0.01, hw * 0.78, 0.12, 0.2);
     // cabin: glass sides with a coloured roof
     const cabB = ab(-hl + 0.07 * sc, hl - 0.3 * sc, hw * 0.74, BODY_H, BODY_H + CAB_H);
-    box(cabB, hex, { faceColor: (f) => (f.n[1] === 1 ? shade(hex, 0.18) : '#4d86c9'), edge: edge || 'rgba(10,20,60,.45)' });
+    box(cabB, hex, { faceColor: (f) => (f.n[1] === 1 ? shade(paint ? paint.body : hex, 0.16) : '#4d86c9'), edge: edge || 'rgba(10,20,60,.45)' });
     // roof markings: skin stripes, a seat pip per seat, an arrow showing the way out
     const rt = (BODY_H + CAB_H) * sc + 0.004 + (pose.lift || 0), ct0 = -hl + 0.07 * sc, ct1 = hl - 0.3 * sc, cmid = (ct0 + ct1) / 2;
     const pt = (t, l) => wd[0] !== 0 ? [pose.cx + wd[0] * t, rt, pose.cz + l] : [pose.cx + l, rt, pose.cz + wd[1] * t];
     if (paint && paint.pattern !== 'none') roofPattern(paint, pt, ct0, ct1, hw * 0.6);
+    if (paint) flat([pt(ct0 + 0.02, -hw * 0.27), pt(ct1 - 0.02, -hw * 0.27), pt(ct1 - 0.02, hw * 0.27), pt(ct0 + 0.02, hw * 0.27)], hex);
     const span = ct1 - ct0 - 0.2, step = v.seats > 1 ? Math.min(span / (v.seats - 1), 0.17) : 0;
     for (let i = 0; i < v.seats; i++) { const q = pt(cmid + (i - (v.seats - 1) / 2) * step, 0); discFlat(q[0], q[1], q[2], 0.05 * sc, 'rgba(255,255,255,.95)'); }
     flat([pt(hl - 0.12 * sc, 0), pt(hl - 0.3 * sc, -0.13 * sc), pt(hl - 0.3 * sc, 0.13 * sc)], 'rgba(255,255,255,.95)');
@@ -237,7 +239,7 @@ export function createRenderer(canvas, opts = {}) {
   function roofPattern(pa, pt, t0, t1, hwr) {   // a simple version of the skin's pattern, drawn flat on the cabin roof
     const cols = pa.colors.length ? pa.colors : ['#ffffff'], len = t1 - t0, id = pa.pattern;
     if (id === 'checker' || id === 'grid') { const n = Math.max(2, Math.round(len / 0.2)); for (let i = 0; i < n; i++) for (let j = 0; j < 2; j++) if ((i + j) % 2 === 0) { const a = t0 + (len * i) / n, b = t0 + (len * (i + 1)) / n, l0 = -hwr + j * hwr, l1 = l0 + hwr; flat([pt(a, l0), pt(b, l0), pt(b, l1), pt(a, l1)], cols[0], 0.85); } }
-    else if (DOTTY.has(id)) { const n = Math.max(2, Math.round(len / 0.2)); for (let i = 0; i < n; i++) for (let j = 0; j < 2; j++) { const q = pt(t0 + (len * (i + 0.5)) / n, (j ? 0.5 : -0.5) * hwr); discFlat(q[0], q[1], q[2], 0.055, cols[(i + j) % cols.length]); } }
+    else if (DOTTY.has(id)) { const n = Math.max(2, Math.round(len / 0.2)); for (let i = 0; i < n; i++) for (let j = 0; j < 2; j++) { const q = pt(t0 + (len * (i + 0.5)) / n, (j ? 0.78 : -0.78) * hwr); discFlat(q[0], q[1], q[2], 0.055, cols[(i + j) % cols.length]); } }
     else { const n = Math.max(3, Math.round(len / 0.14)); for (let i = 0; i < n; i += 2) { const a = t0 + (len * i) / n, b = t0 + (len * (i + 1)) / n; flat([pt(a, -hwr), pt(b, -hwr), pt(b, hwr), pt(a, hwr)], cols[(i / 2) % cols.length], 0.85); } }
   }
   const carFootprint = (v, pose) => { const { hl, hw } = carGeom(v, pose), b = carGeom(v, pose).ab(-hl, hl, hw, 0, 0); return b; };
@@ -272,10 +274,12 @@ export function createRenderer(canvas, opts = {}) {
     const paint = R.look.paint, edge = paint && paint.glow ? paint.trim : undefined;
     if (paint) {
       box([cx - hw, cx + hw, c.z - hl, c.z + hl, 0.06, 0.2], paint.body, { edge });
-      box([cx - hw, cx + hw, c.z - hl, c.z + hl, 0.2, BODY_H + 0.04], s.color, { edge });
+      box([cx - hw, cx + hw, c.z - hl, c.z + hl, 0.2, 0.27], s.color, { edge });
+      box([cx - hw, cx + hw, c.z - hl, c.z + hl, 0.27, BODY_H + 0.04], paint.body, { edge });
       box([cx - hw * 1.03, cx + hw * 1.03, c.z - hl - 0.012, c.z - hl + 0.05, 0.1, 0.26], paint.trim, { edge });
     } else box([cx - hw, cx + hw, c.z - hl, c.z + hl, 0.06, BODY_H + 0.04], s.color);
-    box([cx - hw * 0.9, cx + hw * 0.9, c.z - hl + 0.03, c.z + hl * 0.5, BODY_H + 0.04, BODY_H + 0.04 + CAB_H * sc], s.color, { faceColor: (f) => (f.n[1] === 1 ? s.color : '#4d86c9') });
+    box([cx - hw * 0.9, cx + hw * 0.9, c.z - hl + 0.03, c.z + hl * 0.5, BODY_H + 0.04, BODY_H + 0.04 + CAB_H * sc], s.color, { faceColor: (f) => (f.n[1] === 1 ? (paint ? shade(paint.body, 0.16) : s.color) : '#4d86c9') });
+    if (paint) { const ry = BODY_H + 0.04 + CAB_H * sc + 0.004; flat([[cx - hw * 0.27, ry, c.z - hl + 0.05], [cx + hw * 0.27, ry, c.z - hl + 0.05], [cx + hw * 0.27, ry, c.z + hl * 0.5 - 0.02], [cx - hw * 0.27, ry, c.z + hl * 0.5 - 0.02]], s.color); }
     const wz = [c.z - hl + 0.2, c.z + hl - 0.2];
     for (const sx of [cx - hw, cx + hw]) for (const z of wz) { const vis = Math.sign(sx - cx) * (cam.x - cx) > 0 || Math.abs(cam.x - cx) < 0.01; if (vis) box([sx - 0.03, sx + 0.03, z - 0.1, z + 0.1, 0, 0.16], '#1b1e30', { edge: 'rgba(0,0,0,.5)' }); }
     g.restore();
