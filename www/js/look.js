@@ -4,6 +4,7 @@ import { shade } from './busArt.js';
 import { skinById } from './skinData.js';
 import { BUS_STYLES } from './busStyles.js';
 import { vehicleSkinId } from './themes.js';
+import { PACK_PAINT } from './packs.js';
 
 export const COLOR_HEX = { magenta: '#ff4fa8', green: '#2fcf6a', yellow: '#ffd23a', blue: '#2f8bff', red: '#ff4545', purple: '#9b5de5' };
 
@@ -58,12 +59,20 @@ const SKIN_PAINT = {
   v_spooky: { body: '#ff8a1f', trim: '#2a1b3d', pattern: 'bats', colors: ['#2a1b3d'] },
   v_sky: { body: '#8fd0ff', trim: '#ffffff', pattern: 'stars', colors: ['#ffffff'] },
   v_moon: { body: '#c9ced8', trim: '#7a8296', pattern: 'none', colors: [] },
+  // sets that have no bus-style card yet
+  v_set_spring: { body: '#8fe0a0', trim: '#ff9ad5', pattern: 'petals', colors: ['#ffffff', '#ffd23f'] },
+  v_set_autumn: { body: '#e0762a', trim: '#7a3a12', pattern: 'leaves', colors: ['#ffd23f'] },
+  v_set_construction: { body: '#ffc72c', trim: '#1b1b1b', pattern: 'hazard', colors: ['#1b1b1b'] },
+  v_set_pirate: { body: '#3a2a24', trim: '#c9a15a', pattern: 'skulls', colors: ['#ffffff'] },
+  v_set_hero: { body: '#d62d2d', trim: '#2f5fff', pattern: 'bolt', colors: ['#ffe14d'] },
+  v_set_rock: { body: '#26263a', trim: '#ff3b6b', pattern: 'notes', colors: ['#ffffff'] },
+  v_set_circus: { body: '#e63946', trim: '#ffd23f', pattern: 'circus', colors: ['#ffffff'] },
 };
 export function paintFor(skinId) {
   if (!skinId || skinId === 'v_classic') return null;
   const bs = BUS_STYLES.find((s) => s.setId && vehicleSkinId(s.setId) === skinId);
   if (bs) { const b = bs.look.bus; return { body: b.body, trim: b.trim, pattern: b.pattern.id, colors: b.pattern.colors || [], glow: bs.id === 'cyber' }; }
-  return SKIN_PAINT[skinId] || null;
+  return PACK_PAINT[skinId] || SKIN_PAINT[skinId] || null;
 }
 
 // The skin for the player's equipped ids -> what the board needs.
@@ -86,9 +95,14 @@ export function patternFill(g, look, scale, alpha = 0.85) {
 }
 
 // ---- passenger: a bean with eyes, a smile and the equipped hat. (x, y) = centre of the body, s = height ----
-export function drawPassenger(g, x, y, s, hex, accessory, wobble = 0) {
+export function drawPassenger(g, x, y, s, hex, accessory, wobble = 0, cheer = false) {
   g.save(); g.translate(x, y); g.rotate(wobble);
   const w = s * 0.76;
+  if (cheer) {   // little arms in the air
+    const wig = Math.sin(performance.now() / 180 + x) * 0.25;
+    g.fillStyle = shade(hex, -0.08); g.strokeStyle = shade(hex, -0.5); g.lineWidth = Math.max(1, s * 0.035);
+    for (const sx of [-1, 1]) { g.save(); g.translate(sx * w * 0.46, -s * 0.05); g.rotate(sx * (0.5 + (sx > 0 ? wig : -wig))); g.beginPath(); g.ellipse(0, -s * 0.2, s * 0.085, s * 0.22, 0, 0, 7); g.fill(); g.stroke(); g.restore(); }
+  }
   g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(0, s * 0.5, w * 0.5, s * 0.08, 0, 0, 7); g.fill();
   const grad = g.createRadialGradient(-w * 0.22, -s * 0.28, s * 0.04, 0, 0, s * 0.62); grad.addColorStop(0, shade(hex, 0.5)); grad.addColorStop(0.5, hex); grad.addColorStop(1, shade(hex, -0.36));
   g.fillStyle = grad; rr(g, -w / 2, -s / 2, w, s, w / 2); g.fill();

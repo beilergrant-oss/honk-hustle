@@ -35,6 +35,9 @@ Coins, power-ups and skins bought with coins work with no setup. Real-money butt
 - `ITSAppUsesNonExemptEncryption` is set to false by `configure_ios.sh`.
 - The app collects no data and makes no network calls except purchases.
 
+## Season Packs
+Four packs (Spring, Summer, Autumn, Winter) each unlock the season set plus three extra buses. Coin price 9,000 or $4.99. Product ids are `<bundle id>.pack.spring` etc. and are in `store/iap_products.csv`.
+
 ## Known limits
 - Fonts: bundled Poppins Bold (Lilita One was not available offline).
 - Garage portraits are crops of your sheet, soft at about 500 px.

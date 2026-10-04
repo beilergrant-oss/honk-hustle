@@ -8,7 +8,8 @@
 //   - iOS app WITHOUT window.NativeIAP:   real-money buttons are hidden; coins earned in-game still work
 import { base44 } from './api/base44Client.js'; // adjust to your project's client import
 import { PRODUCTS, coinPurchase, setUsd, setCoinPrice } from './catalog.js';
-import { shopOffers, setProductId, vehicleSkinId, passengerSkinId } from './themes.js';
+import { SEASON_PACKS } from './packs.js';
+import { shopOffers, isOffered, setProductId, vehicleSkinId, passengerSkinId } from './themes.js';
 
 const inNativeShell = () =>
   !!(window.NativeIAP || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) || /GridlockApp/i.test(navigator.userAgent));
@@ -102,6 +103,15 @@ export function getShopSets(profile, now = new Date()) {
   };
 }
 export const buySetWithMoney = (setId) => buyWithMoney(setProductId(setId));
+
+// ---- Season Packs ----
+export function getShopPacks(profile, now = new Date()) {
+  const owned = new Set(profile.ownedSkins || []), hemi = profile.hemisphere || 'north';
+  return SEASON_PACKS.map((p) => {
+    const ids = [vehicleSkinId(p.setId), passengerSkinId(p.setId), ...p.variants.map((v) => v.id)];
+    return { pack: p, inSeason: isOffered(p.setId, now, hemi), ownsAll: ids.every((i) => owned.has(i)), owned, canBuyWithMoney: !!realMoneyProvider() };
+  });
+}
 
 // "2d 5h left" style countdown for the shop cards
 export function timeLeft(endsAt, now = new Date()) {

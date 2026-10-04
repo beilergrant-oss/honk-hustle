@@ -1,5 +1,6 @@
 // catalog.js - products + a PURE grant function. Used by the app AND by your backend verifyPurchase function.
 import { ALL_SKINS } from './skinData.js';
+import { SEASON_PACKS } from './packs.js';
 import { SETS, PRICES, BUNDLE_ID, setProductId, vehicleSkinId, passengerSkinId, isOffered } from './themes.js';
 const P = BUNDLE_ID; // must match App Store Connect (change it in themes.js)
 
@@ -23,6 +24,9 @@ POWERUP_BUNDLES.forEach((p) => { PRODUCTS[p.productId] = { kind: 'bundle', items
 SKIN_PRODUCTS.forEach((s) => { PRODUCTS[s.productId] = { kind: 'skin', skinId: s.id }; });
 // Themed sets: ONE non-consumable product per set that unlocks the vehicle skin AND the passenger skin.
 SETS.forEach((s) => { PRODUCTS[setProductId(s.id)] = { kind: 'set', setId: s.id, skinIds: [vehicleSkinId(s.id), passengerSkinId(s.id)] }; });
+// Season Packs: ONE non-consumable product per season unlocks the season's set (bus + outfit) and its three extra buses.
+export const packSkinIds = (p) => [vehicleSkinId(p.setId), passengerSkinId(p.setId), ...p.variants.map((v) => v.id)];
+SEASON_PACKS.forEach((p) => { PRODUCTS[p.productId] = { kind: 'pack', packId: p.id, skinIds: packSkinIds(p) }; });
 export const setUsd = (set) => PRICES[set.price].usd;
 export const setCoinPrice = (set) => PRICES[set.price].set;
 
@@ -39,13 +43,13 @@ export function grantProduct(profile, productId, transactionId) {
     Object.entries(prod.items).forEach(([k, n]) => { next.powerups[k] = (next.powerups[k] || 0) + n; });
   }
   if (prod.kind === 'skin') next.ownedSkins = [...new Set([...(profile.ownedSkins || []), prod.skinId])];
-  if (prod.kind === 'set') next.ownedSkins = [...new Set([...(profile.ownedSkins || []), ...prod.skinIds])];
+  if (prod.kind === 'set' || prod.kind === 'pack') next.ownedSkins = [...new Set([...(profile.ownedSkins || []), ...prod.skinIds])];
   return { granted: true, profile: next };
 }
 
 // Restore = re-grant non-consumables only (single skins and themed sets). Consumables (coins, bundles) are never restored.
 export function restoreSkins(profile, productIds) {
-  const ids = productIds.map((id) => PRODUCTS[id]).filter(Boolean).flatMap((p) => (p.kind === 'skin' ? [p.skinId] : p.kind === 'set' ? p.skinIds : []));
+  const ids = productIds.map((id) => PRODUCTS[id]).filter(Boolean).flatMap((p) => (p.kind === 'skin' ? [p.skinId] : p.kind === 'set' || p.kind === 'pack' ? p.skinIds : []));
   return { ...profile, ownedSkins: [...new Set([...(profile.ownedSkins || []), ...ids])] };
 }
 
@@ -69,6 +73,11 @@ export function coinPurchase(profile, kind, item, opts = {}) {
     grantSkins = [vehicleSkinId(item.id), passengerSkinId(item.id)];
     if (grantSkins.every((id) => owned.has(id))) return { ok: false, reason: 'already-owned' };
     price = setCoinPrice(item);   // the set price is the same even if you already own one half (keeps it simple)
+  }
+  if (kind === 'pack') {   // always for sale (not tied to the season window)
+    grantSkins = packSkinIds(item);
+    if (grantSkins.every((id) => owned.has(id))) return { ok: false, reason: 'already-owned' };
+    price = item.coinPrice;
   }
   if (kind === 'bundle') price = item.coinPrice;
   if (kind === 'powerup') price = SINGLE_POWERUP_COIN_PRICE[item];

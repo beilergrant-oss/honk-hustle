@@ -167,12 +167,32 @@ export function createRenderer(canvas, opts = {}) {
     for (const f of faces) {
       if (f.skip) continue;
       const q = f.p[0]; if (f.n[0] * (cam.x - q[0]) + f.n[1] * (cam.y - q[1]) + f.n[2] * (cam.z - q[2]) <= 0) continue;
-      const l = 0.6 + 0.5 * Math.max(0, f.n[0] * LIGHT[0] + f.n[1] * LIGHT[1] + f.n[2] * LIGHT[2]);
-      g.beginPath(); f.p.forEach((pt, i) => { const s = P(pt[0], pt[1], pt[2]); i ? g.lineTo(s.x, s.y) : g.moveTo(s.x, s.y); }); g.closePath();
-      g.fillStyle = lit((o.faceColor && o.faceColor(f)) || hex, l); g.fill();
-      g.strokeStyle = o.edge || 'rgba(10,15,40,.35)'; g.lineWidth = o.lw || 1; g.lineJoin = 'round'; g.stroke();
+      const l = 0.6 + 0.5 * Math.max(0, f.n[0] * LIGHT[0] + f.n[1] * LIGHT[1] + f.n[2] * LIGHT[2]), base = (o.faceColor && o.faceColor(f)) || hex;
+      const sp = f.p.map((pt) => P(pt[0], pt[1], pt[2])), top = f.n[1] === 1, r = clamp(sp[0].u * 0.045, 1.2, 5);
+      const ys = sp.map((p) => p.y), y0s = Math.min(...ys), y1s = Math.max(...ys);
+      const gr = top ? g.createLinearGradient(sp[3].x, sp[3].y, sp[1].x, sp[1].y) : g.createLinearGradient(0, y0s, 0, y1s);
+      gr.addColorStop(0, lit(base, l * (top ? 1.12 : 1.14))); gr.addColorStop(1, lit(base, l * (top ? 0.9 : 0.8)));
+      rpath(sp, r); g.fillStyle = gr; g.fill();
+      g.strokeStyle = o.edge || lit(base, l * 0.5); g.lineWidth = o.lw || 1.1; g.lineJoin = 'round'; g.stroke();
+      if (top && !o.noGloss && sp[0].u * Math.abs(f.p[1][0] - f.p[0][0]) > 12) {   // a soft sheen across the top
+        const L2 = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
+        g.beginPath(); [L2(sp[3], sp[0], 0.1), L2(sp[2], sp[1], 0.1), L2(sp[2], sp[1], 0.32), L2(sp[3], sp[0], 0.32)].forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.closePath(); g.fillStyle = 'rgba(255,255,255,.22)'; g.fill();
+      } else if (!top && o.shine) {   // glass: a diagonal streak
+        const w = Math.hypot(sp[1].x - sp[0].x, sp[1].y - sp[0].y), h = y1s - y0s;
+        if (w > 8 && h > 5) { g.save(); rpath(sp, r); g.clip(); g.fillStyle = 'rgba(255,255,255,.28)'; g.beginPath(); g.moveTo(sp[0].x + w * 0.18, y1s); g.lineTo(sp[0].x + w * 0.34, y1s); g.lineTo(sp[0].x + w * 0.5, y0s); g.lineTo(sp[0].x + w * 0.34, y0s); g.closePath(); g.fill(); g.restore(); }
+      }
     }
   }
+  function rpath(pts, r) {   // closed polygon with rounded corners
+    const n = pts.length; g.beginPath();
+    for (let i = 0; i < n; i++) {
+      const p0 = pts[(i + n - 1) % n], p1 = pts[i], p2 = pts[(i + 1) % n], d1 = Math.hypot(p1.x - p0.x, p1.y - p0.y) || 1, d2 = Math.hypot(p2.x - p1.x, p2.y - p1.y) || 1, k1 = Math.min(r / d1, 0.5), k2 = Math.min(r / d2, 0.5);
+      const a = { x: p1.x + (p0.x - p1.x) * k1, y: p1.y + (p0.y - p1.y) * k1 }, c = { x: p1.x + (p2.x - p1.x) * k2, y: p1.y + (p2.y - p1.y) * k2 };
+      i ? g.lineTo(a.x, a.y) : g.moveTo(a.x, a.y); g.quadraticCurveTo(p1.x, p1.y, c.x, c.y);
+    }
+    g.closePath();
+  }
+  const rpoly = (pts, rpx) => { rpath(pts.map((p) => P(p[0], p[1], p[2])), rpx); };
   const flat = (pts, fill, alpha = 1) => { g.save(); g.globalAlpha *= alpha; g.beginPath(); pts.forEach((pt, i) => { const s = P(pt[0], pt[1], pt[2]); i ? g.lineTo(s.x, s.y) : g.moveTo(s.x, s.y); }); g.closePath(); g.fillStyle = fill; g.fill(); g.restore(); };
   const discFlat = (x, y, z, r, fill) => { const p = P(x, y, z); g.fillStyle = fill; g.beginPath(); g.ellipse(p.x, p.y, r * p.u, r * p.u * SINP, 0, 0, 7); g.fill(); };
   // distance from the camera to the nearest point of a ground rectangle (the farther one is drawn first)
@@ -211,17 +231,22 @@ export function createRenderer(canvas, opts = {}) {
     } else box(ab(-hl, hl, hw, 0.08, BODY_H), hex);
     for (const s of [-1, 1]) if (sideVis(s)) wt.forEach((t) => wheel(t, s));
     // headlights on the nose
-    const nose = ab(hl - 0.01, hl + 0.01, hw * 0.78, 0.12, 0.2);
+    for (const sgn of [-1, 1]) {   // headlights and tail lights
+      const lat = (t0, t1, y0, y1, a, b) => (wd[0] !== 0 ? [Math.min(pose.cx + wd[0] * t0, pose.cx + wd[0] * t1), Math.max(pose.cx + wd[0] * t0, pose.cx + wd[0] * t1), pose.cz + a, pose.cz + b, y0 * sc + (pose.lift || 0), y1 * sc + (pose.lift || 0)] : [pose.cx + a, pose.cx + b, Math.min(pose.cz + wd[1] * t0, pose.cz + wd[1] * t1), Math.max(pose.cz + wd[1] * t0, pose.cz + wd[1] * t1), y0 * sc + (pose.lift || 0), y1 * sc + (pose.lift || 0)]);
+      const c0 = sgn * hw * 0.62 * sc;
+      box(lat(hl - 0.005, hl + 0.03 * sc, 0.12, 0.2, c0 - 0.06 * sc, c0 + 0.06 * sc), '#fff3a0', { edge: 'rgba(120,90,0,.5)', noGloss: true });
+      box(lat(-hl - 0.03 * sc, -hl + 0.005, 0.12, 0.2, c0 - 0.05 * sc, c0 + 0.05 * sc), '#ff4b4b', { edge: 'rgba(90,0,0,.5)', noGloss: true });
+    }
     // cabin: glass sides with a coloured roof
     const cabB = ab(-hl + 0.07 * sc, hl - 0.3 * sc, hw * 0.74, BODY_H, BODY_H + CAB_H);
-    box(cabB, hex, { faceColor: (f) => (f.n[1] === 1 ? shade(paint ? paint.body : hex, 0.16) : '#4d86c9'), edge: edge || 'rgba(10,20,60,.45)' });
+    box(cabB, hex, { faceColor: (f) => (f.n[1] === 1 ? shade(paint ? paint.body : hex, 0.16) : '#5a9be0'), edge: edge || 'rgba(10,20,60,.45)', shine: true });
     // roof markings: skin stripes, a seat pip per seat, an arrow showing the way out
     const rt = (BODY_H + CAB_H) * sc + 0.004 + (pose.lift || 0), ct0 = -hl + 0.07 * sc, ct1 = hl - 0.3 * sc, cmid = (ct0 + ct1) / 2;
     const pt = (t, l) => wd[0] !== 0 ? [pose.cx + wd[0] * t, rt, pose.cz + l] : [pose.cx + l, rt, pose.cz + wd[1] * t];
     if (paint && paint.pattern !== 'none') roofPattern(paint, pt, ct0, ct1, hw * 0.6);
     if (paint) flat([pt(ct0 + 0.02, -hw * 0.27), pt(ct1 - 0.02, -hw * 0.27), pt(ct1 - 0.02, hw * 0.27), pt(ct0 + 0.02, hw * 0.27)], hex);
     const span = ct1 - ct0 - 0.2, step = v.seats > 1 ? Math.min(span / (v.seats - 1), 0.17) : 0;
-    for (let i = 0; i < v.seats; i++) { const q = pt(cmid + (i - (v.seats - 1) / 2) * step, 0); discFlat(q[0], q[1], q[2], 0.05 * sc, 'rgba(255,255,255,.95)'); }
+    for (let i = 0; i < v.seats; i++) { const q = pt(cmid + (i - (v.seats - 1) / 2) * step, 0), sp = P(q[0], q[1], q[2]); ball(sp.x, sp.y - sp.u * 0.05 * sc, Math.max(2, 0.055 * sc * sp.u), '#ffffff'); }
     flat([pt(hl - 0.12 * sc, 0), pt(hl - 0.3 * sc, -0.13 * sc), pt(hl - 0.3 * sc, 0.13 * sc)], 'rgba(255,255,255,.95)');
     if (locked) { flat([pt(ct0, -hw * 0.74), pt(ct1, -hw * 0.74), pt(ct1, hw * 0.74), pt(ct0, hw * 0.74)], 'rgba(20,24,50,.5)'); }
     g.restore();
@@ -261,9 +286,9 @@ export function createRenderer(canvas, opts = {}) {
     g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
     g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.ellipse(x - r * 0.35, y - r * 0.45, r * 0.28, r * 0.16, -0.6, 0, 7); g.fill();
   }
-  function person(wx, wy, wz, hex, wobble = 0, grow = 1) {   // a standing passenger sprite sized by perspective
-    const foot = P(wx, wy, wz), head = P(wx, wy + PASS_H * grow, wz), s = foot.y - head.y;
-    drawPassenger(g, foot.x, (foot.y + head.y) / 2, s, hex, R.look.accessory, wobble);
+  function person(wx, wy, wz, hex, wobble = 0, grow = 1, idle = false) {   // a standing passenger sprite sized by perspective
+    const foot = P(wx, wy, wz), head = P(wx, wy + PASS_H * grow, wz), s = foot.y - head.y, bob = idle ? Math.abs(Math.sin(performance.now() / 230 + wx * 5)) * s * 0.07 : 0;
+    drawPassenger(g, foot.x, (foot.y + head.y) / 2 - bob, s, hex, R.look.accessory, wobble, idle);
   }
 
   // parked bus in the bay (nose toward the player)
@@ -278,7 +303,7 @@ export function createRenderer(canvas, opts = {}) {
       box([cx - hw, cx + hw, c.z - hl, c.z + hl, 0.27, BODY_H + 0.04], paint.body, { edge });
       box([cx - hw * 1.03, cx + hw * 1.03, c.z - hl - 0.012, c.z - hl + 0.05, 0.1, 0.26], paint.trim, { edge });
     } else box([cx - hw, cx + hw, c.z - hl, c.z + hl, 0.06, BODY_H + 0.04], s.color);
-    box([cx - hw * 0.9, cx + hw * 0.9, c.z - hl + 0.03, c.z + hl * 0.5, BODY_H + 0.04, BODY_H + 0.04 + CAB_H * sc], s.color, { faceColor: (f) => (f.n[1] === 1 ? (paint ? shade(paint.body, 0.16) : s.color) : '#4d86c9') });
+    box([cx - hw * 0.9, cx + hw * 0.9, c.z - hl + 0.03, c.z + hl * 0.5, BODY_H + 0.04, BODY_H + 0.04 + CAB_H * sc], s.color, { faceColor: (f) => (f.n[1] === 1 ? (paint ? shade(paint.body, 0.16) : s.color) : '#5a9be0'), shine: true });
     if (paint) { const ry = BODY_H + 0.04 + CAB_H * sc + 0.004; flat([[cx - hw * 0.27, ry, c.z - hl + 0.05], [cx + hw * 0.27, ry, c.z - hl + 0.05], [cx + hw * 0.27, ry, c.z + hl * 0.5 - 0.02], [cx - hw * 0.27, ry, c.z + hl * 0.5 - 0.02]], s.color); }
     const wz = [c.z - hl + 0.2, c.z + hl - 0.2];
     for (const sx of [cx - hw, cx + hw]) for (const z of wz) { const vis = Math.sign(sx - cx) * (cam.x - cx) > 0 || Math.abs(cam.x - cx) < 0.01; if (vis) box([sx - 0.03, sx + 0.03, z - 0.1, z + 0.1, 0, 0.16], '#1b1e30', { edge: 'rgba(0,0,0,.5)' }); }
@@ -317,11 +342,12 @@ export function createRenderer(canvas, opts = {}) {
     const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, sky[0]); bg.addColorStop(1, sky[1]); g.fillStyle = bg; g.fillRect(0, 0, W, H);
     poly([[-60, 0, -8], [60, 0, -8], [60, 0, 80], [-60, 0, 80]]); g.fillStyle = ground; g.fill();
     const fog = g.createLinearGradient(0, 0, 0, H * 0.45); fog.addColorStop(0, rgba(sky[0], 0.85)); fog.addColorStop(1, rgba(sky[0], 0)); g.fillStyle = fog; g.fillRect(0, 0, W, H * 0.45);
+    const glow = g.createRadialGradient(W * 0.2, H * 0.08, 5, W * 0.2, H * 0.08, W * 0.8); glow.addColorStop(0, 'rgba(255,255,255,.32)'); glow.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
     // board: a tiled plate with a visible edge
     const bw = L.bw, bh = L.bh, edge = shade(ground, -0.35);
     poly([[-0.14, -0.16, -0.14], [bw + 0.14, -0.16, -0.14], [bw + 0.14, 0, -0.14], [-0.14, 0, -0.14]]); g.fillStyle = edge; g.fill();
-    poly([[-0.14, 0.001, -0.14], [bw + 0.14, 0.001, -0.14], [bw + 0.14, 0.001, bh + 0.14], [-0.14, 0.001, bh + 0.14]]); g.fillStyle = shade(ground, -0.18); g.fill();
-    for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) { poly([[x + 0.03, 0.002, bh - y - 0.97], [x + 0.97, 0.002, bh - y - 0.97], [x + 0.97, 0.002, bh - y - 0.03], [x + 0.03, 0.002, bh - y - 0.03]]); g.fillStyle = (x + y) % 2 ? shade(ground, 0.14) : shade(ground, 0.06); g.fill(); }
+    rpoly([[-0.14, 0.001, -0.14], [bw + 0.14, 0.001, -0.14], [bw + 0.14, 0.001, bh + 0.14], [-0.14, 0.001, bh + 0.14]], 10); g.fillStyle = shade(ground, -0.18); g.fill();
+    for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) { rpoly([[x + 0.03, 0.002, bh - y - 0.97], [x + 0.97, 0.002, bh - y - 0.97], [x + 0.97, 0.002, bh - y - 0.03], [x + 0.03, 0.002, bh - y - 0.03]], 5); g.fillStyle = (x + y) % 2 ? shade(ground, 0.16) : shade(ground, 0.07); g.fill(); }
     // road with the parking bay
     const rx0 = L.roadX0 - 0.3, rx1 = L.roadX0 + L.roadW + 0.3;
     poly([[rx0, -0.12, L.roadZ0], [rx1, -0.12, L.roadZ0], [rx1, 0, L.roadZ0], [rx0, 0, L.roadZ0]]); g.fillStyle = '#272d44'; g.fill();
@@ -331,15 +357,17 @@ export function createRenderer(canvas, opts = {}) {
       g.save(); poly([[x0, 0.002, z0], [x1, 0.002, z0], [x1, 0.002, z1], [x0, 0.002, z1]]); g.strokeStyle = blocked ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.85)'; g.lineWidth = 2; g.setLineDash(blocked ? [] : [6, 5]); g.stroke(); g.restore();
     }
     // soft shadows under everything that stands on the ground
-    const shadow = (b) => { poly([[b[0] + 0.14, 0.003, b[2] - 0.1], [b[1] + 0.14, 0.003, b[2] - 0.1], [b[1] + 0.14, 0.003, b[3] - 0.1], [b[0] + 0.14, 0.003, b[3] - 0.1]]); g.fillStyle = 'rgba(10,15,40,.26)'; g.fill(); };
+    const shadow = (b) => { for (const [e, a] of [[0.1, 0.1], [0.03, 0.16]]) { rpoly([[b[0] + 0.14 - e, 0.003, b[2] - 0.1 - e], [b[1] + 0.14 + e, 0.003, b[2] - 0.1 - e], [b[1] + 0.14 + e, 0.003, b[3] - 0.1 + e], [b[0] + 0.14 - e, 0.003, b[3] - 0.1 + e]], 6); g.fillStyle = 'rgba(10,15,40,' + a + ')'; g.fill(); } };
     for (const v of gm.vehicles) if (v.state === 'grid') { const pose = Object.assign(poseOf(v), vehFx(v, now)); shadow(carFootprint(v, pose)); }
     for (let i = 0; i < gm.bay; i++) { const s = R.vslots[i]; if (s) { const c = slotC(i), hw = L.sw * 0.4; shadow([c.x - hw, c.x + hw, c.z - 0.52, c.z + 0.52]); } }
   }
   const DECOR = { shore: ['\u{1F334}', '\u{1F41A}', '\u26F1\uFE0F'], snow: ['\u{1F332}', '\u26C4', '\u{1F9CA}'], desert: ['\u{1F335}', '\u{1FAA8}', '\u{1F335}'], night: ['\u{1F4A1}', '\u{1F3E2}', '\u{1F333}'], def: ['\u{1F333}', '\u{1F33C}', '\u{1FAA8}'] };
   let decorKey = '', decorList = [];
+  const SEASON_DECOR = { spring: ['\u{1F338}', '\u{1F337}', '\u{1F98B}'], summer: ['\u{1F334}', '\u26F1\uFE0F', '\u{1F349}'], autumn: ['\u{1F341}', '\u{1F383}', '\u{1F330}'], winter: ['\u{1F332}', '\u26C4', '\u2744\uFE0F'],
+    christmas: ['\u{1F384}', '\u{1F381}', '\u26C4'], halloween: ['\u{1F383}', '\u{1F987}', '\u{1F47B}'], valentine: ['\u{1F496}', '\u{1F339}', '\u{1F48C}'], stpatrick: ['\u2618\uFE0F', '\u{1F308}', '\u{1F4B0}'], easter: ['\u{1F95A}', '\u{1F430}', '\u{1F337}'], pride: ['\u{1F308}', '\u{1F984}', '\u{1F496}'] };
   function decorFor(name, L) {
-    const key = name + '|' + L.bw + 'x' + L.bh + '|' + L.bay; if (key === decorKey) return decorList;
-    const n = name.toLowerCase(), set = /shore|beach|sun|sea|ocean|island/.test(n) ? DECOR.shore : /frost|snow|ice|peak|winter/.test(n) ? DECOR.snow : /desert|dune|canyon|mesa/.test(n) ? DECOR.desert : /neon|night|city|downtown/.test(n) ? DECOR.night : DECOR.def;
+    const dt = R.world.decorTheme, key = name + '|' + L.bw + 'x' + L.bh + '|' + L.bay + '|' + (dt || ''); if (key === decorKey) return decorList;
+    const n = name.toLowerCase(), set = SEASON_DECOR[dt] || /shore|beach|sun|sea|ocean|island/.test(n) ? DECOR.shore : /frost|snow|ice|peak|winter/.test(n) ? DECOR.snow : /desert|dune|canyon|mesa/.test(n) ? DECOR.desert : /neon|night|city|downtown/.test(n) ? DECOR.night : DECOR.def;
     let seed = 7; for (const ch of name) seed = (seed * 31 + ch.charCodeAt(0)) % 9973; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
     decorList = []; const left = -1.5, right = L.bw + 1.5;
     for (let i = 0; i < 4; i++) { const z = 0.4 + i * (L.bh / 3.2) + rnd() * 0.6; decorList.push({ x: left - rnd() * 0.5, z, e: set[(i + 1) % 3], s: 0.9 + rnd() * 0.5 }, { x: right + rnd() * 0.5, z: z + 0.5, e: set[i % 3], s: 0.9 + rnd() * 0.5 }); }
@@ -389,7 +417,7 @@ export function createRenderer(canvas, opts = {}) {
     for (let i = 0; i < gm.bay; i++) { const s = R.vslots[i]; if (s) { const c = slotC(i); items.push({ k: dist2(c.x, c.z), d: () => drawParked(s, i, 1, 0, now) }); } }
     for (const lv of R.leavers) { const t = clamp((now - lv.t0) / 420, 0, 1), c = slotC(lv.slot); items.push({ k: dist2(c.x, c.z), d: () => drawParked(lv.s, lv.slot, 1 - t, ease(t) * L.roadW * 0.7, now) }); }
     const n = R.vq.length, shown = Math.min(n, L.qMax);
-    for (let i = shown - 1; i >= 0; i--) { const q = queueW(i), col = COLOR_HEX[R.vq[i]]; items.push({ k: dist2(q.x, q.z) + i * 0.001, d: () => person(q.x, 0, q.z, col, 0, i === 0 ? 1.1 : 1) }); }
+    for (let i = shown - 1; i >= 0; i--) { const q = queueW(i), col = COLOR_HEX[R.vq[i]]; items.push({ k: dist2(q.x, q.z) + i * 0.001, d: () => person(q.x, 0, q.z, col, 0, i === 0 ? 1.1 : 1, true) }); }
     R.flyers = R.flyers.filter((f) => {
       const t = clamp((now - f.t0) / f.dur, 0, 1), k = ease(t);
       if (t >= 1) { const s = R.vslots[f.slot]; if (s && s.id === f.id) { s.filled = Math.max(s.filled, f.seat + 1); (s.fills = s.fills || [])[f.seat] = f.color; } sfx.board(f.n || 0); const p = P(f.to.x, f.to.y, f.to.z); burst(p.x, p.y, f.color, 4, 60); return false; }

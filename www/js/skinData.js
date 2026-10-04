@@ -3,6 +3,7 @@
 // Colour is how the player matches passengers to vehicles, so it must stay readable (see paintFor in look.js).
 // obtain: 'free' | 'world' (free for finishing that world) | 'shop' (always in the shop) | 'set' (themed set: only buyable while it is in the shop, see themes.js)
 import { setSkins, BUNDLE_ID } from './themes.js';
+import { packSkins } from './packs.js';
 const P = BUNDLE_ID; // bundle id now lives in themes.js
 
 export const VEHICLE_SKINS = [
@@ -23,6 +24,7 @@ export const VEHICLE_SKINS = [
   { id: 'v_sky',     name: 'Cloud Hopper',   rarity: 'epic',      obtain: 'world', world: 7, style: { topper: 'balloon', pattern: 'stars', accent: '#ffffff' } },
   { id: 'v_moon',    name: 'Moon Rover',     rarity: 'legendary', obtain: 'world', world: 8, style: { topper: 'rocket', metalness: 0.7, roughness: 0.3 } },
   ...setSkins('vehicle'),   // 22 themed vehicle skins (12 weekly + 4 seasons + 6 holidays)
+  ...packSkins(),           // 12 extra buses that come with the four Season Packs
 ];
 
 export const PASSENGER_SKINS = [

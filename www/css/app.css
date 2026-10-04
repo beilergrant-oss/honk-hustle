@@ -128,3 +128,25 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:12px;padding:8px;background:#fff;color:var(--navy)}
 .section{max-width:640px;margin:14px auto 6px;font-weight:900;font-size:13px;letter-spacing:.5px;text-transform:uppercase;color:#fff;-webkit-text-stroke:3px var(--navy);paint-order:stroke fill}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01s!important;transition-duration:.01s!important}}
+
+/* ---- glossier, bubbly chrome ---- */
+.btn{background-image:linear-gradient(rgba(255,255,255,.38),rgba(255,255,255,0) 52%),linear-gradient(#4a9bff,#2f6bff);box-shadow:0 4px 0 #1a3fa8,inset 0 2px 0 rgba(255,255,255,.45);text-shadow:0 1px 0 rgba(0,0,0,.18)}
+.btn.green{background-image:linear-gradient(rgba(255,255,255,.38),rgba(255,255,255,0) 52%),linear-gradient(#52e08a,#22b85a);box-shadow:0 4px 0 #13783a,inset 0 2px 0 rgba(255,255,255,.45)}
+.btn.gold{background-image:linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,0) 52%),linear-gradient(#ffd23a,#ffa800);box-shadow:0 4px 0 #b87400,inset 0 2px 0 rgba(255,255,255,.55);text-shadow:none}
+.btn.red{background-image:linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,0) 52%),linear-gradient(#ff7070,#e03030)}
+.round-btn,.pill{box-shadow:0 3px 0 rgba(16,36,107,.3),inset 0 2px 0 rgba(255,255,255,.9),inset 0 -3px 0 rgba(16,36,107,.08)}
+.set,.item,.pack{border:3px solid rgba(255,255,255,.9)}
+.tabs button{box-shadow:inset 0 -3px 0 rgba(16,36,107,.1)}
+
+/* ---- Season Packs ---- */
+.pack{background:linear-gradient(var(--s1,#cfe8ff),var(--s2,#fff));border-radius:22px;padding:12px;margin:0 auto 14px;max-width:640px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
+.packhd{display:flex;align-items:center;gap:10px}.packhd .gl{font-size:34px}
+.packhd h3{margin:0;font-size:19px;font-weight:900;color:var(--navy)}.packhd small{font-weight:700;opacity:.75;font-size:12px}
+.pkgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:420px){.pkgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pk{background:rgba(255,255,255,.85);border-radius:16px;padding:6px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;text-align:center;min-width:0}
+.pk b{font-size:12px;line-height:1.15;color:var(--navy)}
+.pkpic svg{display:block;width:100%;height:auto}
+.pk .btn{padding:6px 8px;font-size:12px;width:100%}
+.pk .lockt{font-size:11px;font-weight:800;opacity:.6;padding:6px 0}
+.pack .acts{display:flex;gap:8px}.pack .acts .btn{flex:1;padding:12px 8px;font-size:15px}

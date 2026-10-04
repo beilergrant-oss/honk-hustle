@@ -30,3 +30,7 @@
 "com.yourname.honkhustle.set.stpatrick","Non-Consumable","Set St. Patrick's Day","2.99","v_set_stpatrick + p_set_stpatrick"
 "com.yourname.honkhustle.set.easter","Non-Consumable","Set Easter","2.99","v_set_easter + p_set_easter"
 "com.yourname.honkhustle.set.pride","Non-Consumable","Set Rainbow Pride","2.99","v_set_pride + p_set_pride"
+"com.yourname.honkhustle.pack.spring","Non-Consumable","Spring Bloom Pack","4.99","season set + 3 buses"
+"com.yourname.honkhustle.pack.summer","Non-Consumable","Summer Splash Pack","4.99","season set + 3 buses"
+"com.yourname.honkhustle.pack.autumn","Non-Consumable","Autumn Harvest Pack","4.99","season set + 3 buses"
+"com.yourname.honkhustle.pack.winter","Non-Consumable","Winter Wonderland Pack","4.99","season set + 3 buses"
