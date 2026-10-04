@@ -8,6 +8,8 @@ import { LOADING_ART } from './art.js';
 import { loadProfile, saveProfile, resetProfile, restoreIfMissing } from './store.js';
 import { getLevel, prefetch, TOTAL_LEVELS, levelInfo, AREA_SIZE, WORLDS, completionEvents, locate } from './campaign.js';
 import { startRound, applyResult, SKIP_COST, SPECIAL_BONUS } from './rounds.js';
+import { STREAK_CYCLE, dailyState, claimDaily } from './daily.js';
+import { streakProgress } from './rounds.js';
 import { POWERUPS, usePowerup, availability } from './powerups.js';
 import { createGame, tapVehicle, drainEvents, failStuck } from './game.js';
 import { createRenderer } from './render.js';
@@ -21,6 +23,7 @@ import { skinById } from './skinData.js';
 import { lookFor, BUS_STYLES } from './busStyles.js';
 import { TOPPER_EMOJI } from './look.js';
 import { configureSfx, sfx, haptic, unlockAudio } from './sfx.js';
+import { nextCombo, resetCombo, comboText, comboColor, floatText } from './juice.js';
 import { initIap } from './iap.js';
 import { CONFIG } from './config.js';
 import { $, esc, fmt, toast, modal, closeModal } from './ui.js';
@@ -46,13 +49,24 @@ const backBar = (title, right = '') => `<div class="bar"><button class="round-bt
 const coinsPill = () => `<span class="pill" aria-label="Coins">\u{1FA99} <span data-coins>${fmt(S.profile.coins)}</span></span>`;
 
 // ======================================================================= home
+function flamePill(streak) {
+  const sp = streakProgress(streak), golden = sp.special && streak >= 10;
+  return `<span class="pill flame${golden ? ' golden' : ''}" title="Win levels first try in a row for free power-ups">\u{1F525} ${streak}${golden ? ' GOLDEN' : `<i class="fbar"><b style="width:${Math.round((sp.progress || 0) * 100)}%"></b></i><small>${sp.next ? 'next ' + sp.next : ''}</small>`}</span>`;
+}
+function showDaily(auto) {
+  const d = dailyState(S.profile); if (auto && !d.claimable) return;
+  const cells = (granted) => STREAK_CYCLE.map((r, i) => { const st = i < d.index || (granted && i === d.index) ? 'past' : i === d.index ? 'today' : 'next'; return `<div class="dday ${st}"><small>Day ${i + 1}</small><span>${r.coins ? '\u{1FA99} ' + r.coins : POWERUPS[r.powerup].icon}</span>${st === 'past' ? '<i>✓</i>' : ''}</div>`; }).join('');
+  const show = (granted) => modal({ emoji: '\u{1F381}', title: 'Daily Reward', body: `<div class="dgrid">${cells(granted)}</div><small class="muted">${d.streak > 1 ? d.streak + ' day streak' : 'Play daily to build a streak'} • Best ${d.best}</small>`, dismissible: true,
+    actions: granted ? [{ label: 'Reward claimed!', cls: 'green' }] : d.claimable ? [{ label: 'Claim', cls: 'green', onClick: () => { const r = claimDaily(S.profile); save(r.profile); sfx.coin(); haptic('success'); $$coins(); if (S.route === 'home') renderHome(); show(true); return false; } }, { label: 'Later', cls: 'ghost' }] : [{ label: 'Come back tomorrow', cls: 'ghost' }] });
+  show(false);
+}
 function renderHome() {
   const p = S.profile, picked = pickTheme(new Date(), { hemisphere: p.hemisphere, seasonal: p.settings.seasonal });
   const t = picked.theme, [w1, ...rest] = 'Honk Hustle'.split(' ');
   const next = nextLevelNo(), info = levelInfo(next), streak = p.winStreak || 0, art = picked.reason === 'regular' || picked.reason === 'season';
   $('#home').innerHTML = `
     <div class="home-bg">${art ? `<img class="home-art art-${t.id}" src="${LOADING_ART}" alt="">` : sceneSvg(t)}</div><div class="home-fx">${art && picked.reason === 'regular' ? '' : particlesHtml(t)}</div>
-    <div class="home-top">${coinsPill()}<span class="pill" title="Win streak">\u{1F525} ${streak}</span></div>
+    <div class="home-top">${coinsPill()}${flamePill(streak)}${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">\u{1F381} Daily</button>' : ''}</div>
     ${art ? '' : `<div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
       <span class="w w1">${w1}</span><span class="w w2">${rest.join(' ')}!</span>
       <div class="home-chip">${esc(t.name)}</div>
@@ -76,7 +90,7 @@ function renderLevels() {
   const cells = [];
   for (let n = first; n <= last; n++) {
     const tier = levelInfo(n).tier, done = n <= hi, locked = n > hi + 1 && !S.profile.settings.openLevels, isCur = n === cur;
-    cells.push(`<button class="lv ${done ? 'done' : ''} ${isCur ? 'current' : ''} ${locked ? 'locked' : ''}" data-lv="${n}" aria-label="Level ${n}${locked ? ', locked' : done ? ', completed' : ''}">${n}${tier !== 'easy' ? `<span class="t ${tier}">${tier === 'hard' ? 'HARD' : 'XHARD'}</span>` : ''}${done ? '<span class="ck">⭐</span>' : ''}</button>`);
+    cells.push(`<button class="lv ${done ? 'done' : ''} ${isCur ? 'current' : ''} ${locked ? 'locked' : ''}" data-lv="${n}" aria-label="Level ${n}${locked ? ', locked' : done ? ', completed' : ''}">${n}${tier !== 'easy' ? `<span class="t ${tier}">${tier === 'hard' ? 'HARD' : 'XHARD'}</span>` : ''}${done ? `<span class="ck">${'\u2B50'.repeat((S.profile.stars || {})[n] || 1)}</span>` : ''}</button>`);
   }
   $('#levels').innerHTML = `${backBar('Levels', coinsPill())}
     <div class="areanav"><button class="round-btn" data-area="-1" ${area <= 1 ? 'disabled' : ''} aria-label="Previous area">‹</button>
@@ -117,10 +131,17 @@ function startLevel(n, { retry = false } = {}) {
   $('[data-lvtier]').textContent = (level.tier === 'hard' ? 'HARD' : level.tier === 'extraHard' ? 'EXTRA HARD' : level.info.world.name.toUpperCase()) + (S.round.special ? ' • GOLDEN STREAK' : '');
   setMoves(S.game.round.moveLimit - S.game.round.movesUsed);
   refreshPowerbar();
-  showHint(n);
+  showHint(n); resetCombo();
+  if (level.info.firstOfWorld && !retry) showWorldBanner(level.info);
   prefetch(n, 3);
 }
 
+function showWorldBanner(info) {
+  const st = $('#game .stage'), w = info.world, el = document.createElement('button');
+  el.className = 'worldbanner'; el.style.background = `linear-gradient(${w.sky[0]},${w.sky[1]})`;
+  el.innerHTML = `<small>World ${info.worldIndex + 1} of ${WORLDS.length}</small><h2>${esc(w.name)}</h2><i style="background:${w.ground}"></i><small>Tap to start</small>`;
+  el.onclick = () => el.remove(); st.appendChild(el); setTimeout(() => el.remove(), 2600);
+}
 function showHint(n) {
   const b = $('[data-banner]'), msgs = { 1: 'Tap a vehicle to send it to the bay. Passengers board a bus of their colour.', 2: 'Blocked? Move the vehicle in front first. Every tap costs a move.', 3: 'Locked vehicles open after enough others have left.' };
   if (msgs[n] && !S.seenHint[n]) { b.textContent = msgs[n]; b.hidden = false; S.seenHint[n] = true; setTimeout(() => { b.hidden = true; }, 6000); } else b.hidden = true;
@@ -144,6 +165,7 @@ function onTapVehicle(id) {
   $('[data-banner]').hidden = true;
   if (S.targeting) { applyPowerup('heli', id); return; }
   const r = tapVehicle(g, id); if (r.result === 'ignored') return;
+  if (r.result === 'go') { const c = nextCombo(); if (c > 1) { const st = $('#game .stage'); floatText(st, comboText(c), st.clientWidth / 2, st.clientHeight * 0.35, comboColor(c)); haptic('light'); } } else resetCombo();
   playEvents(); setMoves(g.round.moveLimit - g.round.movesUsed);
 }
 
@@ -184,13 +206,14 @@ function onStatus(kind, reason) {
 function handleWin() {
   const g = S.game, level = S.level, n = S.levelNo, firstTry = S.attempts === 0;
   const mult = S.round.special ? S.round.special.coinMultiplier : 1, reward = level.coinReward * mult;
+  const left = Math.max(0, S.round.moveLimit - S.round.movesUsed), slack = Math.max(1, S.round.moveLimit - level.vehicles.length), ratio = left / slack, stars = ratio >= 0.5 ? 3 : ratio >= 0.2 ? 2 : 1;
   let p = applyResult(S.profile, firstTry ? 'win-first-try' : 'win-retry');
-  const ev = completionEvents(n), lines = [['Coins', '+' + fmt(reward)]];
+  const ev = completionEvents(n), lines = [['Stars', '\u2B50'.repeat(stars) + '\u2606'.repeat(3 - stars)], ['Coins', '+' + fmt(reward)]];
   let coins = (p.coins || 0) + reward + ev.bonusCoins, owned = [...(p.ownedSkins || [])];
   if (ev.bonusCoins) lines.push([ev.worldUnlocked !== null ? 'World complete!' : 'Area complete!', '+' + fmt(ev.bonusCoins)]);
   for (const s of ev.rewardSkins) { if (!owned.includes(s)) { owned.push(s); const sk = skinById(s); if (sk) lines.push(['New skin', sk.name]); } }
   if (S.round.special) lines.push(['Golden Streak', 'x' + SPECIAL_BONUS.coinMultiplier + ' coins']);
-  p = { ...p, coins, ownedSkins: owned, highestLevel: Math.max(p.highestLevel || 0, n) };
+  p = { ...p, coins, ownedSkins: owned, highestLevel: Math.max(p.highestLevel || 0, n), stars: { ...(p.stars || {}), [n]: Math.max((p.stars || {})[n] || 0, stars) } };
   save(p);
   lines.push(['Win streak', '\u{1F525} ' + p.winStreak + (firstTry ? '' : ' (retries reset it)')]);
   sfx.win(); haptic('success'); $$coins();
@@ -351,6 +374,7 @@ document.addEventListener('click', async (e) => {
   unlockAudio();
   const d = t.dataset;
   if (d.go) { sfx.tap(); return go(d.go); }
+  if (d.act === 'daily') return showDaily(false);
   if (d.act === 'play') { sfx.tap(); return startLevel(nextLevelNo()); }
   if (d.act === 'pause') return openPause();
   if (d.lv) { sfx.tap(); return startLevel(+d.lv); }
@@ -389,7 +413,7 @@ async function boot() {
     tasks: makeBootTasks({ base44, pingUrl: null, result }),
     canPlayOffline: true, embedded: true, hemisphere: S.profile.hemisphere, seasonal: S.profile.settings.seasonal,
     artUrl: LOADING_ART, forceTheme: q.get('theme') || null, minShowMs: q.get('fast') ? 0 : 1600,
-    onDone: () => { boot.destroy(); $('#loading').innerHTML = ''; S.profile = loadProfile(); const go2 = q.get('go'); if (go2 === 'game') startLevel(+q.get('level') || nextLevelNo()); else go(go2 || 'home'); },
+    onDone: () => { boot.destroy(); $('#loading').innerHTML = ''; S.profile = loadProfile(); const go2 = q.get('go'); if (go2 === 'game') startLevel(+q.get('level') || nextLevelNo()); else { go(go2 || 'home'); if (!go2 && !q.get('fast')) setTimeout(() => showDaily(true), 500); } },
   });
 }
 boot();

@@ -163,3 +163,17 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .home-art.art-winter{filter:saturate(.7) hue-rotate(14deg) brightness(1.12) contrast(.96)}
 .home-art.art-spring{filter:saturate(1.1) brightness(1.04)}
 .home-art.art-summer{filter:saturate(1.15) brightness(1.03)}
+/* ---- ideas ported from the Base44 build ---- */
+.pill.flame{gap:6px}.pill.flame .fbar{display:inline-block;width:34px;height:6px;border-radius:9px;background:rgba(16,36,107,.18);overflow:hidden}
+.pill.flame .fbar b{display:block;height:100%;background:#ffb300;border-radius:9px}.pill.flame small{font-size:11px;opacity:.7}
+.pill.flame.golden{background:#ffc83a;color:#4a2c00;box-shadow:0 0 0 2px #fff3b0,0 3px 0 rgba(16,36,107,.3)}
+.daily-btn{border:0;cursor:pointer;color:#10246b;animation:pulse 1.4s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.08)}}
+.dgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+.dday{position:relative;border-radius:12px;padding:6px 2px;background:var(--soft);display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:800;font-size:13px}
+.dday small{font-size:10px;opacity:.7;text-transform:uppercase}.dday.today{background:#ffd23f;outline:2px solid #e09b00}.dday.next{opacity:.55}.dday.past{background:#d6f5de}
+.dday i{position:absolute;right:-3px;top:-3px;width:16px;height:16px;border-radius:50%;background:#2fb457;color:#fff;font-size:10px;font-style:normal;line-height:16px}
+.worldbanner{position:absolute;inset:0;z-index:6;border:0;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;cursor:pointer;animation:fadeout .5s 2.1s forwards}
+.worldbanner h2{margin:0;font-size:38px;font-weight:900;text-shadow:0 3px 0 rgba(0,0,0,.35)}.worldbanner small{background:rgba(0,0,0,.25);padding:4px 12px;border-radius:99px;font-weight:800}
+.worldbanner i{width:40px;height:40px;border-radius:50%;box-shadow:0 0 0 4px rgba(255,255,255,.6)}
+@keyframes fadeout{to{opacity:0}}

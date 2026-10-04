@@ -17,6 +17,14 @@ export function bonusesFor(streak) {
   return { freeUses: uses, special: streak >= STREAK_RULES.specialAt ? SPECIAL_BONUS : null };
 }
 
+/** Progress toward the next streak bonus, for the flame counter. */
+export function streakProgress(streak) {
+  const next = STREAK_RULES.freeUseTiers.find((t) => streak < t.wins);
+  if (next) return { next: next.wins, uses: next.uses, progress: streak / next.wins, special: false };
+  if (streak < STREAK_RULES.specialAt) return { next: STREAK_RULES.specialAt, uses: 0, progress: streak / STREAK_RULES.specialAt, special: true };
+  return { next: null, uses: 0, progress: 1, special: true };
+}
+
 // result: 'win-first-try' | 'win-retry' | 'lose' | 'skip'
 export function applyResult(profile, result) {
   let streak = profile.winStreak || 0;
