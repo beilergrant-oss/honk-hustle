@@ -2,6 +2,8 @@
 import { DRAW } from './patterns2d.js';
 import { shade } from './busArt.js';
 import { skinById } from './skinData.js';
+import { BUS_STYLES } from './busStyles.js';
+import { vehicleSkinId } from './themes.js';
 
 export const COLOR_HEX = { magenta: '#ff4fa8', green: '#2fcf6a', yellow: '#ffd23a', blue: '#2f8bff', red: '#ff4545', purple: '#9b5de5' };
 
@@ -39,6 +41,31 @@ function tileFor(pattern, accents) {
   tiles.set(key, c); return c;
 }
 
+// The paint job of a vehicle skin: the body colour and trim of the bus, plus a roof pattern. The roof and the belt stripe keep the
+// game colour, so the player can still match passengers to buses at a glance.
+const SKIN_PAINT = {
+  v_taxi: { body: '#ffd23f', trim: '#111111', pattern: 'checker', colors: ['#111111'] },
+  v_police: { body: '#1e3a8a', trim: '#ffffff', pattern: 'stripes', colors: ['#ffffff'] },
+  v_racing: { body: '#e32d2d', trim: '#ffffff', pattern: 'stripes', colors: ['#ffffff'] },
+  v_unicorn: { body: '#ffd9f3', trim: '#b983ff', pattern: 'stars', colors: ['#ffffff', '#ffe14d'] },
+  v_gold: { body: '#e6b422', trim: '#fff1a8', pattern: 'none', colors: [] },
+  v_surf: { body: '#2bd0d0', trim: '#ff8a3d', pattern: 'waves', colors: ['#ffffff'] },
+  v_safari: { body: '#c9a15a', trim: '#3b2a14', pattern: 'zebra', colors: ['#1b1b1b'] },
+  v_frost: { body: '#a8defa', trim: '#ffffff', pattern: 'snow', colors: ['#ffffff'] },
+  v_neon: { body: '#241a5c', trim: '#3df5ff', pattern: 'grid', colors: ['#3df5ff'], glow: true },
+  v_jungle: { body: '#3a9a46', trim: '#7a5230', pattern: 'dots', colors: ['#ffffff'] },
+  v_candy: { body: '#ff9ad5', trim: '#ffffff', pattern: 'stripes', colors: ['#ffffff'] },
+  v_spooky: { body: '#ff8a1f', trim: '#2a1b3d', pattern: 'bats', colors: ['#2a1b3d'] },
+  v_sky: { body: '#8fd0ff', trim: '#ffffff', pattern: 'stars', colors: ['#ffffff'] },
+  v_moon: { body: '#c9ced8', trim: '#7a8296', pattern: 'none', colors: [] },
+};
+export function paintFor(skinId) {
+  if (!skinId || skinId === 'v_classic') return null;
+  const bs = BUS_STYLES.find((s) => s.setId && vehicleSkinId(s.setId) === skinId);
+  if (bs) { const b = bs.look.bus; return { body: b.body, trim: b.trim, pattern: b.pattern.id, colors: b.pattern.colors || [], glow: bs.id === 'cyber' }; }
+  return SKIN_PAINT[skinId] || null;
+}
+
 // The skin for the player's equipped ids -> what the board needs.
 export function resolveLook(profile) {
   const v = skinById(profile.equippedVehicleSkin || 'v_classic'), p = skinById(profile.equippedPassengerSkin || 'p_classic');
@@ -46,6 +73,7 @@ export function resolveLook(profile) {
   return {
     vehicle: { pattern: vs.pattern || null, accents: vs.accents || (vs.accent ? [vs.accent] : ['#ffffff']), topper: vs.topper || null, glossy: !!vs.glossy, emissive: vs.emissive || 0, metal: vs.metalness || 0 },
     accessory: (p && p.style && p.style.accessory) || null,
+    paint: paintFor(profile.equippedVehicleSkin || 'v_classic'),
   };
 }
 

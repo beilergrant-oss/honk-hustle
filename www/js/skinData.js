@@ -1,6 +1,6 @@
 // skinData.js - pure data (no Three.js) so the server can use it too.
-// RULE: skins NEVER change a vehicle's or passenger's base colour. Colour is how the player matches
-// passengers to vehicles, so skins add patterns, finishes and accessories on top of it.
+// RULE: a skin repaints the lower body, trim and roof pattern, but the roof and the belt stripe keep the game colour.
+// Colour is how the player matches passengers to vehicles, so it must stay readable (see paintFor in look.js).
 // obtain: 'free' | 'world' (free for finishing that world) | 'shop' (always in the shop) | 'set' (themed set: only buyable while it is in the shop, see themes.js)
 import { setSkins, BUNDLE_ID } from './themes.js';
 const P = BUNDLE_ID; // bundle id now lives in themes.js
