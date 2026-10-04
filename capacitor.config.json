@@ -1,0 +1,23 @@
+{
+  "appId": "com.yourname.honkhustle",
+  "appName": "Honk Hustle",
+  "webDir": "www",
+  "backgroundColor": "#0e1730",
+  "ios": {
+    "contentInset": "never",
+    "limitsNavigationsToAppBoundDomains": false,
+    "allowsLinkPreview": false,
+    "scrollEnabled": false
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 0,
+      "backgroundColor": "#0e1730"
+    },
+    "StatusBar": {
+      "style": "LIGHT",
+      "overlaysWebView": true
+    }
+  }
+}
