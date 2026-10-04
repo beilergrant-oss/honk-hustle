@@ -150,3 +150,16 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .pk .btn{padding:6px 8px;font-size:12px;width:100%}
 .pk .lockt{font-size:11px;font-weight:800;opacity:.6;padding:6px 0}
 .pack .acts{display:flex;gap:8px}.pack .acts .btn{flex:1;padding:12px 8px;font-size:15px}
+
+/* ---- key-art home + sunnier screens ---- */
+.home-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:53% 0;display:block}
+.home-play small{color:#fff;-webkit-text-stroke:3px #0a2a68;paint-order:stroke fill;font-size:14px;opacity:1}
+.home-row button{border:3px solid #fff;background:linear-gradient(#fff,#e6f3ff)}
+.sky{background:radial-gradient(ellipse 60px 22px at 18% 14%,rgba(255,255,255,.9) 98%,transparent),radial-gradient(ellipse 90px 28px at 82% 22%,rgba(255,255,255,.85) 98%,transparent),radial-gradient(ellipse 70px 24px at 40% 6%,rgba(255,255,255,.7) 98%,transparent),linear-gradient(#2fb0ff,#8fdcff 38%,#d9f4ff 75%,#fff7d6)}
+.title{-webkit-text-stroke:6px #0f2f8f;color:#ffd23a;text-shadow:0 4px 0 rgba(10,35,110,.45)}
+.btn.big{box-shadow:0 6px 0 #13783a,0 0 0 3px #bfffd4,inset 0 3px 0 rgba(255,255,255,.5)}
+
+.home-art.art-autumn{filter:sepia(.45) saturate(1.25) hue-rotate(-12deg) brightness(1.02)}
+.home-art.art-winter{filter:saturate(.7) hue-rotate(14deg) brightness(1.12) contrast(.96)}
+.home-art.art-spring{filter:saturate(1.1) brightness(1.04)}
+.home-art.art-summer{filter:saturate(1.15) brightness(1.03)}

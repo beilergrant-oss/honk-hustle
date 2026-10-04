@@ -4,6 +4,7 @@ import { makeBootTasks } from './bootTasks.js';
 import { pickTheme } from './loadingThemes.js';
 import { sceneSvg, particlesHtml } from './busArt.js';
 import { base44 } from './api/base44Client.js';
+import { LOADING_ART } from './art.js';
 import { loadProfile, saveProfile, resetProfile, restoreIfMissing } from './store.js';
 import { getLevel, prefetch, TOTAL_LEVELS, levelInfo, AREA_SIZE, WORLDS, completionEvents, locate } from './campaign.js';
 import { startRound, applyResult, SKIP_COST, SPECIAL_BONUS } from './rounds.js';
@@ -48,15 +49,14 @@ const coinsPill = () => `<span class="pill" aria-label="Coins">\u{1FA99} <span d
 function renderHome() {
   const p = S.profile, picked = pickTheme(new Date(), { hemisphere: p.hemisphere, seasonal: p.settings.seasonal });
   const t = picked.theme, [w1, ...rest] = 'Honk Hustle'.split(' ');
-  const next = nextLevelNo(), info = levelInfo(next), streak = p.winStreak || 0;
+  const next = nextLevelNo(), info = levelInfo(next), streak = p.winStreak || 0, art = picked.reason === 'regular' || picked.reason === 'season';
   $('#home').innerHTML = `
-    <div class="home-bg">${sceneSvg(t)}</div><div class="home-fx">${particlesHtml(t)}</div>
+    <div class="home-bg">${art ? `<img class="home-art art-${t.id}" src="${LOADING_ART}" alt="">` : sceneSvg(t)}</div><div class="home-fx">${art && picked.reason === 'regular' ? '' : particlesHtml(t)}</div>
     <div class="home-top">${coinsPill()}<span class="pill" title="Win streak">\u{1F525} ${streak}</span></div>
-    <div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
+    ${art ? '' : `<div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
       <span class="w w1">${w1}</span><span class="w w2">${rest.join(' ')}!</span>
-      <div class="tag">Unjam the traffic. Fill the buses.</div>
-      ${picked.reason !== 'regular' ? `<div class="home-chip">${esc(t.name)}</div>` : ''}
-    </div>
+      <div class="home-chip">${esc(t.name)}</div>
+    </div>`}
     <div class="home-bottom">
       <div class="home-play"><button class="btn green big" data-act="play" style="width:100%">Play</button><small>Level ${next}${info.tier === 'hard' ? ' • Hard' : info.tier === 'extraHard' ? ' • Extra Hard' : ''}</small></div>
       <div class="home-row">
@@ -388,7 +388,7 @@ async function boot() {
   const boot = bootLoadingScreen($('#loading'), {
     tasks: makeBootTasks({ base44, pingUrl: null, result }),
     canPlayOffline: true, embedded: true, hemisphere: S.profile.hemisphere, seasonal: S.profile.settings.seasonal,
-    forceTheme: q.get('theme') || null, minShowMs: q.get('fast') ? 0 : 1600,
+    artUrl: LOADING_ART, forceTheme: q.get('theme') || null, minShowMs: q.get('fast') ? 0 : 1600,
     onDone: () => { boot.destroy(); $('#loading').innerHTML = ''; S.profile = loadProfile(); const go2 = q.get('go'); if (go2 === 'game') startLevel(+q.get('level') || nextLevelNo()); else go(go2 || 'home'); },
   });
 }

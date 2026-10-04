@@ -75,6 +75,17 @@ const CSS = `
 .hh-root.is-offline .hh-panel.p-offline,.hh-root.is-error .hh-panel.p-error{display:block}
 .hh-root.is-offline .hh-tip,.hh-root.is-error .hh-tip{display:none}
 .hh-btn[hidden]{display:none}
+/* --- key art (ordinary days) --- */
+.has-art .hh-logo{display:none}
+.hh-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:53% 0;display:block;transition:transform .9s ease-in}
+.has-art.is-leaving .hh-art{transform:scale(1.12)}
+.has-art .hh-bottom{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 34px)}
+.has-art .hh-bar{background:#0a2a68;border-color:#7fd6ff;box-shadow:0 0 0 3px #1d63c4,0 6px 0 3px rgba(8,30,90,.55),inset 0 3px 6px rgba(0,0,0,.5)}
+.has-art .hh-pct{color:#fff;-webkit-text-stroke:4px #0a2a68;paint-order:stroke fill}
+.art-autumn{filter:sepia(.45) saturate(1.25) hue-rotate(-12deg) brightness(1.02)}
+.art-winter{filter:saturate(.7) hue-rotate(14deg) brightness(1.12) contrast(.96)}
+.art-spring{filter:saturate(1.1) brightness(1.04)}
+.art-summer{filter:saturate(1.15) brightness(1.03)}
 /* --- animation --- */
 @keyframes hh-stripes{to{background-position:56px 0}}
 @keyframes hh-glowbar{from{box-shadow:inset 0 3px 0 rgba(255,255,255,.55),0 0 6px #b9ff5a}to{box-shadow:inset 0 3px 0 rgba(255,255,255,.55),0 0 22px #e6ff9a}}
@@ -156,7 +167,8 @@ export function createScreen(root, opts = {}) {
 
   function setTheme(t, reason) {
     theme = t;
-    el.box.innerHTML = sceneSvg(t); el.fx.innerHTML = particlesHtml(t);
+    const art = !!(opts.artUrl && (t.id === 'regular' || reason === 'season')); root.classList.toggle('has-art', art);   // ordinary days use the key art, which already has the logo
+    el.box.innerHTML = art ? `<img class="hh-art art-${t.id}" src="${opts.artUrl}" alt="">` : sceneSvg(t); el.fx.innerHTML = art && t.id === 'regular' ? '' : particlesHtml(t);
     for (const [n, w] of [[1, el.w1], [2, el.w2]]) if (w) { const cc = n === 1 ? t.title : t.title2; w.style.setProperty('--c1', cc[0]); w.style.setProperty('--c2', cc[1]); }
     const showChip = reason && reason !== 'regular'; el.chip.hidden = !showChip; el.chip.textContent = showChip ? t.name : '';
     root.setAttribute('data-theme', t.id);
