@@ -93,7 +93,6 @@ function renderHome() {
     <div class="home-top">${coinsPill()}${flamePill(streak)}${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">' + iconSvg('gift', 20) + ' Daily</button>' : ''}</div>
     <div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
       <span class="w w1" data-t="${w1}">${w1}</span><span class="w w2" data-t="${rest.join(' ')}!">${rest.join(' ')}!</span>
-      ${picked.reason !== 'regular' ? `<div class="home-chip">${esc(t.name)}</div>` : ''}
     </div>
     <div class="hhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>
     <div class="home-bottom">
