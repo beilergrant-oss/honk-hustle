@@ -309,13 +309,13 @@ function renderGarage() {
 
 // ======================================================================= shop
 function renderShop() {
-  const tabs = [['packs', 'Packs'], ['sets', 'Bus sets'], ['power', 'Power-ups'], ['coins', 'Coins']];
+  const tabs = [['packs', 'Packs'], ['power', 'Power-ups'], ['coins', 'Coins']];
   $('#shop').classList.add('sky');
   $('#shop').innerHTML = `${backBar('Shop', coinsPill())}
     <div class="tabs">${tabs.map(([id, l]) => `<button data-tab="${id}" class="${S.shopTab === id ? 'on' : ''}">${l}</button>`).join('')}</div>
     <div class="scroll" id="shopBody"></div>`;
   const body = $('#shopBody');
-  if (S.shopTab === 'packs') body.innerHTML = packsHtml(); else if (S.shopTab === 'sets') body.innerHTML = setsHtml(); else if (S.shopTab === 'power') body.innerHTML = powerHtml(); else body.innerHTML = coinsHtml();
+  if (S.shopTab === 'packs') body.innerHTML = packsHtml(); else if (S.shopTab === 'power') body.innerHTML = powerHtml(); else body.innerHTML = coinsHtml();
 }
 function setCard(c) {
   const set = c.set, vs = skinById(vehicleSkinId(set.id)), st = BUS_STYLES.find((s) => s.id === set.id);
