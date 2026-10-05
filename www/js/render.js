@@ -15,7 +15,7 @@ const PITCH = 1.16, SINP = Math.sin(PITCH), COSP = Math.cos(PITCH), FOV = 36 * M
 const LIGHT = (() => { const v = [-0.45, 0.85, -0.35], n = Math.hypot(...v); return v.map((x) => x / n); })();
 const BODY_H = 0.34, CAB_H = 0.3;
 let PASS_H = 0.98, PASS_GAP = 0.7;   // set by layout() so about 9 big passengers always fit across the queue
-const INK = '#14205a';   // the dark outline colour of the cartoon look
+const INK = '#3a4a78';   // the dark outline colour of the cartoon look
 
 const rgb = (hex) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 const lit = (hex, l) => { const [r, g, b] = rgb(hex); const f = (v) => clamp(Math.round(l > 1 ? v + (255 - v) * (l - 1) * 1.6 : v * l), 0, 255); return `rgb(${f(r)},${f(g)},${f(b)})`; };
@@ -177,7 +177,7 @@ export function createRenderer(canvas, opts = {}) {
       const gr = top ? g.createLinearGradient(sp[3].x, sp[3].y, sp[1].x, sp[1].y) : g.createLinearGradient(0, y0s, 0, y1s);
       gr.addColorStop(0, lit(base, l * (top ? 1.1 : 1.1))); gr.addColorStop(1, lit(base, l * (top ? 0.94 : 0.86)));
       rpath(sp, r); g.fillStyle = gr; g.fill();
-      g.strokeStyle = o.edge || INK; g.lineWidth = o.lw || clamp(sp[0].u * 0.05, 1.6, 3.2); g.lineJoin = 'round'; g.stroke();
+      g.strokeStyle = o.edge || shade(base, -0.5); g.lineWidth = o.lw || clamp(sp[0].u * 0.026, 0.9, 1.7); g.lineJoin = 'round'; g.stroke();
       if (top && !o.noGloss && sp[0].u * Math.abs(f.p[1][0] - f.p[0][0]) > 12) {   // a soft sheen across the top
         const L2 = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
         g.beginPath(); [L2(sp[3], sp[0], 0.1), L2(sp[2], sp[1], 0.1), L2(sp[2], sp[1], 0.32), L2(sp[3], sp[0], 0.32)].forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.closePath(); g.fillStyle = 'rgba(255,255,255,.34)'; g.fill();
@@ -408,11 +408,11 @@ export function createRenderer(canvas, opts = {}) {
     decorList = [];
     const zTop = L.qz + 1.5, step = 1.9;
     for (let z = -0.6; z < zTop; z += step * (0.8 + rnd() * 0.5)) {    // down both sides
-      decorList.push({ x: -1.15 - rnd() * 0.7, z, e: pick(), s: 1.25 + rnd() * 0.7 }, { x: L.bw + 1.15 + rnd() * 0.7, z: z + rnd(), e: pick(), s: 1.25 + rnd() * 0.7 });
+      decorList.push({ x: -1.15 - rnd() * 0.7, z, e: pick(), s: 0.85 + rnd() * 0.4 }, { x: L.bw + 1.15 + rnd() * 0.7, z: z + rnd(), e: pick(), s: 0.85 + rnd() * 0.4 });
     }
     for (let x = -1.8; x < L.bw + 2; x += 1.9 + rnd() * 0.8) {          // along the bottom (near the player) and the top (past the queue)
-      decorList.push({ x: x + rnd() * 0.5, z: -1.8 - rnd() * 1.6, e: pick(), s: 1.2 + rnd() * 0.7 });
-      decorList.push({ x: x + rnd() * 0.5, z: zTop + rnd() * 1.4, e: pick(), s: 1.3 + rnd() * 0.8 });
+      decorList.push({ x: x + rnd() * 0.5, z: -1.8 - rnd() * 1.6, e: pick(), s: 0.8 + rnd() * 0.4 });
+      decorList.push({ x: x + rnd() * 0.5, z: zTop + rnd() * 1.4, e: pick(), s: 0.85 + rnd() * 0.4 });
     }
     decorKey = key; return decorList;
   }
@@ -421,7 +421,7 @@ export function createRenderer(canvas, opts = {}) {
     const L = R.L, bd = bdOf(), name = (R.world.name || '').toUpperCase(); if (!name || L.H < 360) return;
     g.save(); g.font = '900 15px Poppins, system-ui, sans-serif'; const tw = g.measureText(name).width, w = tw + 56, h = 32, x = 8, y = 8;
     const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, bd.band[0]); gr.addColorStop(1, bd.band[1]);
-    rr(g, x, y, w, h, 12); g.fillStyle = gr; g.fill(); g.lineWidth = 3; g.strokeStyle = INK; g.stroke();
+    rr(g, x, y, w, h, 12); g.fillStyle = gr; g.fill(); g.lineWidth = 1.5; g.strokeStyle = shade(bd.band[1], -0.4); g.stroke();
     g.fillStyle = 'rgba(255,255,255,.28)'; rr(g, x + 3, y + 3, w - 6, h * 0.38, 8); g.fill();
     g.font = '18px ' + EMOJI_FONT; g.textBaseline = 'middle'; g.textAlign = 'center'; g.fillStyle = '#000'; g.fillText(bd.icon, x + 20, y + h / 2 + 1);
     g.font = '900 15px Poppins, system-ui, sans-serif'; g.textAlign = 'left'; g.lineWidth = 4; g.strokeStyle = INK; g.strokeText(name, x + 38, y + h / 2 + 1); g.fillStyle = '#fff'; g.fillText(name, x + 38, y + h / 2 + 1);

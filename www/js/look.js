@@ -105,12 +105,12 @@ export function patternFill(g, look, scale, alpha = 0.85) {
 
 // ---- passenger: a chunky cartoon bean with big eyes, rosy cheeks and the equipped hat and outfit. (x, y) = centre of the body, s = height ----
 // outfit = { c1, c2, pattern } is the passenger skin's matching outfit (a vest in the bus skin's colours). The face and upper body keep the game colour.
-const INK = '#14205a';
+const INK = '#33406e';
 export function drawPassenger(g, x, y, s, hex, accessory, wobble = 0, cheer = false, outfit = null) {
   g.save(); g.translate(x, y); g.rotate(wobble);
   const w = s * 0.86, lw = Math.max(1.5, s * 0.075), t = performance.now();
   g.fillStyle = 'rgba(10,15,40,.22)'; g.beginPath(); g.ellipse(0, s * 0.5, w * 0.55, s * 0.09, 0, 0, 7); g.fill();
-  g.lineJoin = 'round'; g.lineCap = 'round'; g.strokeStyle = INK; g.lineWidth = lw;
+  g.lineJoin = 'round'; g.lineCap = 'round'; g.strokeStyle = shade(hex, -0.55); g.lineWidth = lw * 0.55;
   if (cheer) {   // little arms in the air
     const wig = Math.sin(t / 180 + x) * 0.3;
     for (const sx of [-1, 1]) { g.save(); g.translate(sx * w * 0.46, -s * 0.02); g.rotate(sx * (0.55 + (sx > 0 ? wig : -wig))); g.fillStyle = hex; g.beginPath(); g.ellipse(0, -s * 0.2, s * 0.1, s * 0.23, 0, 0, 7); g.fill(); g.stroke(); g.restore(); }
