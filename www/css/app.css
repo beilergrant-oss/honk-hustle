@@ -200,3 +200,15 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .gc .gs{position:absolute;left:8px;top:8px;width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 2px #fff}.gc .gt{font-style:normal;font-size:10.5px;font-weight:800;opacity:.75}
 .gshop{text-align:center;margin:14px 0 4px}
 .pkpic{position:relative}.pkr{position:absolute;right:-6px;bottom:-8px;width:44px}.pkr img{width:100%;height:auto;display:block}
+
+/* ---- Home screen in the game's cartoon style ---- */
+#home{display:flex;flex-direction:column}
+.hb{overflow:hidden}.hb-road{position:absolute;left:-5%;right:-5%;top:46%;height:30%;background:linear-gradient(#5b6585,#434c69);border-top:5px solid #14205a;border-bottom:5px solid #14205a;box-shadow:0 0 0 0 transparent}
+.hb-road::after{content:"";position:absolute;left:0;right:0;top:46%;height:6px;background:repeating-linear-gradient(90deg,#fff 0 36px,transparent 36px 72px);opacity:.85}
+.hd{position:absolute;line-height:1;filter:drop-shadow(0 5px 0 rgba(20,32,90,.25));animation:hd-sway 4s ease-in-out infinite}
+@keyframes hd-sway{50%{transform:translateY(-6px) rotate(3deg)}}
+.hhero{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.hbus{width:min(82%,340px);animation:hh-bob 2.2s ease-in-out infinite;filter:drop-shadow(0 6px 0 rgba(20,32,90,.22))}.hbus svg{display:block;width:100%;height:auto}
+.hcrowd{display:flex;justify-content:center;margin-top:-14px;width:100%}
+.hr{display:block;width:17%;max-width:84px;margin:0 -2.5%;animation:hr-hop 1s ease-in-out infinite}.hr img{display:block;width:100%;height:auto}
+@keyframes hr-hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}

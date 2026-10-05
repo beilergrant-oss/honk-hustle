@@ -20,7 +20,8 @@ import { packById } from './packs.js';
 import { COIN_PACKS, POWERUP_BUNDLES, SINGLE_POWERUP_COIN_PRICE, coinPurchase } from './catalog.js';
 import { vehicleSkinId, passengerSkinId, setById, setProductId } from './themes.js';
 import { skinById, isOwned, passengerFor } from './skinData.js';
-import { miniBus, riderPic } from './cartoon.js';
+import { miniBus, riderPic, busPic } from './cartoon.js';
+import { BACKDROPS } from './backdrops.js';
 import { lookFor, BUS_STYLES } from './busStyles.js';
 import { TOPPER_EMOJI } from './look.js';
 import { configureSfx, sfx, haptic, unlockAudio } from './sfx.js';
@@ -64,16 +65,27 @@ function showDaily(auto) {
 function renderHome() {
   const p = S.profile, picked = pickTheme(new Date(), { hemisphere: p.hemisphere, seasonal: p.settings.seasonal });
   const t = picked.theme, [w1, ...rest] = 'Honk Hustle'.split(' ');
-  const next = nextLevelNo(), info = levelInfo(next), streak = p.winStreak || 0, art = picked.reason === 'regular' || picked.reason === 'season';
+  const next = nextLevelNo(), info = levelInfo(next), streak = p.winStreak || 0, festive = picked.reason === 'holiday';
+  // The home screen is drawn in the same cartoon style as the game: your equipped bus and riders on the backdrop of the world you are in.
+  const bd = BACKDROPS[info.world.bd] || BACKDROPS.city, vid = p.equippedVehicleSkin || 'v_classic', pid = p.equippedPassengerSkin || 'p_classic';
+  const sky = festive ? t.sky : bd.sky, ground = festive ? t.ground : bd.ground;
+  const spots = [[4, 12, 62], [78, 9, 70], [-2, 32, 56], [86, 34, 60], [2, 56, 66], [84, 58, 64], [10, 80, 70], [70, 82, 72]];
+  const FEST = { christmas: ['\u{1F384}', '\u{1F381}', '\u26C4', '\u2744\uFE0F'], halloween: ['\u{1F383}', '\u{1F987}', '\u{1F47B}', '\u{1F56F}\uFE0F'], valentine: ['\u{1F496}', '\u{1F339}', '\u{1F48C}', '\u{1F9F8}'], stpatrick: ['\u2618\uFE0F', '\u{1F308}', '\u{1F4B0}', '\u{1F37A}'], easter: ['\u{1F95A}', '\u{1F430}', '\u{1F337}', '\u{1F423}'], pride: ['\u{1F308}', '\u{1F984}', '\u{1F496}', '\u2728'],
+    newyear: ['\u{1F386}', '\u{1F37E}', '\u{1F389}', '\u{1F973}'], july4: ['\u{1F386}', '\u{1F1FA}\u{1F1F8}', '\u{1F9E8}', '\u2B50'], thanksgiving: ['\u{1F983}', '\u{1F341}', '\u{1F967}', '\u{1F33D}'], lunarnewyear: ['\u{1F3EE}', '\u{1F9E7}', '\u{1F409}', '\u{1F386}'], diwali: ['\u{1FA94}', '\u2728', '\u{1F386}', '\u{1F36C}'] };
+  const dset = (festive && FEST[t.id]) || bd.decor;
+  const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;font-size:${sz}px;animation-delay:${-i * 0.7}s">${dset[i % dset.length]}</span>`).join('');
+  const crowd = ['#ff3fa4', '#22c94a', '#ffd60a', '#2a7bff', '#ff3030', '#9345e8'].map((c, i) => `<span class="hr" style="animation-delay:${-i * 0.18}s">${riderPic(pid, i, 84)}</span>`).join('');
   $('#home').innerHTML = `
-    <div class="home-bg">${art ? `<img class="home-art art-${t.id}" src="${LOADING_ART}" alt="">` : sceneSvg(t)}</div><div class="home-fx">${art && picked.reason === 'regular' ? '' : particlesHtml(t)}</div>
+    <div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)"><div class="hb-road"></div>${decor}</div>
+    <div class="home-fx">${festive || picked.reason === 'season' ? particlesHtml(t) : ''}</div>
     <div class="home-top">${coinsPill()}${flamePill(streak)}${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">\u{1F381} Daily</button>' : ''}</div>
-    ${art ? '' : `<div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
+    <div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
       <span class="w w1" data-t="${w1}">${w1}</span><span class="w w2" data-t="${rest.join(' ')}!">${rest.join(' ')}!</span>
-      <div class="home-chip">${esc(t.name)}</div>
-    </div>`}
+      ${picked.reason !== 'regular' ? `<div class="home-chip">${esc(t.name)}</div>` : ''}
+    </div>
+    <div class="hhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>
     <div class="home-bottom">
-      <div class="home-play"><button class="btn green big" data-act="play" style="width:100%">Play</button><small>Level ${next}${info.tier === 'hard' ? ' • Hard' : info.tier === 'extraHard' ? ' • Extra Hard' : ''}</small></div>
+      <div class="home-play"><button class="btn green big" data-act="play" style="width:100%">Play</button><small>Level ${next}${info.tier === 'hard' ? ' • Hard' : info.tier === 'extraHard' ? ' • Extra Hard' : ''} • ${esc(info.world.name)}</small></div>
       <div class="home-row">
         <button data-go="levels"><span>\u{1F5FA}️</span>Levels</button>
         <button data-go="garage"><span>\u{1F68C}</span>Garage</button>
