@@ -65,6 +65,24 @@ function showDaily(auto) {
 }
 const FEST = { christmas: ['\u{1F384}', '\u{1F381}', '\u26C4', '\u2744\uFE0F'], halloween: ['\u{1F383}', '\u{1F987}', '\u{1F47B}', '\u{1F56F}\uFE0F'], valentine: ['\u{1F496}', '\u{1F339}', '\u{1F48C}', '\u{1F9F8}'], stpatrick: ['\u2618\uFE0F', '\u{1F308}', '\u{1F4B0}', '\u{1F37A}'], easter: ['\u{1F95A}', '\u{1F430}', '\u{1F337}', '\u{1F423}'], pride: ['\u{1F308}', '\u{1F984}', '\u{1F496}', '\u2728'],
     newyear: ['\u{1F386}', '\u{1F37E}', '\u{1F389}', '\u{1F973}'], july4: ['\u{1F386}', '\u{1F1FA}\u{1F1F8}', '\u{1F9E8}', '\u2B50'], thanksgiving: ['\u{1F983}', '\u{1F341}', '\u{1F967}', '\u{1F33D}'], lunarnewyear: ['\u{1F3EE}', '\u{1F9E7}', '\u{1F409}', '\u{1F386}'], diwali: ['\u{1FA94}', '\u2728', '\u{1F386}', '\u{1F36C}'] };
+const SEASON_DECOR = {
+  autumn: ['\u{1F341}', '\u{1F383}', '\u{1F333}', '\u{1F342}', '\u{1F33E}', '\u{1F344}', '\u{1F330}', '\u{1F33D}'],
+  spring: ['\u{1F338}', '\u{1F337}', '\u{1F333}', '\u{1F41D}', '\u{1F98B}', '\u{1F33C}', '\u{1F308}', '\u{1F423}'],
+  summer: ['\u{1F334}', '\u26F1', '\u{1F349}', '\u{1F3C4}', '\u{1F980}', '\u{1F41A}', '\u{1F366}', '\u2600'],
+  winter: ['\u26C4', '\u{1F332}', '\u2744', '\u{1F3BF}', '\u{1F384}', '\u{1F3D4}', '\u26C4', '\u2744'],
+};
+// The home / loading backdrop: the live season or holiday dresses it (sky, hills, sun, ground colour, scenery); otherwise it wears your world's backdrop.
+function sceneBg(picked, bd) {
+  const t = picked.theme, festive = picked.reason === 'holiday', seasonal = picked.reason === 'season';
+  const themed = festive || seasonal;
+  const sky = themed ? t.sky : bd.sky, ground = festive ? t.ground : seasonal ? t.sidewalk : bd.ground;
+  const dset = (festive && FEST[t.id]) || (seasonal && SEASON_DECOR[t.id]) || bd.decor;
+  const spots = [[4, 12, 62], [78, 9, 70], [-2, 32, 56], [86, 34, 60], [2, 56, 66], [84, 58, 64], [10, 80, 70], [70, 82, 72]];
+  const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;width:${Math.round(sz * 1.15)}px;height:${Math.round(sz * 1.15)}px;animation-delay:${-i * 0.7}s">${decorHtml(dset[i % dset.length])}</span>`).join('');
+  const hills = themed && t.hills ? `<div class="hb-hill" style="left:-22%;width:84%;background:radial-gradient(ellipse at 50% 100%,${t.hills[0]} 0 68%,transparent 69%)"></div><div class="hb-hill h2" style="left:30%;width:98%;background:radial-gradient(ellipse at 50% 100%,${t.hills[1]} 0 68%,transparent 69%)"></div>` : '';
+  const sun = themed && (t.celestial === 'sunset' || t.celestial === 'sun') ? `<div class="hb-sun ${t.celestial}"></div>` : themed && t.celestial === 'moon' ? '<div class="hb-sun moon"></div>' : '';
+  return `<div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)">${sun}${hills}<div class="hb-road"></div>${decor}</div>`;
+}
 // A little hanging signpost that names the season or world, styled in that theme's own colours and icon (instead of plain text on a dark pill).
 function signChip(t, reason) {
   if (reason === 'regular') return '';
@@ -75,11 +93,8 @@ function signChip(t, reason) {
 function homeArt(p, picked) {
   const t = picked.theme, festive = picked.reason === 'holiday', info = levelInfo(nextLevelNo());
   const bdKey = festive ? '' : info.world.bd, bd = BACKDROPS[info.world.bd] || BACKDROPS.city, vid = p.equippedVehicleSkin || 'v_classic', pid = p.equippedPassengerSkin || 'p_classic';
-  const sky = festive ? t.sky : bd.sky, ground = festive ? t.ground : bd.ground, dset = (festive && FEST[t.id]) || bd.decor;
-  const spots = [[4, 12, 62], [78, 9, 70], [-2, 32, 56], [86, 34, 60], [2, 56, 66], [84, 58, 64], [10, 80, 70], [70, 82, 72]];
-  const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;width:${Math.round(sz * 1.15)}px;height:${Math.round(sz * 1.15)}px;animation-delay:${-i * 0.7}s">${decorHtml(dset[i % dset.length])}</span>`).join('');
   const crowd = [0, 1, 2, 3, 4, 5].map((i) => `<span class="hr" style="animation-delay:${-i * 0.18}s">${riderPic(pid, i, 84)}</span>`).join('');
-  return `<div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)"><div class="hb-road"></div>${decor}</div><div class="hhero lhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>`;
+  return sceneBg(picked, bd) + `<div class="hhero lhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>`;
 }
 function renderHome() {
   const p = S.profile, picked = pickTheme(new Date(), { hemisphere: p.hemisphere, seasonal: p.settings.seasonal });
@@ -87,13 +102,9 @@ function renderHome() {
   const next = nextLevelNo(), info = levelInfo(next), streak = p.winStreak || 0, festive = picked.reason === 'holiday';
   // The home screen is drawn in the same cartoon style as the game: your equipped bus and riders on the backdrop of the world you are in.
   const bdKey = festive ? '' : info.world.bd, bd = BACKDROPS[info.world.bd] || BACKDROPS.city, vid = p.equippedVehicleSkin || 'v_classic', pid = p.equippedPassengerSkin || 'p_classic';
-  const sky = festive ? t.sky : bd.sky, ground = festive ? t.ground : bd.ground;
-  const spots = [[4, 12, 62], [78, 9, 70], [-2, 32, 56], [86, 34, 60], [2, 56, 66], [84, 58, 64], [10, 80, 70], [70, 82, 72]];
-  const dset = (festive && FEST[t.id]) || bd.decor;
-  const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;width:${Math.round(sz * 1.15)}px;height:${Math.round(sz * 1.15)}px;animation-delay:${-i * 0.7}s">${decorHtml(dset[i % dset.length])}</span>`).join('');
   const crowd = ['#ff3fa4', '#22c94a', '#ffd60a', '#2a7bff', '#ff3030', '#9345e8'].map((c, i) => `<span class="hr" style="animation-delay:${-i * 0.18}s">${riderPic(pid, i, 84)}</span>`).join('');
   $('#home').innerHTML = `
-    <div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)"><div class="hb-road"></div>${decor}</div>
+    ${sceneBg(picked, bd)}
     <div class="home-fx">${festive || picked.reason === 'season' ? particlesHtml(t) : ''}</div>
     <div class="home-top">${coinsPill()}<div class="ht-right">${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">' + iconSvg('gift', 20) + ' Daily</button>' : ''}<button class="topbtn" data-go="settings" aria-label="Settings">${iconSvg('gear', 26)}</button></div></div>
     <div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
