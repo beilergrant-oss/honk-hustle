@@ -62,6 +62,18 @@ function showDaily(auto) {
     actions: granted ? [{ label: 'Reward claimed!', cls: 'green' }] : d.claimable ? [{ label: 'Claim', cls: 'green', onClick: () => { const r = claimDaily(S.profile); save(r.profile); sfx.coin(); haptic('success'); $$coins(); if (S.route === 'home') renderHome(); show(true); return false; } }, { label: 'Later', cls: 'ghost' }] : [{ label: 'Come back tomorrow', cls: 'ghost' }] });
   show(false);
 }
+const FEST = { christmas: ['\u{1F384}', '\u{1F381}', '\u26C4', '\u2744\uFE0F'], halloween: ['\u{1F383}', '\u{1F987}', '\u{1F47B}', '\u{1F56F}\uFE0F'], valentine: ['\u{1F496}', '\u{1F339}', '\u{1F48C}', '\u{1F9F8}'], stpatrick: ['\u2618\uFE0F', '\u{1F308}', '\u{1F4B0}', '\u{1F37A}'], easter: ['\u{1F95A}', '\u{1F430}', '\u{1F337}', '\u{1F423}'], pride: ['\u{1F308}', '\u{1F984}', '\u{1F496}', '\u2728'],
+    newyear: ['\u{1F386}', '\u{1F37E}', '\u{1F389}', '\u{1F973}'], july4: ['\u{1F386}', '\u{1F1FA}\u{1F1F8}', '\u{1F9E8}', '\u2B50'], thanksgiving: ['\u{1F983}', '\u{1F341}', '\u{1F967}', '\u{1F33D}'], lunarnewyear: ['\u{1F3EE}', '\u{1F9E7}', '\u{1F409}', '\u{1F386}'], diwali: ['\u{1FA94}', '\u2728', '\u{1F386}', '\u{1F36C}'] };
+// The same scene as the home screen (backdrop of your world, your bus, your riders), reused by the loading screen so the two match.
+function homeArt(p, picked) {
+  const t = picked.theme, festive = picked.reason === 'holiday', info = levelInfo(nextLevelNo());
+  const bd = BACKDROPS[info.world.bd] || BACKDROPS.city, vid = p.equippedVehicleSkin || 'v_classic', pid = p.equippedPassengerSkin || 'p_classic';
+  const sky = festive ? t.sky : bd.sky, ground = festive ? t.ground : bd.ground, dset = (festive && FEST[t.id]) || bd.decor;
+  const spots = [[4, 12, 62], [78, 9, 70], [-2, 32, 56], [86, 34, 60], [2, 56, 66], [84, 58, 64], [10, 80, 70], [70, 82, 72]];
+  const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;font-size:${sz}px;animation-delay:${-i * 0.7}s">${dset[i % dset.length]}</span>`).join('');
+  const crowd = [0, 1, 2, 3, 4, 5].map((i) => `<span class="hr" style="animation-delay:${-i * 0.18}s">${riderPic(pid, i, 84)}</span>`).join('');
+  return `<div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)"><div class="hb-road"></div>${decor}</div><div class="hhero lhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>`;
+}
 function renderHome() {
   const p = S.profile, picked = pickTheme(new Date(), { hemisphere: p.hemisphere, seasonal: p.settings.seasonal });
   const t = picked.theme, [w1, ...rest] = 'Honk Hustle'.split(' ');
@@ -70,8 +82,6 @@ function renderHome() {
   const bd = BACKDROPS[info.world.bd] || BACKDROPS.city, vid = p.equippedVehicleSkin || 'v_classic', pid = p.equippedPassengerSkin || 'p_classic';
   const sky = festive ? t.sky : bd.sky, ground = festive ? t.ground : bd.ground;
   const spots = [[4, 12, 62], [78, 9, 70], [-2, 32, 56], [86, 34, 60], [2, 56, 66], [84, 58, 64], [10, 80, 70], [70, 82, 72]];
-  const FEST = { christmas: ['\u{1F384}', '\u{1F381}', '\u26C4', '\u2744\uFE0F'], halloween: ['\u{1F383}', '\u{1F987}', '\u{1F47B}', '\u{1F56F}\uFE0F'], valentine: ['\u{1F496}', '\u{1F339}', '\u{1F48C}', '\u{1F9F8}'], stpatrick: ['\u2618\uFE0F', '\u{1F308}', '\u{1F4B0}', '\u{1F37A}'], easter: ['\u{1F95A}', '\u{1F430}', '\u{1F337}', '\u{1F423}'], pride: ['\u{1F308}', '\u{1F984}', '\u{1F496}', '\u2728'],
-    newyear: ['\u{1F386}', '\u{1F37E}', '\u{1F389}', '\u{1F973}'], july4: ['\u{1F386}', '\u{1F1FA}\u{1F1F8}', '\u{1F9E8}', '\u2B50'], thanksgiving: ['\u{1F983}', '\u{1F341}', '\u{1F967}', '\u{1F33D}'], lunarnewyear: ['\u{1F3EE}', '\u{1F9E7}', '\u{1F409}', '\u{1F386}'], diwali: ['\u{1FA94}', '\u2728', '\u{1F386}', '\u{1F36C}'] };
   const dset = (festive && FEST[t.id]) || bd.decor;
   const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;font-size:${sz}px;animation-delay:${-i * 0.7}s">${dset[i % dset.length]}</span>`).join('');
   const crowd = ['#ff3fa4', '#22c94a', '#ffd60a', '#2a7bff', '#ff3030', '#9345e8'].map((c, i) => `<span class="hr" style="animation-delay:${-i * 0.18}s">${riderPic(pid, i, 84)}</span>`).join('');
@@ -406,7 +416,7 @@ async function boot() {
   const boot = bootLoadingScreen($('#loading'), {
     tasks: makeBootTasks({ base44, pingUrl: null, result }),
     canPlayOffline: true, embedded: true, hemisphere: S.profile.hemisphere, seasonal: S.profile.settings.seasonal,
-    artUrl: LOADING_ART, forceTheme: q.get('theme') || null, minShowMs: q.get('fast') ? 0 : 1600,
+    artUrl: LOADING_ART, sceneHtml: () => homeArt(S.profile, pickTheme(new Date(), { hemisphere: S.profile.hemisphere, seasonal: S.profile.settings.seasonal })), forceTheme: q.get('theme') || null, minShowMs: q.get('fast') ? 0 : 1600,
     onDone: () => { boot.destroy(); $('#loading').innerHTML = ''; S.profile = loadProfile(); const go2 = q.get('go'); if (go2 === 'game') startLevel(+q.get('level') || nextLevelNo()); else { go(go2 || 'home'); if (!go2 && !q.get('fast')) setTimeout(() => showDaily(true), 500); } },
   });
 }

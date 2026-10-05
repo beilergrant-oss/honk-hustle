@@ -225,3 +225,8 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .home-play .btn.big{width:112px!important;font-size:15px;padding:8px 12px;border-radius:16px;box-shadow:0 5px 0 #13783a,0 0 0 3px #bfffd4,inset 0 3px 0 rgba(255,255,255,.5)}
 .busimg{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 0 rgba(20,32,90,.22))}
 .hbus .busimg,.gbus .busimg{border-radius:0;border:0;box-shadow:none;object-fit:contain;filter:drop-shadow(0 8px 0 rgba(20,32,90,.22))}
+/* loading screen drawn like the home screen */
+.has-home .hh-scenebox{position:absolute;inset:0;overflow:hidden}
+.has-home .hh-scenebox .home-bg{position:absolute;inset:0}
+.has-home .hh-scenebox .lhero{position:absolute;left:0;right:0;top:34%;bottom:16%;flex:none}
+.has-home .hh-tip{color:#fff;text-shadow:0 1px 3px rgba(10,30,90,.7)}
