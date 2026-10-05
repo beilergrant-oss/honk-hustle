@@ -66,6 +66,12 @@ function showDaily(auto) {
 }
 const FEST = { christmas: ['\u{1F384}', '\u{1F381}', '\u26C4', '\u2744\uFE0F'], halloween: ['\u{1F383}', '\u{1F987}', '\u{1F47B}', '\u{1F56F}\uFE0F'], valentine: ['\u{1F496}', '\u{1F339}', '\u{1F48C}', '\u{1F9F8}'], stpatrick: ['\u2618\uFE0F', '\u{1F308}', '\u{1F4B0}', '\u{1F37A}'], easter: ['\u{1F95A}', '\u{1F430}', '\u{1F337}', '\u{1F423}'], pride: ['\u{1F308}', '\u{1F984}', '\u{1F496}', '\u2728'],
     newyear: ['\u{1F386}', '\u{1F37E}', '\u{1F389}', '\u{1F973}'], july4: ['\u{1F386}', '\u{1F1FA}\u{1F1F8}', '\u{1F9E8}', '\u2B50'], thanksgiving: ['\u{1F983}', '\u{1F341}', '\u{1F967}', '\u{1F33D}'], lunarnewyear: ['\u{1F3EE}', '\u{1F9E7}', '\u{1F409}', '\u{1F386}'], diwali: ['\u{1FA94}', '\u2728', '\u{1F386}', '\u{1F36C}'] };
+// A little hanging signpost that names the season or world, styled in that theme's own colours and icon (instead of plain text on a dark pill).
+function signChip(t, reason) {
+  if (reason === 'regular') return '';
+  const icon = (FEST[t.id] && FEST[t.id][0]) || '⭐';
+  return `<div class="home-chip" style="--b1:${t.title[0]};--b2:${t.title2[1]}"><span class="hc-ic">${decorHtml(icon)}</span><span class="hc-tx">${esc(t.name)}</span></div>`;
+}
 // The same scene as the home screen (backdrop of your world, your bus, your riders), reused by the loading screen so the two match.
 function homeArt(p, picked) {
   const t = picked.theme, festive = picked.reason === 'holiday', info = levelInfo(nextLevelNo());
@@ -93,6 +99,7 @@ function renderHome() {
     <div class="home-top">${coinsPill()}${flamePill(streak)}${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">' + iconSvg('gift', 20) + ' Daily</button>' : ''}</div>
     <div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
       <span class="w w1" data-t="${w1}">${w1}</span><span class="w w2" data-t="${rest.join(' ')}!">${rest.join(' ')}!</span>
+      ${signChip(t, picked.reason)}
     </div>
     <div class="hhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>
     <div class="home-bottom">
