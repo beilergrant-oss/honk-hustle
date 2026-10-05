@@ -68,7 +68,7 @@ function renderHome() {
     <div class="home-bg">${art ? `<img class="home-art art-${t.id}" src="${LOADING_ART}" alt="">` : sceneSvg(t)}</div><div class="home-fx">${art && picked.reason === 'regular' ? '' : particlesHtml(t)}</div>
     <div class="home-top">${coinsPill()}${flamePill(streak)}${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">\u{1F381} Daily</button>' : ''}</div>
     ${art ? '' : `<div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
-      <span class="w w1">${w1}</span><span class="w w2">${rest.join(' ')}!</span>
+      <span class="w w1" data-t="${w1}">${w1}</span><span class="w w2" data-t="${rest.join(' ')}!">${rest.join(' ')}!</span>
       <div class="home-chip">${esc(t.name)}</div>
     </div>`}
     <div class="home-bottom">
