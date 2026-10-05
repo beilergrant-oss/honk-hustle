@@ -247,7 +247,8 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 
 /* drawn scenery and icons instead of emoji */
 .hd{display:block;font-size:0}.hd .dimg{display:block;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 4px 0 rgba(20,32,90,.18))}
-.ic2{display:block;margin:0 auto}.home-row button span{display:block;height:30px}
+.ic2{display:block;margin:0 auto}.home-row button span{display:block;height:46px}.home-row button span .ic2{filter:drop-shadow(0 3px 2px rgba(10,20,55,.35));transition:transform .15s}.home-row button:active span .ic2{transform:scale(.92)}
+.packhd .gl svg{display:block;width:100%;height:100%}.packhd .gl{width:44px;height:44px}
 .pw .i{display:inline-flex;align-items:center;justify-content:center}.pw .i .ic2{display:block}
 .pill .ic2{display:inline-block;margin:0;vertical-align:middle}
 .btn .ic2,.lockt .ic2,.gl .ic2,.gt .ic2,.dday .ic2,.banner .ic2,.gtabs .ic2{display:inline-block;vertical-align:-5px;margin:0 2px 0 0}

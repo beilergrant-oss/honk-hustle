@@ -8,7 +8,7 @@
 //   - iOS app WITHOUT window.NativeIAP:   real-money buttons are hidden; coins earned in-game still work
 import { base44 } from './api/base44Client.js'; // adjust to your project's client import
 import { PRODUCTS, coinPurchase, setUsd, setCoinPrice } from './catalog.js';
-import { SEASON_PACKS } from './packs.js';
+import { ALL_PACKS } from './packs.js';
 import { shopOffers, isOffered, setProductId, vehicleSkinId, passengerSkinId } from './themes.js';
 
 const inNativeShell = () =>
@@ -106,11 +106,13 @@ export const buySetWithMoney = (setId) => buyWithMoney(setProductId(setId));
 
 // ---- Season Packs ----
 export function getShopPacks(profile, now = new Date()) {
-  const owned = new Set(profile.ownedSkins || []), hemi = profile.hemisphere || 'north';
-  return SEASON_PACKS.map((p) => {
+  const owned = new Set(profile.ownedSkins || []), hemi = profile.hemisphere || 'north', endsAt = shopOffers(now, hemi).weeklyEndsAt;
+  const card = (p) => {
     const ids = [vehicleSkinId(p.setId), passengerSkinId(p.setId), ...p.variants.flatMap((v) => [v.id, v.riderId])];
-    return { pack: p, inSeason: isOffered(p.setId, now, hemi), ownsAll: ids.every((i) => owned.has(i)), owned, canBuyWithMoney: !!realMoneyProvider() };
-  });
+    return { pack: p, kind: p.kind, endsAt: p.kind === 'weekly' ? endsAt : null, inSeason: isOffered(p.setId, now, hemi), ownsAll: ids.every((i) => owned.has(i)), owned, canBuyWithMoney: !!realMoneyProvider() };
+  };
+  const all = ALL_PACKS.map(card);
+  return [...all.filter((c) => c.kind === 'weekly' && c.inSeason), ...all.filter((c) => c.kind === 'season').sort((a, b) => (b.inSeason - a.inSeason))];
 }
 
 // "2d 5h left" style countdown for the shop cards

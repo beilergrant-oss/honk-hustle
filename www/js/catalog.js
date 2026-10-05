@@ -1,6 +1,6 @@
 // catalog.js - products + a PURE grant function. Used by the app AND by your backend verifyPurchase function.
 import { ALL_SKINS } from './skinData.js';
-import { SEASON_PACKS } from './packs.js';
+import { ALL_PACKS } from './packs.js';
 import { SETS, PRICES, BUNDLE_ID, setProductId, vehicleSkinId, passengerSkinId, isOffered } from './themes.js';
 const P = BUNDLE_ID; // must match App Store Connect (change it in themes.js)
 
@@ -31,7 +31,7 @@ SKIN_PRODUCTS.forEach((s) => { PRODUCTS[s.productId] = { kind: 'skin', skinId: s
 SETS.forEach((s) => { PRODUCTS[setProductId(s.id)] = { kind: 'set', setId: s.id, skinIds: [vehicleSkinId(s.id), passengerSkinId(s.id)] }; });
 // Season Packs: ONE non-consumable product per season unlocks the season's set (bus + outfit) and its three extra buses.
 export const packSkinIds = (p) => [vehicleSkinId(p.setId), passengerSkinId(p.setId), ...p.variants.flatMap((v) => [v.id, v.riderId])];
-SEASON_PACKS.forEach((p) => { PRODUCTS[p.productId] = { kind: 'pack', packId: p.id, skinIds: packSkinIds(p) }; });
+ALL_PACKS.forEach((p) => { PRODUCTS[p.productId] = { kind: 'pack', packId: p.id, skinIds: packSkinIds(p) }; });
 export const setUsd = (set) => PRICES[set.price].usd;
 export const setCoinPrice = (set) => PRICES[set.price].set;
 
@@ -79,7 +79,8 @@ export function coinPurchase(profile, kind, item, opts = {}) {
     if (grantSkins.every((id) => owned.has(id))) return { ok: false, reason: 'already-owned' };
     price = setCoinPrice(item);   // the set price is the same even if you already own one half (keeps it simple)
   }
-  if (kind === 'pack') {   // always for sale (not tied to the season window)
+  if (kind === 'pack') {   // season packs are always for sale; weekly packs only while they are featured
+    if (item.kind === 'weekly' && !isOffered(item.setId, now, hemi)) return { ok: false, reason: 'not-in-shop' };
     grantSkins = packSkinIds(item);
     if (grantSkins.every((id) => owned.has(id))) return { ok: false, reason: 'already-owned' };
     price = item.coinPrice;

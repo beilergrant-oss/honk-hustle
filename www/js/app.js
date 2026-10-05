@@ -104,9 +104,9 @@ function renderHome() {
     <div class="home-bottom">
       <div class="home-play" style="--tc:${(festive ? t.title : bd.band)[0]}"><button class="btn green big" data-act="play" style="width:100%">Play</button><small>Level ${next}${info.tier === 'hard' ? ' • Hard' : info.tier === 'extraHard' ? ' • Extra Hard' : ''} • ${esc(info.world.name)}</small></div>
       <div class="home-row home-row3">
-        <button data-go="levels"><span>${iconSvg('map', 30)}</span>Levels</button>
-        <button data-go="garage"><span>${iconSvg('bus', 30)}</span>Garage</button>
-        <button data-go="shop"><span>${iconSvg('cart', 30)}</span>Shop</button>
+        <button data-go="levels"><span>${iconSvg('lvl3d', 46)}</span>Levels</button>
+        <button data-go="garage"><span>${iconSvg('garage3d', 46)}</span>Garage</button>
+        <button data-go="shop"><span>${iconSvg('shop3d', 46)}</span>Shop</button>
       </div>
     </div>`;
   const bg = $('#home .home-bg'); bg.style.pointerEvents = 'none';
@@ -333,12 +333,15 @@ function packsHtml() {
     const on = eq === skinId, btn = !owned ? `<span class="lockt">${iconSvg('lock', 14)} In pack</span>` : `<button class="btn ${on ? 'ghost' : 'green'}" ${setEquip ? `data-equipset="${setEquip}"` : `data-equipskin="${skinId}"`} ${on ? 'disabled' : ''}>${on ? 'Equipped' : 'Equip'}</button>`;
     return `<div class="pk"><div class="pkpic">${miniBus(paint, '#ffc41f', topper)}<span class="pkr">${riderPic(riderId, ri, 56)}</span></div><b>${esc(label)}</b>${btn}</div>`;
   };
+  let weeklyHead = 0, seasonHead = 0;
   return packs.map((c) => {
     const p = c.pack, set = setById(p.setId), vid = vehicleSkinId(p.setId), own = c.owned;
     const cells = [cell(vid, set.vehicle.name, paintFor(vid), set.vehicle.style.topper, own.has(vid), p.setId, passengerSkinId(p.setId), 0), ...p.variants.map((v, i) => cell(v.id, v.name, v.paint, v.topper, own.has(v.id), null, v.riderId, i + 1))].join('');
     const acts = c.ownsAll ? '<div class="muted" style="text-align:center">You own this pack</div>' : `<div class="acts"><button class="btn gold" data-buypack="${p.id}">${iconSvg('coin', 18)} ${fmt(p.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneypack="${p.id}">${p.usd}</button>` : ''}</div>`;
-    return `<div class="pack" style="--s1:${p.sky[0]};--s2:${p.sky[1]}"><div class="packhd"><span class="gl">${decorHtml(p.glyph)}</span><div><h3>${esc(p.name)}</h3><small>${c.inSeason ? 'In season now' : 'Any time'} • Bus set + outfit + 3 extra buses</small></div></div><div class="pkgrid">${cells}</div>${acts}</div>`;
-  }).join('') + '<p class="muted" style="text-align:center;margin:16px auto;max-width:420px">Packs are yours forever. Each one unlocks the season set plus three more buses with their own colours.</p>';
+    const sub = c.kind === 'weekly' ? timeLeft(c.endsAt) : c.inSeason ? 'In season now' : 'Seasonal \u2022 any time', gl = p.glyphTopper ? topperSvg(p.glyphTopper) : decorHtml(p.glyph);
+    const head = (c.kind === 'weekly' && !weeklyHead++ ? '<div class="section">New this week \u2022 rotates every Monday</div>' : '') + (c.kind === 'season' && !seasonHead++ ? '<div class="section">Seasonal packs</div>' : '');
+    return head + `<div class="pack" style="--s1:${p.sky[0]};--s2:${p.sky[1]}"><div class="packhd"><span class="gl">${gl}</span><div><h3>${esc(p.name)}</h3><small>${sub} \u2022 4 buses + outfits</small></div></div><div class="pkgrid">${cells}</div>${acts}</div>`;
+  }).join('') + '<p class="muted" style="text-align:center;margin:16px auto;max-width:420px">Packs are yours forever. Each one unlocks a themed bus set plus three more buses with their own colours. Weekly packs change every Monday.</p>';
 }
 function setsHtml() {
   const sh = getShopSets(S.profile, new Date());
@@ -399,7 +402,7 @@ document.addEventListener('click', async (e) => {
   if (d.act === 'testcoins') { save({ coins: (S.profile.coins || 0) + 10000 }); sfx.coin(); toast('+10,000 coins'); return renderSettings(); }
   if (d.act === 'reset') return modal({ icon: 'warning', title: 'Reset everything?', body: 'This erases your levels, coins, power-ups and skins on this device.', actions: [{ label: 'Erase progress', cls: 'red', onClick: () => { S.profile = resetProfile(); S.areaView = 1; configureSfx(S.profile.settings); go('home'); } }, { label: 'Cancel', cls: 'ghost' }] });
   if (d.buyset) { const r = coinPurchase(S.profile, 'set', setById(d.buyset), { hemisphere: S.profile.hemisphere }); if (r.ok) { save(r.profile); sfx.coin(); toast('Set unlocked!'); } else toast({ 'not-enough-coins': 'Not enough coins yet.', 'not-in-shop': 'Not in the shop right now.', 'already-owned': 'You already own it.' }[r.reason] || 'Could not buy.'); return renderShop(); }
-  if (d.buypack) { const r = coinPurchase(S.profile, 'pack', packById(d.buypack)); if (r.ok) { save(r.profile); sfx.coin(); toast('Pack unlocked!'); } else toast({ 'not-enough-coins': 'Not enough coins yet.', 'already-owned': 'You already own it.' }[r.reason] || 'Could not buy.'); return renderShop(); }
+  if (d.buypack) { const r = coinPurchase(S.profile, 'pack', packById(d.buypack)); if (r.ok) { save(r.profile); sfx.coin(); toast('Pack unlocked!'); } else toast({ 'not-enough-coins': 'Not enough coins yet.', 'already-owned': 'You already own it.', 'not-in-shop': 'That pack just left the shop.' }[r.reason] || 'Could not buy.'); return renderShop(); }
   if (d.moneypack) return shopMoney(packById(d.moneypack).productId, 'Pack');
   if (d.equipskin) { const rd = passengerFor(d.equipskin), patch = { equippedVehicleSkin: d.equipskin }; if (rd && isOwned(S.profile, rd)) patch.equippedPassengerSkin = rd; save(patch); toast('Equipped'); return renderShop(); }
   if (d.equipset) { save({ equippedVehicleSkin: vehicleSkinId(d.equipset), equippedPassengerSkin: passengerSkinId(d.equipset) }); toast('Equipped'); return renderShop(); }
