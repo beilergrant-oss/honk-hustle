@@ -254,6 +254,6 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .btn .ic2,.lockt .ic2,.gl .ic2,.gt .ic2,.dday .ic2,.banner .ic2,.gtabs .ic2{display:inline-block;vertical-align:-5px;margin:0 2px 0 0}
 .gl{display:inline-flex}
 
-.hb-hill{position:absolute;top:calc(38% - 15vh);height:15vh;opacity:.95;pointer-events:none}.hb-hill.h2{top:calc(38% - 11vh);height:11vh}
-.hb-sun{position:absolute;left:62%;top:calc(38% - 20vh);width:78px;height:78px;border-radius:50%;pointer-events:none;background:radial-gradient(circle at 38% 34%,#fff8d0,#ffd65a 55%,#ff9f3a);box-shadow:0 0 0 12px rgba(255,214,90,.22),0 0 40px 18px rgba(255,190,80,.35)}
-.hb-sun.sunset{background:radial-gradient(circle at 38% 34%,#fff0c0,#ffb347 55%,#ff7a3a);top:calc(38% - 15vh)}.hb-sun.moon{background:radial-gradient(circle at 38% 34%,#fff,#dfe8ff 60%,#aebde8);box-shadow:0 0 30px 10px rgba(200,215,255,.3)}
+.hb-top{position:absolute;left:0;top:0;width:100%;height:46%;display:block}.hb-bot{position:absolute;left:0;top:76%;width:100%;height:24%;display:block}
+.hb-top .sc-cl{animation:sc-drift 38s ease-in-out infinite alternate}@keyframes sc-drift{from{transform:translateX(-14px)}to{transform:translateX(18px)}}
+.hc-ic{display:inline-flex;align-items:center}
