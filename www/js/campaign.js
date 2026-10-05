@@ -1,23 +1,15 @@
 // campaign.js - 11,200 levels, 112 areas, 9 worlds. Levels are generated on demand, never stored.
 import { generateLevel, rng, shuffled } from './levelGen.js';
+import { BACKDROPS, WORLD_LIST, WORLD_LEVELS } from './backdrops.js';
 
 export const AREA_SIZE = 100;                 // every 100 levels = new area
 export const TUTORIAL_LEVELS = 10;            // first 10 levels are always easy
-export const WORLD_SIZES = [1000, 1200, 1500, 1100, 1300, 1000, 1400, 1200, 1500]; // each world is 1000-1500 levels
+export const WORLD_SIZES = WORLD_LIST.map(() => WORLD_LEVELS);   // a new world every 200 levels: 56 worlds
 export const TOTAL_LEVELS = WORLD_SIZES.reduce((a, b) => a + b, 0); // 11,200
 
-// Colors are for the scene: ground, sky gradient. rewardVehicleSkin / rewardPassengerSkin are free when the world is finished.
-export const WORLDS = [
-  { id: 'shores',  name: 'Sunny Shores',   ground: '#FFD23F', sky: ['#FF9A3C', '#FFE08A'], rewardVehicleSkin: 'v_surf',    rewardPassengerSkin: 'p_sunhat' },
-  { id: 'desert',  name: 'Desert Highway', ground: '#E8B36B', sky: ['#F6C453', '#FDE7B0'], rewardVehicleSkin: 'v_safari',  rewardPassengerSkin: 'p_cowboy' },
-  { id: 'frost',   name: 'Frosty Peaks',   ground: '#EAF6FF', sky: ['#9CC9F0', '#E6F4FF'], rewardVehicleSkin: 'v_frost',   rewardPassengerSkin: 'p_beanie' },
-  { id: 'neon',    name: 'Neon Downtown',  ground: '#2B2D5B', sky: ['#1B1040', '#5B2E91'], rewardVehicleSkin: 'v_neon',    rewardPassengerSkin: 'p_headphones' },
-  { id: 'jungle',  name: 'Jungle Run',     ground: '#6FBF4A', sky: ['#9EE07A', '#E3F7C8'], rewardVehicleSkin: 'v_jungle',  rewardPassengerSkin: 'p_explorer' },
-  { id: 'candy',   name: 'Candy Land',     ground: '#FFB6D9', sky: ['#FF8AC4', '#FFE1F0'], rewardVehicleSkin: 'v_candy',   rewardPassengerSkin: 'p_icecream' },
-  { id: 'spooky',  name: 'Spooky Hollow',  ground: '#5B3A7A', sky: ['#2A1740', '#8B4B2A'], rewardVehicleSkin: 'v_spooky',  rewardPassengerSkin: 'p_witch' },
-  { id: 'sky',     name: 'Sky Harbor',     ground: '#CFE8FF', sky: ['#5EA8F5', '#DDF0FF'], rewardVehicleSkin: 'v_sky',     rewardPassengerSkin: 'p_pilot' },
-  { id: 'moon',    name: 'Moon Base',      ground: '#B9BCC9', sky: ['#05060F', '#2A2F55'], rewardVehicleSkin: 'v_moon',    rewardPassengerSkin: 'p_astronaut' },
-];
+// Each world takes its colours from its backdrop. The first 9 worlds hand out the original world-reward skins; later worlds pay bonus coins.
+const OLD_REWARDS = [['v_surf', 'p_sunhat'], ['v_safari', 'p_cowboy'], ['v_frost', 'p_beanie'], ['v_neon', 'p_headphones'], ['v_jungle', 'p_explorer'], ['v_candy', 'p_icecream'], ['v_spooky', 'p_witch'], ['v_sky', 'p_pilot'], ['v_moon', 'p_astronaut']];
+export const WORLDS = WORLD_LIST.map(([name, bd], i) => { const b = BACKDROPS[bd]; return { id: 'w' + (i + 1), name, bd, ground: b.ground, sky: b.sky, rewardVehicleSkin: (OLD_REWARDS[i] || [])[0], rewardPassengerSkin: (OLD_REWARDS[i] || [])[1] }; });
 
 const WORLD_STARTS = WORLD_SIZES.reduce((acc, size, i) => { acc.push((acc[i - 1] ?? 0) + (i ? WORLD_SIZES[i - 1] : 0)); return acc; }, []);
 // WORLD_STARTS[i] = number of levels before world i
@@ -29,7 +21,7 @@ export function locate(n) {
   return {
     n,
     worldIndex: wi,
-    world: WORLDS[wi % WORLDS.length],
+    world: WORLDS[wi],
     areaGlobal: Math.ceil(n / AREA_SIZE),                   // 1..112
     areaInWorld: Math.ceil(inWorld / AREA_SIZE),
     levelInArea: ((n - 1) % AREA_SIZE) + 1,
@@ -109,8 +101,8 @@ export function completionEvents(n) {
   const ev = { areaUnlocked: null, worldUnlocked: null, bonusCoins: 0, rewardSkins: [] };
   if (loc.lastOfArea && n < TOTAL_LEVELS) { ev.areaUnlocked = loc.areaGlobal + 1; ev.bonusCoins += 300; }
   if (loc.lastOfWorld) {
-    ev.rewardSkins = [loc.world.rewardVehicleSkin, loc.world.rewardPassengerSkin];
-    ev.bonusCoins += 1000;
+    ev.rewardSkins = [loc.world.rewardVehicleSkin, loc.world.rewardPassengerSkin].filter(Boolean);
+    ev.bonusCoins += 1000 + Math.min(1500, loc.worldIndex * 40);
     if (n < TOTAL_LEVELS) ev.worldUnlocked = loc.worldIndex + 1;
   }
   return ev;

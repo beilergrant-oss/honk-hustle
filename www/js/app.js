@@ -19,7 +19,8 @@ import { getShopSets, getShopPacks, buyWithMoney, restorePurchases, equipSkin, t
 import { packById } from './packs.js';
 import { COIN_PACKS, POWERUP_BUNDLES, SINGLE_POWERUP_COIN_PRICE, coinPurchase } from './catalog.js';
 import { vehicleSkinId, passengerSkinId, setById, setProductId } from './themes.js';
-import { skinById } from './skinData.js';
+import { skinById, isOwned, passengerFor } from './skinData.js';
+import { miniBus, riderPic } from './cartoon.js';
 import { lookFor, BUS_STYLES } from './busStyles.js';
 import { TOPPER_EMOJI } from './look.js';
 import { configureSfx, sfx, haptic, unlockAudio } from './sfx.js';
@@ -263,19 +264,14 @@ function openPause() {
 // ======================================================================= garage
 function renderGarage() {
   const root = $('#garage'); root.innerHTML = '';
-  const images = {}; BUS_STYLES.forEach((s) => { images[s.id] = 'img/buses/' + s.id + '.png'; });
   S.garage = mountGarage(root, {
-    profile: S.profile, images: S.useDrawnBuses ? {} : images, canBuyWithMoney: moneyOk(),
-    onClose: () => go('home'),
-    onEquip: async (styleId) => {
-      const st = BUS_STYLES.find((s) => s.id === styleId);
-      let next = { ...S.profile, equippedVehicleSkin: st.setId ? vehicleSkinId(st.setId) : 'v_classic' };
-      const pSkin = st.setId ? passengerSkinId(st.setId) : 'p_classic';
-      if (!st.setId || (next.ownedSkins || []).includes(pSkin)) next.equippedPassengerSkin = pSkin;
-      return { ok: true, profile: save(next) };
+    profile: S.profile, onClose: () => go('home'), onShop: () => { S.shopTab = 'packs'; go('shop'); },
+    onEquip: (skinId) => {
+      let next = { ...S.profile };
+      if (skinId.startsWith('p_')) next.equippedPassengerSkin = skinId;
+      else { next.equippedVehicleSkin = skinId; const r = passengerFor(skinId); if (r && isOwned(next, r)) next.equippedPassengerSkin = r; }
+      sfx.tap(); return { ok: true, profile: save(next) };
     },
-    onBuyCoins: async (styleId) => { const st = BUS_STYLES.find((s) => s.id === styleId); const r = coinPurchase(S.profile, 'set', setById(st.setId), { hemisphere: S.profile.hemisphere }); if (r.ok) { save(r.profile); sfx.coin(); } return r; },
-    onBuyMoney: async (styleId) => { const st = BUS_STYLES.find((s) => s.id === styleId); await buyWithMoney(setProductId(st.setId)); S.profile = loadProfile(); return { ok: true, profile: S.profile }; },
   });
 }
 
@@ -299,30 +295,15 @@ function setCard(c) {
     <div class="body"><h3>${esc(set.name)}</h3><div class="muted">Bus: ${esc(set.vehicle.name)} • Outfit: ${esc(set.passenger.name)}</div><div class="acts">${acts}</div></div></div>`;
 }
 // a little bus picture drawn from a skin's paint (used by the Season Packs)
-function miniBus(paint, hex, topper) {
-  const p = paint || { body: hex, trim: '#fff', pattern: 'none', colors: [] }, cols = p.colors.length ? p.colors : ['#ffffff'], id = p.pattern;
-  let pat = '';
-  if (id === 'checker' || id === 'grid') for (let i = 0; i < 8; i++) pat += `<rect x="${20 + i * 10}" y="${i % 2 ? 36 : 44}" width="10" height="8" fill="${cols[0]}" opacity=".9"/>`;
-  else if (['stripes', 'waves', 'snow', 'zebra', 'leaves', 'rainbow'].includes(id) && id !== 'snow' && id !== 'leaves') for (let i = 0; i < 6; i++) pat += `<rect x="${22 + i * 13}" y="36" width="6" height="16" fill="${cols[i % cols.length]}" opacity=".85"/>`;
-  else if (id !== 'none') for (let i = 0; i < 7; i++) pat += `<circle cx="${24 + i * 12}" cy="${i % 2 ? 41 : 47}" r="3.4" fill="${cols[i % cols.length]}"/>`;
-  return `<svg viewBox="0 0 130 84" role="img"><ellipse cx="65" cy="76" rx="52" ry="5" fill="rgba(16,36,107,.2)"/>
-    <rect x="10" y="30" width="110" height="38" rx="9" fill="${p.body}"/><rect x="10" y="52" width="110" height="7" fill="${hex}"/>
-    <rect x="16" y="14" width="98" height="26" rx="8" fill="${p.body}"/><rect x="16" y="14" width="98" height="26" rx="8" fill="#fff" opacity=".18"/>
-    <rect x="22" y="19" width="86" height="14" rx="5" fill="#3f78c0"/>${pat}
-    <rect x="46" y="26" width="38" height="5" rx="2.5" fill="${hex}"/>
-    <rect x="6" y="56" width="10" height="10" rx="3" fill="${p.trim}"/><rect x="114" y="56" width="10" height="10" rx="3" fill="${p.trim}"/>
-    <circle cx="36" cy="68" r="8" fill="#1b1e30"/><circle cx="94" cy="68" r="8" fill="#1b1e30"/><circle cx="36" cy="68" r="3" fill="#cfd6ee"/><circle cx="94" cy="68" r="3" fill="#cfd6ee"/>
-    ${topper ? `<text x="65" y="14" text-anchor="middle" font-size="20">${TOPPER_EMOJI[topper] || ''}</text>` : ''}</svg>`;
-}
 function packsHtml() {
   const packs = getShopPacks(S.profile, new Date()), eq = S.profile.equippedVehicleSkin;
-  const cell = (skinId, label, paint, topper, owned, setEquip) => {
+  const cell = (skinId, label, paint, topper, owned, setEquip, riderId, ri) => {
     const on = eq === skinId, btn = !owned ? '<span class="lockt">\u{1F512} In pack</span>' : `<button class="btn ${on ? 'ghost' : 'green'}" ${setEquip ? `data-equipset="${setEquip}"` : `data-equipskin="${skinId}"`} ${on ? 'disabled' : ''}>${on ? 'Equipped' : 'Equip'}</button>`;
-    return `<div class="pk"><div class="pkpic">${miniBus(paint, '#ffc41f', topper)}</div><b>${esc(label)}</b>${btn}</div>`;
+    return `<div class="pk"><div class="pkpic">${miniBus(paint, '#ffc41f', topper)}<span class="pkr">${riderPic(riderId, ri, 56)}</span></div><b>${esc(label)}</b>${btn}</div>`;
   };
   return packs.map((c) => {
     const p = c.pack, set = setById(p.setId), vid = vehicleSkinId(p.setId), own = c.owned;
-    const cells = [cell(vid, set.vehicle.name, paintFor(vid), set.vehicle.style.topper, own.has(vid), p.setId), ...p.variants.map((v) => cell(v.id, v.name, v.paint, v.topper, own.has(v.id), null))].join('');
+    const cells = [cell(vid, set.vehicle.name, paintFor(vid), set.vehicle.style.topper, own.has(vid), p.setId, passengerSkinId(p.setId), 0), ...p.variants.map((v, i) => cell(v.id, v.name, v.paint, v.topper, own.has(v.id), null, v.riderId, i + 1))].join('');
     const acts = c.ownsAll ? '<div class="muted" style="text-align:center">You own this pack</div>' : `<div class="acts"><button class="btn gold" data-buypack="${p.id}">\u{1FA99} ${fmt(p.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneypack="${p.id}">${p.usd}</button>` : ''}</div>`;
     return `<div class="pack" style="--s1:${p.sky[0]};--s2:${p.sky[1]}"><div class="packhd"><span class="gl">${p.glyph}</span><div><h3>${esc(p.name)}</h3><small>${c.inSeason ? 'In season now' : 'Any time'} • Bus set + outfit + 3 extra buses</small></div></div><div class="pkgrid">${cells}</div>${acts}</div>`;
   }).join('') + '<p class="muted" style="text-align:center;margin:16px auto;max-width:420px">Packs are yours forever. Each one unlocks the season set plus three more buses with their own colours.</p>';
@@ -388,7 +369,7 @@ document.addEventListener('click', async (e) => {
   if (d.buyset) { const r = coinPurchase(S.profile, 'set', setById(d.buyset), { hemisphere: S.profile.hemisphere }); if (r.ok) { save(r.profile); sfx.coin(); toast('Set unlocked!'); } else toast({ 'not-enough-coins': 'Not enough coins yet.', 'not-in-shop': 'Not in the shop right now.', 'already-owned': 'You already own it.' }[r.reason] || 'Could not buy.'); return renderShop(); }
   if (d.buypack) { const r = coinPurchase(S.profile, 'pack', packById(d.buypack)); if (r.ok) { save(r.profile); sfx.coin(); toast('Pack unlocked!'); } else toast({ 'not-enough-coins': 'Not enough coins yet.', 'already-owned': 'You already own it.' }[r.reason] || 'Could not buy.'); return renderShop(); }
   if (d.moneypack) return shopMoney(packById(d.moneypack).productId, 'Pack');
-  if (d.equipskin) { save({ equippedVehicleSkin: d.equipskin }); toast('Equipped'); return renderShop(); }
+  if (d.equipskin) { const rd = passengerFor(d.equipskin), patch = { equippedVehicleSkin: d.equipskin }; if (rd && isOwned(S.profile, rd)) patch.equippedPassengerSkin = rd; save(patch); toast('Equipped'); return renderShop(); }
   if (d.equipset) { save({ equippedVehicleSkin: vehicleSkinId(d.equipset), equippedPassengerSkin: passengerSkinId(d.equipset) }); toast('Equipped'); return renderShop(); }
   if (d.buypu) { const r = coinPurchase(S.profile, 'powerup', d.buypu); if (r.ok) { save(r.profile); sfx.coin(); toast('Bought!'); } else toast('Not enough coins yet.'); return renderShop(); }
   if (d.buybundle) { const b = POWERUP_BUNDLES.find((x) => x.id === d.buybundle), r = coinPurchase(S.profile, 'bundle', b); if (r.ok) { save(r.profile); sfx.coin(); toast('Bought ' + b.name); } else toast('Not enough coins yet.'); return renderShop(); }

@@ -108,7 +108,7 @@ export const buySetWithMoney = (setId) => buyWithMoney(setProductId(setId));
 export function getShopPacks(profile, now = new Date()) {
   const owned = new Set(profile.ownedSkins || []), hemi = profile.hemisphere || 'north';
   return SEASON_PACKS.map((p) => {
-    const ids = [vehicleSkinId(p.setId), passengerSkinId(p.setId), ...p.variants.map((v) => v.id)];
+    const ids = [vehicleSkinId(p.setId), passengerSkinId(p.setId), ...p.variants.flatMap((v) => [v.id, v.riderId])];
     return { pack: p, inSeason: isOffered(p.setId, now, hemi), ownsAll: ids.every((i) => owned.has(i)), owned, canBuyWithMoney: !!realMoneyProvider() };
   });
 }

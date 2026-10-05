@@ -1,6 +1,13 @@
 // levelGen.js - solvable-by-construction level generator for Hard / Extra Hard
 export const SIZES = { car: { len: 2, seats: 2 }, van: { len: 3, seats: 4 }, bus: { len: 4, seats: 6 } };
-export const COLORS = ['magenta', 'green', 'yellow', 'blue', 'red', 'purple'];
+// 10 colours. The first 6 are the original set; more colours join as the levels go on (see colorsFor).
+export const COLORS = ['magenta', 'green', 'yellow', 'blue', 'red', 'purple', 'orange', 'cyan', 'brown', 'lime'];
+// Number of different bus / passenger colours at level n: grows steadily from 3 to all 10 by around level 7,500.
+export function colorsFor(tier, n) {
+  if (n <= 3) return 2;
+  const grow = Math.floor(n / 1000);
+  return Math.min(COLORS.length, tier === 'easy' ? 3 + grow : tier === 'hard' ? 5 + grow : 6 + grow);
+}
 
 // slack = extra moves allowed on top of "one tap per vehicle" (every tap on a vehicle costs 1 move).
 export const DIFFICULTY = {
@@ -16,13 +23,13 @@ export function configFor(tier, n) {
   if (n <= 3) return { ...c, w: 5, h: 5, vehicles: 3 + n, colors: 2, maxFree: 1 }; // tutorial
   if (tier === 'easy') {
     c.vehicles = 6 + Math.round(p * 6);          // 6 -> 12
-    c.colors = 3 + Math.round(p * 2);            // 3 -> 5
     c.locks = p > 0.3 ? 1 : 0;
     c.cones = p > 0.5 ? 2 : 0;
   } else {
     c.vehicles += Math.round(p * 4);
     c.locks += p > 0.6 ? 1 : 0;
   }
+  c.colors = colorsFor(tier, n);
   return c;
 }
 

@@ -182,3 +182,21 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .worldbanner h2{margin:0;font-size:38px;font-weight:900;text-shadow:0 3px 0 rgba(0,0,0,.35)}.worldbanner small{background:rgba(0,0,0,.25);padding:4px 12px;border-radius:99px;font-weight:800}
 .worldbanner i{width:40px;height:40px;border-radius:50%;box-shadow:0 0 0 4px rgba(255,255,255,.6)}
 @keyframes fadeout{to{opacity:0}}
+
+/* ---- Garage (own buses and riders) ---- */
+.gar{position:absolute;inset:0;display:flex;flex-direction:column;background:linear-gradient(#35b6ff,#8fdcff 38%,#d2f3ff)}
+.gtop{display:flex;align-items:center;gap:10px;padding:max(12px,env(safe-area-inset-top)) 14px 6px}.gtop h1{flex:1;margin:0;font-size:28px;font-weight:900;color:#fff;-webkit-text-stroke:6px var(--navy);paint-order:stroke fill}
+.gstage{margin:2px 14px 8px;border-radius:24px;background:linear-gradient(#bfe9ff,#fff3c4 70%,#8fd36a 70%);box-shadow:0 5px 0 rgba(16,36,107,.3),inset 0 0 0 3px #fff;padding:8px 8px 10px;text-align:center;position:relative;overflow:hidden}
+.gbus{width:min(62%,250px);margin:0 auto;animation:hh-bob 2.2s ease-in-out infinite}.gbus svg{display:block;width:100%;height:auto}
+.gcrowd{display:flex;justify-content:center;margin-top:-10px}.gcrowd img{width:15.5%;max-width:64px;height:auto;margin:0 -2%}
+.gname{font-weight:900;font-size:16px;color:var(--navy);margin-top:2px}.gname small{font-weight:700;opacity:.7;font-size:12px}
+.gtabs{display:flex;gap:8px;padding:0 14px 8px}.gtabs button{flex:1;border:0;border-radius:14px;padding:10px 6px;font:800 14px Poppins,system-ui;color:var(--navy);background:#fff;box-shadow:0 3px 0 rgba(16,36,107,.25)}
+.gtabs button.on{background:linear-gradient(#ffe38a,#ffc83d);box-shadow:0 3px 0 #b88400}.gtabs small{opacity:.65;font-size:11px}
+.gscroll{flex:1;overflow:auto;padding:2px 14px max(18px,env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.ggrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;max-width:620px;margin:0 auto}
+.gc{position:relative;border:0;border-radius:18px;background:#fff;padding:6px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:0 4px 0 rgba(16,36,107,.28);font:inherit;color:var(--navy);min-width:0}
+.gc:active{transform:scale(.97)}.gc.eq{outline:4px solid #3ddc84;background:#eafff1}.gc.lock .gp{filter:grayscale(.85) brightness(.9);opacity:.6}
+.gc .gp{display:block;width:100%}.gc .gp svg,.gc .gp img{display:block;width:100%;height:auto}.gc b{font-size:12px;line-height:1.1;text-align:center}
+.gc .gs{position:absolute;left:8px;top:8px;width:10px;height:10px;border-radius:50%;box-shadow:0 0 0 2px #fff}.gc .gt{font-style:normal;font-size:10.5px;font-weight:800;opacity:.75}
+.gshop{text-align:center;margin:14px 0 4px}
+.pkpic{position:relative}.pkr{position:absolute;right:-6px;bottom:-8px;width:44px}.pkr img{width:100%;height:auto;display:block}

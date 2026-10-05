@@ -51,3 +51,9 @@ Four packs (Spring, Summer, Autumn, Winter) each unlock the season set plus thre
 `www/js/loadingThemes.js` picks the loading and home look by the player's local date: **special event > holiday > season > regular**.
 Events: New Year, Independence Day, Thanksgiving, Lunar New Year, Diwali (dates in `EVENTS`; Lunar New Year and Diwali use a table through 2035).
 Holidays: Christmas, Halloween, Valentine's, St. Patrick's, Easter, Pride. Preview any day with `?date=YYYY-MM-DD` (or force a look with `?theme=halloween`).
+
+## Worlds, backgrounds, colours, Garage
+- **56 worlds, a new one every 200 levels** (`WORLD_LIST` in `www/js/backdrops.js`). Each world has a backdrop (city, beach, forest, winter, halloween, space, autumn, jungle, candy, desert, ocean, spring, farm, volcano, mountain, castle, pirate, circus, toy, savanna) that sets the ground, board tiles, scattered details, scenery sprites and the name ribbon. Seasons and holidays only sprinkle a few of their own sprites in.
+- **Colours grow with the level**: 10 bus and passenger colours (`COLORS`, `colorsFor` in `levelGen.js`); easy levels start with 3, harder tiers with more, up to all 10 around level 7,000+.
+- **Garage** (`garageScreen.js`) lists every bus and rider skin you own, greyed out when locked; equipping a bus also equips the rider that matches it (`PASSENGER_FOR_VEHICLE` in `skinData.js`). Riders wear a vest in their bus's colours (`outfitFor` in `look.js`). Season Pack buses each come with a matching rider.
+- Two new rider products were added to `store/iap_products.csv` (Unicorn Kid, Golden Star).

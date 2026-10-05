@@ -3,7 +3,7 @@
 // Colour is how the player matches passengers to vehicles, so it must stay readable (see paintFor in look.js).
 // obtain: 'free' | 'world' (free for finishing that world) | 'shop' (always in the shop) | 'set' (themed set: only buyable while it is in the shop, see themes.js)
 import { setSkins, BUNDLE_ID } from './themes.js';
-import { packSkins } from './packs.js';
+import { packSkins, packPassengerSkins, PACK_PAIRS } from './packs.js';
 const P = BUNDLE_ID; // bundle id now lives in themes.js
 
 export const VEHICLE_SKINS = [
@@ -46,8 +46,25 @@ export const PASSENGER_SKINS = [
   { id: 'p_witch',      name: 'Little Witch', rarity: 'epic', obtain: 'world', world: 6, style: { accessory: 'witch' } },
   { id: 'p_pilot',      name: 'Pilot',        rarity: 'epic', obtain: 'world', world: 7, style: { accessory: 'pilot' } },
   { id: 'p_astronaut',  name: 'Astronaut',    rarity: 'legendary', obtain: 'world', world: 8, style: { accessory: 'astronaut' } },
+  // Riders that match the shop buses (same prices)
+  { id: 'p_taxi',       name: 'Cabbie',       rarity: 'common',    obtain: 'shop', coinPrice: 2000,  style: { accessory: 'cabbie' } },
+  { id: 'p_police',     name: 'Officer',      rarity: 'rare',      obtain: 'shop', coinPrice: 4000,  style: { accessory: 'policeCap' } },
+  { id: 'p_racer',      name: 'Racer',        rarity: 'rare',      obtain: 'shop', coinPrice: 4000,  style: { accessory: 'racerHelmet' } },
+  { id: 'p_unicorn',    name: 'Unicorn Kid',  rarity: 'epic',      obtain: 'shop', coinPrice: 8000,  productId: P + '.skin.unicornrider', price: '$2.99', style: { accessory: 'unicornHorn' } },
+  { id: 'p_golden',     name: 'Golden Star',  rarity: 'legendary', obtain: 'shop', coinPrice: 15000, productId: P + '.skin.goldrider', price: '$4.99', style: { accessory: 'goldCrown' } },
   ...setSkins('passenger'), // 22 matching themed passenger skins
+  ...packPassengerSkins(),  // 12 riders that match the Season Pack buses
 ];
+
+// Every bus skin and the rider skin that goes with it. Equipping a bus also equips its rider (if owned); a rider's outfit uses its bus's colours.
+export const PASSENGER_FOR_VEHICLE = {
+  v_classic: 'p_classic', v_taxi: 'p_taxi', v_police: 'p_police', v_racing: 'p_racer', v_unicorn: 'p_unicorn', v_gold: 'p_golden',
+  v_surf: 'p_sunhat', v_safari: 'p_cowboy', v_frost: 'p_beanie', v_neon: 'p_headphones', v_jungle: 'p_explorer', v_candy: 'p_icecream', v_spooky: 'p_witch', v_sky: 'p_pilot', v_moon: 'p_astronaut',
+  ...PACK_PAIRS,
+};
+VEHICLE_SKINS.filter((v) => v.setId).forEach((v) => { PASSENGER_FOR_VEHICLE[v.id] = 'p_set_' + v.setId; });
+export const passengerFor = (vehicleId) => PASSENGER_FOR_VEHICLE[vehicleId] || null;
+export const vehicleFor = (passengerId) => Object.keys(PASSENGER_FOR_VEHICLE).find((k) => PASSENGER_FOR_VEHICLE[k] === passengerId) || null;
 
 export const ALL_SKINS = [...VEHICLE_SKINS, ...PASSENGER_SKINS];
 export const skinById = (id) => ALL_SKINS.find((s) => s.id === id);

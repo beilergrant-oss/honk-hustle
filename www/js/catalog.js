@@ -25,7 +25,7 @@ SKIN_PRODUCTS.forEach((s) => { PRODUCTS[s.productId] = { kind: 'skin', skinId: s
 // Themed sets: ONE non-consumable product per set that unlocks the vehicle skin AND the passenger skin.
 SETS.forEach((s) => { PRODUCTS[setProductId(s.id)] = { kind: 'set', setId: s.id, skinIds: [vehicleSkinId(s.id), passengerSkinId(s.id)] }; });
 // Season Packs: ONE non-consumable product per season unlocks the season's set (bus + outfit) and its three extra buses.
-export const packSkinIds = (p) => [vehicleSkinId(p.setId), passengerSkinId(p.setId), ...p.variants.map((v) => v.id)];
+export const packSkinIds = (p) => [vehicleSkinId(p.setId), passengerSkinId(p.setId), ...p.variants.flatMap((v) => [v.id, v.riderId])];
 SEASON_PACKS.forEach((p) => { PRODUCTS[p.productId] = { kind: 'pack', packId: p.id, skinIds: packSkinIds(p) }; });
 export const setUsd = (set) => PRICES[set.price].usd;
 export const setCoinPrice = (set) => PRICES[set.price].set;

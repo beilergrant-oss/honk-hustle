@@ -5,6 +5,7 @@ import { cellsOf } from './levelGen.js';
 import { shade } from './busArt.js';
 import { COLOR_HEX, TOPPER_EMOJI, rr, drawPassenger } from './look.js';
 import { sfx, haptic } from './sfx.js';
+import { BACKDROPS } from './backdrops.js';
 
 const DIR_VEC = { E: [1, 0], S: [0, 1], W: [-1, 0], N: [0, -1] };       // grid directions (grid y grows toward the player)
 const ease = (t) => 1 - Math.pow(1 - t, 3);
@@ -12,7 +13,9 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 const PITCH = 1.16, SINP = Math.sin(PITCH), COSP = Math.cos(PITCH), FOV = 36 * Math.PI / 180;
 const LIGHT = (() => { const v = [-0.45, 0.85, -0.35], n = Math.hypot(...v); return v.map((x) => x / n); })();
-const BODY_H = 0.34, CAB_H = 0.3, PASS_H = 0.64, PASS_GAP = 0.46;
+const BODY_H = 0.34, CAB_H = 0.3;
+let PASS_H = 0.98, PASS_GAP = 0.7;   // set by layout() so about 9 big passengers always fit across the queue
+const INK = '#14205a';   // the dark outline colour of the cartoon look
 
 const rgb = (hex) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
 const lit = (hex, l) => { const [r, g, b] = rgb(hex); const f = (v) => clamp(Math.round(l > 1 ? v + (255 - v) * (l - 1) * 1.6 : v * l), 0, 255); return `rgb(${f(r)},${f(g)},${f(b)})`; };
@@ -54,12 +57,13 @@ export function createRenderer(canvas, opts = {}) {
     const bw = gm.w, bh = gm.h, bay = gm.bay;
     const roadW = Math.max(bw + 1.2, bay * 0.92 + 0.5), cx = bw / 2, sw = roadW / bay;
     const roadZ0 = bh + 0.8, slotZ = roadZ0 + 0.18 + 0.6, roadZ1 = roadZ0 + 1.56, qz = roadZ1 + 0.95;
+    PASS_GAP = clamp((roadW - 0.8) / 9, 0.7, 1.15); PASS_H = PASS_GAP * 1.4;
     const qMax = Math.floor((roadW - 0.3) / PASS_GAP);
     R.L = { W, H, bw, bh, bay, cx, roadW, sw, roadX0: cx - roadW / 2, roadZ0, roadZ1, slotZ, qz, qMax, qx0: cx - ((Math.min(qMax, 99) - 1) * PASS_GAP) / 2 };
     // fit the whole scene on screen: find the closest camera that keeps everything inside the margins
     F = (H / 2) / Math.tan(FOV / 2);
     const tz = (qz + 0.2 - 0.5) / 2, m = 8;
-    const pts = [[-0.45, 0, -0.55], [bw + 0.45, 0, -0.55], [cx - roadW / 2 - 0.2, 0.75, qz + 0.2], [cx + roadW / 2 + 0.2, 0.75, qz + 0.2], [cx + roadW / 2 + 1.0, 0.3, qz], [-0.45, 0.6, bh], [bw + 0.45, 0.6, bh]];
+    const pts = [[-0.45, 0, -0.55], [bw + 0.45, 0, -0.55], [cx - roadW / 2 - 0.2, PASS_H * 1.3, qz + 0.2], [cx + roadW / 2 + 0.2, PASS_H * 1.3, qz + 0.2], [cx + roadW / 2 + 1.0, 0.3, qz], [-0.45, 0.6, bh], [bw + 0.45, 0.6, bh]];
     const place = (d) => { cam = { x: cx, y: d * SINP, z: tz - d * COSP }; cy0 = H / 2; return pts.map((p) => P(p[0], p[1], p[2])); };
     let lo = 3, hi = 400;
     for (let i = 0; i < 30; i++) {
@@ -167,16 +171,16 @@ export function createRenderer(canvas, opts = {}) {
     for (const f of faces) {
       if (f.skip) continue;
       const q = f.p[0]; if (f.n[0] * (cam.x - q[0]) + f.n[1] * (cam.y - q[1]) + f.n[2] * (cam.z - q[2]) <= 0) continue;
-      const l = 0.6 + 0.5 * Math.max(0, f.n[0] * LIGHT[0] + f.n[1] * LIGHT[1] + f.n[2] * LIGHT[2]), base = (o.faceColor && o.faceColor(f)) || hex;
-      const sp = f.p.map((pt) => P(pt[0], pt[1], pt[2])), top = f.n[1] === 1, r = clamp(sp[0].u * 0.045, 1.2, 5);
+      const l = 0.74 + 0.4 * Math.max(0, f.n[0] * LIGHT[0] + f.n[1] * LIGHT[1] + f.n[2] * LIGHT[2]), base = (o.faceColor && o.faceColor(f)) || hex;
+      const sp = f.p.map((pt) => P(pt[0], pt[1], pt[2])), top = f.n[1] === 1, r = clamp(sp[0].u * 0.085, 1.6, 8);
       const ys = sp.map((p) => p.y), y0s = Math.min(...ys), y1s = Math.max(...ys);
       const gr = top ? g.createLinearGradient(sp[3].x, sp[3].y, sp[1].x, sp[1].y) : g.createLinearGradient(0, y0s, 0, y1s);
-      gr.addColorStop(0, lit(base, l * (top ? 1.12 : 1.14))); gr.addColorStop(1, lit(base, l * (top ? 0.9 : 0.8)));
+      gr.addColorStop(0, lit(base, l * (top ? 1.1 : 1.1))); gr.addColorStop(1, lit(base, l * (top ? 0.94 : 0.86)));
       rpath(sp, r); g.fillStyle = gr; g.fill();
-      g.strokeStyle = o.edge || lit(base, l * 0.5); g.lineWidth = o.lw || 1.1; g.lineJoin = 'round'; g.stroke();
+      g.strokeStyle = o.edge || INK; g.lineWidth = o.lw || clamp(sp[0].u * 0.05, 1.6, 3.2); g.lineJoin = 'round'; g.stroke();
       if (top && !o.noGloss && sp[0].u * Math.abs(f.p[1][0] - f.p[0][0]) > 12) {   // a soft sheen across the top
         const L2 = (a, b, k) => ({ x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k });
-        g.beginPath(); [L2(sp[3], sp[0], 0.1), L2(sp[2], sp[1], 0.1), L2(sp[2], sp[1], 0.32), L2(sp[3], sp[0], 0.32)].forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.closePath(); g.fillStyle = 'rgba(255,255,255,.22)'; g.fill();
+        g.beginPath(); [L2(sp[3], sp[0], 0.1), L2(sp[2], sp[1], 0.1), L2(sp[2], sp[1], 0.32), L2(sp[3], sp[0], 0.32)].forEach((p, i) => (i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y))); g.closePath(); g.fillStyle = 'rgba(255,255,255,.34)'; g.fill();
       } else if (!top && o.shine) {   // glass: a diagonal streak
         const w = Math.hypot(sp[1].x - sp[0].x, sp[1].y - sp[0].y), h = y1s - y0s;
         if (w > 8 && h > 5) { g.save(); rpath(sp, r); g.clip(); g.fillStyle = 'rgba(255,255,255,.28)'; g.beginPath(); g.moveTo(sp[0].x + w * 0.18, y1s); g.lineTo(sp[0].x + w * 0.34, y1s); g.lineTo(sp[0].x + w * 0.5, y0s); g.lineTo(sp[0].x + w * 0.34, y0s); g.closePath(); g.fill(); g.restore(); }
@@ -214,10 +218,10 @@ export function createRenderer(canvas, opts = {}) {
     const lat = wd[0] !== 0 ? [0, 1] : [1, 0];   // lateral axis (x or z)
     const sideVis = (s) => { const nx = lat[0] * s, nz = lat[1] * s; return nx * (cam.x - pose.cx) + nz * (cam.z - pose.cz) > 0; };
     const wheel = (t, s) => {
-      const w0 = hw - 0.03 * sc, w1 = hw + 0.045 * sc; const bx = ab(t - 0.115 * sc, t + 0.115 * sc, 0, 0, 0.17);
+      const w0 = hw - 0.03 * sc, w1 = hw + 0.045 * sc; const bx = ab(t - 0.14 * sc, t + 0.14 * sc, 0, 0, 0.21);
       const a = s > 0 ? [w0, w1] : [-w1, -w0];
       const b = wd[0] !== 0 ? [bx[0], bx[1], pose.cz + a[0], pose.cz + a[1], bx[4], bx[5]] : [pose.cx + a[0], pose.cx + a[1], bx[2], bx[3], bx[4], bx[5]];
-      box(b, '#1b1e30', { edge: 'rgba(0,0,0,.5)' });
+      box(b, '#2a2f4a', { edge: INK });
     };
     const wt = [-hl + 0.25 * sc, hl - 0.25 * sc];
     for (const s of [-1, 1]) if (!sideVis(s)) wt.forEach((t) => wheel(t, s));
@@ -234,12 +238,12 @@ export function createRenderer(canvas, opts = {}) {
     for (const sgn of [-1, 1]) {   // headlights and tail lights
       const lat = (t0, t1, y0, y1, a, b) => (wd[0] !== 0 ? [Math.min(pose.cx + wd[0] * t0, pose.cx + wd[0] * t1), Math.max(pose.cx + wd[0] * t0, pose.cx + wd[0] * t1), pose.cz + a, pose.cz + b, y0 * sc + (pose.lift || 0), y1 * sc + (pose.lift || 0)] : [pose.cx + a, pose.cx + b, Math.min(pose.cz + wd[1] * t0, pose.cz + wd[1] * t1), Math.max(pose.cz + wd[1] * t0, pose.cz + wd[1] * t1), y0 * sc + (pose.lift || 0), y1 * sc + (pose.lift || 0)]);
       const c0 = sgn * hw * 0.62 * sc;
-      box(lat(hl - 0.005, hl + 0.03 * sc, 0.12, 0.2, c0 - 0.06 * sc, c0 + 0.06 * sc), '#fff3a0', { edge: 'rgba(120,90,0,.5)', noGloss: true });
-      box(lat(-hl - 0.03 * sc, -hl + 0.005, 0.12, 0.2, c0 - 0.05 * sc, c0 + 0.05 * sc), '#ff4b4b', { edge: 'rgba(90,0,0,.5)', noGloss: true });
+      box(lat(hl - 0.005, hl + 0.04 * sc, 0.1, 0.23, c0 - 0.085 * sc, c0 + 0.085 * sc), '#fff7b8', { edge: INK, noGloss: true });
+      box(lat(-hl - 0.04 * sc, -hl + 0.005, 0.1, 0.22, c0 - 0.07 * sc, c0 + 0.07 * sc), '#ff5a5a', { edge: INK, noGloss: true });
     }
     // cabin: glass sides with a coloured roof
     const cabB = ab(-hl + 0.07 * sc, hl - 0.3 * sc, hw * 0.74, BODY_H, BODY_H + CAB_H);
-    box(cabB, hex, { faceColor: (f) => (f.n[1] === 1 ? shade(paint ? paint.body : hex, 0.16) : '#5a9be0'), edge: edge || 'rgba(10,20,60,.45)', shine: true });
+    box(cabB, hex, { faceColor: (f) => (f.n[1] === 1 ? shade(paint ? paint.body : hex, 0.16) : '#9fe0ff'), edge: edge, shine: true });
     // roof markings: skin stripes, a seat pip per seat, an arrow showing the way out
     const rt = (BODY_H + CAB_H) * sc + 0.004 + (pose.lift || 0), ct0 = -hl + 0.07 * sc, ct1 = hl - 0.3 * sc, cmid = (ct0 + ct1) / 2;
     const pt = (t, l) => wd[0] !== 0 ? [pose.cx + wd[0] * t, rt, pose.cz + l] : [pose.cx + l, rt, pose.cz + wd[1] * t];
@@ -280,15 +284,17 @@ export function createRenderer(canvas, opts = {}) {
     g.fillStyle = '#fff'; g.beginPath(); g.moveTo(-c * 0.12, -c * 0.33); g.lineTo(c * 0.12, -c * 0.33); g.lineTo(c * 0.16, -c * 0.22); g.lineTo(-c * 0.16, -c * 0.22); g.closePath(); g.fill();
     g.fillStyle = '#d95f00'; rr(g, -c * 0.28, -c * 0.07, c * 0.56, c * 0.09, c * 0.03); g.fill(); g.restore();
   }
-  function ball(x, y, r, hex) {   // a little shaded sphere
+  function ball(x, y, r, hex, face = false) {   // a little shaded sphere
     g.fillStyle = 'rgba(10,15,40,.3)'; g.beginPath(); g.ellipse(x + r * 0.2, y + r * 0.85, r * 0.9, r * 0.3, 0, 0, 7); g.fill();
     const gr = g.createRadialGradient(x - r * 0.35, y - r * 0.4, r * 0.1, x, y, r * 1.05); gr.addColorStop(0, shade(hex, 0.55)); gr.addColorStop(0.45, hex); gr.addColorStop(1, shade(hex, -0.38));
     g.fillStyle = gr; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
     g.fillStyle = 'rgba(255,255,255,.75)'; g.beginPath(); g.ellipse(x - r * 0.35, y - r * 0.45, r * 0.28, r * 0.16, -0.6, 0, 7); g.fill();
+    g.lineWidth = Math.max(1, r * 0.22); g.strokeStyle = INK; g.beginPath(); g.arc(x, y, r, 0, 7); g.stroke();
+    if (face && r > 4) { g.fillStyle = '#fff'; for (const sx of [-1, 1]) { g.beginPath(); g.arc(x + sx * r * 0.36, y - r * 0.05, r * 0.28, 0, 7); g.fill(); g.fillStyle = INK; g.beginPath(); g.arc(x + sx * r * 0.36, y - r * 0.02, r * 0.14, 0, 7); g.fill(); g.fillStyle = '#fff'; } }
   }
   function person(wx, wy, wz, hex, wobble = 0, grow = 1, idle = false) {   // a standing passenger sprite sized by perspective
     const foot = P(wx, wy, wz), head = P(wx, wy + PASS_H * grow, wz), s = foot.y - head.y, bob = idle ? Math.abs(Math.sin(performance.now() / 230 + wx * 5)) * s * 0.07 : 0;
-    drawPassenger(g, foot.x, (foot.y + head.y) / 2 - bob, s, hex, R.look.accessory, wobble, idle);
+    drawPassenger(g, foot.x, (foot.y + head.y) / 2 - bob, s, hex, R.look.accessory, wobble, idle, R.look.outfit);
   }
 
   // parked bus in the bay (nose toward the player)
@@ -303,15 +309,15 @@ export function createRenderer(canvas, opts = {}) {
       box([cx - hw, cx + hw, c.z - hl, c.z + hl, 0.27, BODY_H + 0.04], paint.body, { edge });
       box([cx - hw * 1.03, cx + hw * 1.03, c.z - hl - 0.012, c.z - hl + 0.05, 0.1, 0.26], paint.trim, { edge });
     } else box([cx - hw, cx + hw, c.z - hl, c.z + hl, 0.06, BODY_H + 0.04], s.color);
-    box([cx - hw * 0.9, cx + hw * 0.9, c.z - hl + 0.03, c.z + hl * 0.5, BODY_H + 0.04, BODY_H + 0.04 + CAB_H * sc], s.color, { faceColor: (f) => (f.n[1] === 1 ? (paint ? shade(paint.body, 0.16) : s.color) : '#5a9be0'), shine: true });
+    box([cx - hw * 0.9, cx + hw * 0.9, c.z - hl + 0.03, c.z + hl * 0.5, BODY_H + 0.04, BODY_H + 0.04 + CAB_H * sc], s.color, { faceColor: (f) => (f.n[1] === 1 ? (paint ? shade(paint.body, 0.16) : s.color) : '#9fe0ff'), shine: true });
     if (paint) { const ry = BODY_H + 0.04 + CAB_H * sc + 0.004; flat([[cx - hw * 0.27, ry, c.z - hl + 0.05], [cx + hw * 0.27, ry, c.z - hl + 0.05], [cx + hw * 0.27, ry, c.z + hl * 0.5 - 0.02], [cx - hw * 0.27, ry, c.z + hl * 0.5 - 0.02]], s.color); }
     const wz = [c.z - hl + 0.2, c.z + hl - 0.2];
-    for (const sx of [cx - hw, cx + hw]) for (const z of wz) { const vis = Math.sign(sx - cx) * (cam.x - cx) > 0 || Math.abs(cam.x - cx) < 0.01; if (vis) box([sx - 0.03, sx + 0.03, z - 0.1, z + 0.1, 0, 0.16], '#1b1e30', { edge: 'rgba(0,0,0,.5)' }); }
+    for (const sx of [cx - hw, cx + hw]) for (const z of wz) { const vis = Math.sign(sx - cx) * (cam.x - cx) > 0 || Math.abs(cam.x - cx) < 0.01; if (vis) box([sx - 0.035, sx + 0.035, z - 0.12, z + 0.12, 0, 0.19], '#2a2f4a', { edge: INK }); }
     g.restore();
     for (let i = 0; i < s.seats; i++) {
       const w = seatW(slot, i, s.seats), p = P(w.x + dx, w.y + (sc - 1) * 0.1, w.z), r = Math.max(2, SEAT_R * p.u);
       g.globalAlpha = alpha;
-      if (i < s.filled) ball(p.x, p.y - r * 0.4, r * 1.1, s.fills ? s.fills[i] : '#fff');
+      if (i < s.filled) ball(p.x, p.y - r * 0.4, r * 1.15, s.fills ? s.fills[i] : '#fff', true);
       else { g.fillStyle = 'rgba(15,25,60,.4)'; g.beginPath(); g.ellipse(p.x, p.y, r, r * SINP, 0, 0, 7); g.fill(); }
     }
     g.globalAlpha = 1;
@@ -337,42 +343,89 @@ export function createRenderer(canvas, opts = {}) {
   // ---------- frame ----------
   const poly = (pts) => { g.beginPath(); pts.forEach((pt, i) => { const s = P(pt[0], pt[1], pt[2]); i ? g.lineTo(s.x, s.y) : g.moveTo(s.x, s.y); }); g.closePath(); };
 
+  const bdOf = () => BACKDROPS[R.world.bd] || BACKDROPS.city;
+  // little details scattered over the ground, one kind per theme (seeded, so they stay put)
+  let speckKey = '', speckList = [];
+  function specksFor(L) {
+    const bd = bdOf(), key = (R.world.bd || '') + '|' + L.bw + 'x' + L.bh + '|' + L.bay; if (key === speckKey) return speckList;
+    let seed = 11; for (const ch of key) seed = (seed * 31 + ch.charCodeAt(0)) % 9973; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+    speckList = [];
+    for (let i = 0, tries = 0; i < 150 && tries < 900; tries++) {
+      const x = -9 + rnd() * (L.bw + 18), z = -10 + rnd() * (L.qz + 22);
+      if (x > -0.5 && x < L.bw + 0.5 && z > -0.5 && z < L.bh + 0.5) continue;                        // not on the board
+      if (x > L.roadX0 - 0.5 && x < L.roadX0 + L.roadW + 0.5 && z > L.roadZ0 - 0.4 && z < L.qz + 0.9) continue;   // not on the road and queue
+      speckList.push({ x, z, c: bd.speckColors[Math.floor(rnd() * bd.speckColors.length)], s: 0.6 + rnd() * 0.9, r: rnd() * 6.28 }); i++;
+    }
+    speckKey = key; return speckList;
+  }
+  function drawSpeck(kind, p, d) {
+    const u = p.u * d.s; g.save(); g.translate(p.x, p.y); g.fillStyle = d.c; g.strokeStyle = d.c;
+    if (kind === 'grass') { g.lineWidth = Math.max(1.5, u * 0.07); g.lineCap = 'round'; g.beginPath(); for (const a of [-0.45, 0, 0.45]) { g.moveTo(0, 0); g.lineTo(Math.sin(a) * u * 0.3, -u * 0.3 * Math.cos(a)); } g.stroke(); }
+    else if (kind === 'sand') { g.beginPath(); g.ellipse(0, 0, u * 0.1, u * 0.05, 0, 0, 7); g.fill(); g.beginPath(); g.ellipse(u * 0.2, u * 0.08, u * 0.06, u * 0.03, 0, 0, 7); g.fill(); }
+    else if (kind === 'snow') { g.globalAlpha = 0.9; g.beginPath(); g.ellipse(0, 0, u * 0.13, u * 0.07, 0, 0, 7); g.fill(); }
+    else if (kind === 'stars') { const r = u * 0.16; g.beginPath(); for (let i = 0; i < 8; i++) { const rr2 = i % 2 ? r * 0.35 : r, an = i * Math.PI / 4; g.lineTo(Math.cos(an) * rr2, Math.sin(an) * rr2 * 0.9); } g.closePath(); g.fill(); }
+    else if (kind === 'cobble') { g.lineWidth = Math.max(1.2, u * 0.05); g.globalAlpha = 0.55; g.beginPath(); g.ellipse(0, 0, u * 0.28, u * 0.14, 0, 0, 7); g.stroke(); }
+    else if (kind === 'sprinkles') { g.rotate(d.r); rr(g, -u * 0.14, -u * 0.04, u * 0.28, u * 0.08, u * 0.04); g.fill(); }
+    else if (kind === 'bubbles') { g.lineWidth = Math.max(1.2, u * 0.05); g.globalAlpha = 0.7; g.beginPath(); g.arc(0, 0, u * 0.14, 0, 7); g.stroke(); g.globalAlpha = 0.25; g.fill(); }
+    else if (kind === 'leaves') { g.rotate(d.r); g.beginPath(); g.ellipse(0, 0, u * 0.17, u * 0.08, 0, 0, 7); g.fill(); }
+    else if (kind === 'petals') { g.beginPath(); for (let k = 0; k < 5; k++) g.arc(Math.cos(k * 1.2566) * u * 0.07, Math.sin(k * 1.2566) * u * 0.05, u * 0.05, 0, 7); g.fill(); }
+    g.restore();
+  }
   function drawGround(now) {
-    const L = R.L, gm = R.game, W = L.W, H = L.H, ground = R.world.ground, sky = R.world.sky;
-    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, sky[0]); bg.addColorStop(1, sky[1]); g.fillStyle = bg; g.fillRect(0, 0, W, H);
+    const L = R.L, gm = R.game, W = L.W, H = L.H, bd = bdOf(), ground = bd.ground;
+    const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, bd.sky[0]); bg.addColorStop(1, bd.sky[1]); g.fillStyle = bg; g.fillRect(0, 0, W, H);
     poly([[-60, 0, -8], [60, 0, -8], [60, 0, 80], [-60, 0, 80]]); g.fillStyle = ground; g.fill();
-    const fog = g.createLinearGradient(0, 0, 0, H * 0.45); fog.addColorStop(0, rgba(sky[0], 0.85)); fog.addColorStop(1, rgba(sky[0], 0)); g.fillStyle = fog; g.fillRect(0, 0, W, H * 0.45);
-    const glow = g.createRadialGradient(W * 0.2, H * 0.08, 5, W * 0.2, H * 0.08, W * 0.8); glow.addColorStop(0, 'rgba(255,255,255,.32)'); glow.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = glow; g.fillRect(0, 0, W, H);
-    // board: a tiled plate with a visible edge
-    const bw = L.bw, bh = L.bh, edge = shade(ground, -0.35);
-    poly([[-0.14, -0.16, -0.14], [bw + 0.14, -0.16, -0.14], [bw + 0.14, 0, -0.14], [-0.14, 0, -0.14]]); g.fillStyle = edge; g.fill();
-    rpoly([[-0.14, 0.001, -0.14], [bw + 0.14, 0.001, -0.14], [bw + 0.14, 0.001, bh + 0.14], [-0.14, 0.001, bh + 0.14]], 10); g.fillStyle = shade(ground, -0.18); g.fill();
-    for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) { rpoly([[x + 0.03, 0.002, bh - y - 0.97], [x + 0.97, 0.002, bh - y - 0.97], [x + 0.97, 0.002, bh - y - 0.03], [x + 0.03, 0.002, bh - y - 0.03]], 5); g.fillStyle = (x + y) % 2 ? shade(ground, 0.16) : shade(ground, 0.07); g.fill(); }
+    for (const d of specksFor(L)) { const p = P(d.x, 0.002, d.z); if (p.x > -40 && p.x < W + 40 && p.y > -40 && p.y < H + 40) drawSpeck(bd.speck, p, d); }
+    if (bd.crosswalk) { for (let i = -2; i < L.bw + 2; i += 0.8) poly([[i, 0.002, -1.45], [i + 0.45, 0.002, -1.45], [i + 0.45, 0.002, -0.8], [i, 0.002, -0.8]]), g.fillStyle = 'rgba(255,255,255,.8)', g.fill(); }
+    const fog = g.createLinearGradient(0, 0, 0, H * 0.3); fog.addColorStop(0, rgba(bd.sky[0], 0.55)); fog.addColorStop(1, rgba(bd.sky[0], 0)); g.fillStyle = fog; g.fillRect(0, 0, W, H * 0.3);
+    // board: a framed plate with a visible edge and a checker of two tile colours
+    const bw = L.bw, bh = L.bh, edge = shade(bd.plate, -0.4);
+    poly([[-0.2, -0.2, -0.2], [bw + 0.2, -0.2, -0.2], [bw + 0.2, 0, -0.2], [-0.2, 0, -0.2]]); g.fillStyle = edge; g.fill();
+    rpoly([[-0.2, 0.001, -0.2], [bw + 0.2, 0.001, -0.2], [bw + 0.2, 0.001, bh + 0.2], [-0.2, 0.001, bh + 0.2]], 12); g.fillStyle = bd.plate; g.fill(); g.strokeStyle = INK; g.lineWidth = 2.2; g.stroke();
+    for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) { rpoly([[x + 0.04, 0.002, bh - y - 0.96], [x + 0.96, 0.002, bh - y - 0.96], [x + 0.96, 0.002, bh - y - 0.04], [x + 0.04, 0.002, bh - y - 0.04]], 6); g.fillStyle = (x + y) % 2 ? bd.tileA : bd.tileB; g.fill(); }
     // road with the parking bay
     const rx0 = L.roadX0 - 0.3, rx1 = L.roadX0 + L.roadW + 0.3;
     poly([[rx0, -0.12, L.roadZ0], [rx1, -0.12, L.roadZ0], [rx1, 0, L.roadZ0], [rx0, 0, L.roadZ0]]); g.fillStyle = '#272d44'; g.fill();
-    poly([[rx0, 0.001, L.roadZ0], [rx1, 0.001, L.roadZ0], [rx1, 0.001, L.roadZ1], [rx0, 0.001, L.roadZ1]]); g.fillStyle = '#4a5575'; g.fill();
+    poly([[rx0, 0.001, L.roadZ0], [rx1, 0.001, L.roadZ0], [rx1, 0.001, L.roadZ1], [rx0, 0.001, L.roadZ1]]); g.fillStyle = '#4a5575'; g.fill(); g.strokeStyle = INK; g.lineWidth = 2; g.stroke();
     for (let i = 0; i < gm.bay; i++) {
       const x0 = L.roadX0 + i * L.sw + 0.05, x1 = x0 + L.sw - 0.1, z0 = L.roadZ0 + 0.14, z1 = L.roadZ1 - 0.14, blocked = gm.blockedSlots.includes(i);
-      g.save(); poly([[x0, 0.002, z0], [x1, 0.002, z0], [x1, 0.002, z1], [x0, 0.002, z1]]); g.strokeStyle = blocked ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.85)'; g.lineWidth = 2; g.setLineDash(blocked ? [] : [6, 5]); g.stroke(); g.restore();
+      g.save(); poly([[x0, 0.002, z0], [x1, 0.002, z0], [x1, 0.002, z1], [x0, 0.002, z1]]); g.strokeStyle = blocked ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.9)'; g.lineWidth = 2.4; g.setLineDash(blocked ? [] : [6, 5]); g.stroke(); g.restore();
     }
     // soft shadows under everything that stands on the ground
     const shadow = (b) => { for (const [e, a] of [[0.1, 0.1], [0.03, 0.16]]) { rpoly([[b[0] + 0.14 - e, 0.003, b[2] - 0.1 - e], [b[1] + 0.14 + e, 0.003, b[2] - 0.1 - e], [b[1] + 0.14 + e, 0.003, b[3] - 0.1 + e], [b[0] + 0.14 - e, 0.003, b[3] - 0.1 + e]], 6); g.fillStyle = 'rgba(10,15,40,' + a + ')'; g.fill(); } };
     for (const v of gm.vehicles) if (v.state === 'grid') { const pose = Object.assign(poseOf(v), vehFx(v, now)); shadow(carFootprint(v, pose)); }
     for (let i = 0; i < gm.bay; i++) { const s = R.vslots[i]; if (s) { const c = slotC(i), hw = L.sw * 0.4; shadow([c.x - hw, c.x + hw, c.z - 0.52, c.z + 0.52]); } }
   }
-  const DECOR = { shore: ['\u{1F334}', '\u{1F41A}', '\u26F1\uFE0F'], snow: ['\u{1F332}', '\u26C4', '\u{1F9CA}'], desert: ['\u{1F335}', '\u{1FAA8}', '\u{1F335}'], night: ['\u{1F4A1}', '\u{1F3E2}', '\u{1F333}'], def: ['\u{1F333}', '\u{1F33C}', '\u{1FAA8}'] };
+  // seasons and holidays sprinkle a few of their own sprites into the world's scenery
+  const SEASON_DECOR = { spring: ['\u{1F338}', '\u{1F337}', '\u{1F98B}'], summer: ['\u{1F334}', '⛱️', '\u{1F349}'], autumn: ['\u{1F341}', '\u{1F383}', '\u{1F330}'], winter: ['\u{1F332}', '⛄', '❄️'],
+    christmas: ['\u{1F384}', '\u{1F381}', '⛄'], halloween: ['\u{1F383}', '\u{1F987}', '\u{1F47B}'], valentine: ['\u{1F496}', '\u{1F339}', '\u{1F48C}'], stpatrick: ['☘️', '\u{1F308}', '\u{1F4B0}'], easter: ['\u{1F95A}', '\u{1F430}', '\u{1F337}'], pride: ['\u{1F308}', '\u{1F984}', '\u{1F496}'] };
   let decorKey = '', decorList = [];
-  const SEASON_DECOR = { spring: ['\u{1F338}', '\u{1F337}', '\u{1F98B}'], summer: ['\u{1F334}', '\u26F1\uFE0F', '\u{1F349}'], autumn: ['\u{1F341}', '\u{1F383}', '\u{1F330}'], winter: ['\u{1F332}', '\u26C4', '\u2744\uFE0F'],
-    christmas: ['\u{1F384}', '\u{1F381}', '\u26C4'], halloween: ['\u{1F383}', '\u{1F987}', '\u{1F47B}'], valentine: ['\u{1F496}', '\u{1F339}', '\u{1F48C}'], stpatrick: ['\u2618\uFE0F', '\u{1F308}', '\u{1F4B0}'], easter: ['\u{1F95A}', '\u{1F430}', '\u{1F337}'], pride: ['\u{1F308}', '\u{1F984}', '\u{1F496}'] };
-  function decorFor(name, L) {
-    const dt = R.world.decorTheme, key = name + '|' + L.bw + 'x' + L.bh + '|' + L.bay + '|' + (dt || ''); if (key === decorKey) return decorList;
-    const n = name.toLowerCase(), set = SEASON_DECOR[dt] || /shore|beach|sun|sea|ocean|island/.test(n) ? DECOR.shore : /frost|snow|ice|peak|winter/.test(n) ? DECOR.snow : /desert|dune|canyon|mesa/.test(n) ? DECOR.desert : /neon|night|city|downtown/.test(n) ? DECOR.night : DECOR.def;
-    let seed = 7; for (const ch of name) seed = (seed * 31 + ch.charCodeAt(0)) % 9973; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
-    decorList = []; const left = -1.5, right = L.bw + 1.5;
-    for (let i = 0; i < 4; i++) { const z = 0.4 + i * (L.bh / 3.2) + rnd() * 0.6; decorList.push({ x: left - rnd() * 0.5, z, e: set[(i + 1) % 3], s: 0.9 + rnd() * 0.5 }, { x: right + rnd() * 0.5, z: z + 0.5, e: set[i % 3], s: 0.9 + rnd() * 0.5 }); }
-    for (let i = 0; i < 5; i++) decorList.push({ x: L.cx - L.roadW / 2 + (i + rnd() * 0.6) * (L.roadW / 4.5), z: L.qz + 1.2 + rnd() * 1.6, e: set[i % 3], s: 1 + rnd() * 0.7 });
+  function decorFor(L) {
+    const dt = R.world.decorTheme, bd = bdOf(), key = (R.world.bd || '') + '|' + L.bw + 'x' + L.bh + '|' + L.bay + '|' + (dt || ''); if (key === decorKey) return decorList;
+    const seas = SEASON_DECOR[dt];
+    let seed = 7; for (const ch of key) seed = (seed * 31 + ch.charCodeAt(0)) % 9973; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
+    let n = 0; const pick = () => { n++; return seas && n % 6 === 0 ? seas[n % seas.length] : bd.decor[Math.floor(rnd() * bd.decor.length)]; };
+    decorList = [];
+    const zTop = L.qz + 1.5, step = 1.9;
+    for (let z = -0.6; z < zTop; z += step * (0.8 + rnd() * 0.5)) {    // down both sides
+      decorList.push({ x: -1.15 - rnd() * 0.7, z, e: pick(), s: 1.25 + rnd() * 0.7 }, { x: L.bw + 1.15 + rnd() * 0.7, z: z + rnd(), e: pick(), s: 1.25 + rnd() * 0.7 });
+    }
+    for (let x = -1.8; x < L.bw + 2; x += 1.9 + rnd() * 0.8) {          // along the bottom (near the player) and the top (past the queue)
+      decorList.push({ x: x + rnd() * 0.5, z: -1.8 - rnd() * 1.6, e: pick(), s: 1.2 + rnd() * 0.7 });
+      decorList.push({ x: x + rnd() * 0.5, z: zTop + rnd() * 1.4, e: pick(), s: 1.3 + rnd() * 0.8 });
+    }
     decorKey = key; return decorList;
+  }
+  // the world's name on a ribbon, top left
+  function drawRibbon() {
+    const L = R.L, bd = bdOf(), name = (R.world.name || '').toUpperCase(); if (!name || L.H < 360) return;
+    g.save(); g.font = '900 15px Poppins, system-ui, sans-serif'; const tw = g.measureText(name).width, w = tw + 56, h = 32, x = 8, y = 8;
+    const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, bd.band[0]); gr.addColorStop(1, bd.band[1]);
+    rr(g, x, y, w, h, 12); g.fillStyle = gr; g.fill(); g.lineWidth = 3; g.strokeStyle = INK; g.stroke();
+    g.fillStyle = 'rgba(255,255,255,.28)'; rr(g, x + 3, y + 3, w - 6, h * 0.38, 8); g.fill();
+    g.font = '18px ' + EMOJI_FONT; g.textBaseline = 'middle'; g.textAlign = 'center'; g.fillStyle = '#000'; g.fillText(bd.icon, x + 20, y + h / 2 + 1);
+    g.font = '900 15px Poppins, system-ui, sans-serif'; g.textAlign = 'left'; g.lineWidth = 4; g.strokeStyle = INK; g.strokeText(name, x + 38, y + h / 2 + 1); g.fillStyle = '#fff'; g.fillText(name, x + 38, y + h / 2 + 1);
+    g.restore();
   }
   function vehFx(v, now) {
     const fx = R.fx[v.id] || {}, dv = DIR_VEC[v.dir], o = { dx: 0, dz: 0, sc: 1 };
@@ -393,7 +446,7 @@ export function createRenderer(canvas, opts = {}) {
 
     // everything that stands up is collected, sorted far to near, then drawn
     const items = [];
-    const decor = decorFor(R.world.name || '', L);
+    const decor = decorFor(L);
     for (const d of decor) items.push({ k: dist2(d.x, d.z), d: () => { const p = P(d.x, 0, d.z); g.fillStyle = 'rgba(10,15,40,.18)'; g.beginPath(); g.ellipse(p.x, p.y, p.u * 0.45 * d.s, p.u * 0.14 * d.s, 0, 0, 7); g.fill(); g.fillStyle = '#000'; g.font = Math.round(p.u * d.s) + 'px ' + EMOJI_FONT; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(d.e, p.x, p.y + p.u * 0.08); } });
     for (const w of gm.walls) { const c = cellW(w.x, w.y); items.push({ k: dist2(c.x, c.z), d: () => drawCone(c.x, c.z) }); }
     for (let i = 0; i < gm.bay; i++) if (gm.blockedSlots.includes(i)) { const c = slotC(i); items.push({ k: dist2(c.x, c.z), d: () => drawCone(c.x, c.z) }); }
@@ -417,7 +470,7 @@ export function createRenderer(canvas, opts = {}) {
     for (let i = 0; i < gm.bay; i++) { const s = R.vslots[i]; if (s) { const c = slotC(i); items.push({ k: dist2(c.x, c.z), d: () => drawParked(s, i, 1, 0, now) }); } }
     for (const lv of R.leavers) { const t = clamp((now - lv.t0) / 420, 0, 1), c = slotC(lv.slot); items.push({ k: dist2(c.x, c.z), d: () => drawParked(lv.s, lv.slot, 1 - t, ease(t) * L.roadW * 0.7, now) }); }
     const n = R.vq.length, shown = Math.min(n, L.qMax);
-    for (let i = shown - 1; i >= 0; i--) { const q = queueW(i), col = COLOR_HEX[R.vq[i]]; items.push({ k: dist2(q.x, q.z) + i * 0.001, d: () => person(q.x, 0, q.z, col, 0, i === 0 ? 1.1 : 1, true) }); }
+    for (let i = shown - 1; i >= 0; i--) { const q = queueW(i), col = COLOR_HEX[R.vq[i]]; items.push({ k: dist2(q.x, q.z) + i * 0.001, d: () => person(q.x, 0, q.z, col, 0, i === 0 ? 1.18 : 1, true) }); }
     R.flyers = R.flyers.filter((f) => {
       const t = clamp((now - f.t0) / f.dur, 0, 1), k = ease(t);
       if (t >= 1) { const s = R.vslots[f.slot]; if (s && s.id === f.id) { s.filled = Math.max(s.filled, f.seat + 1); (s.fills = s.fills || [])[f.seat] = f.color; } sfx.board(f.n || 0); const p = P(f.to.x, f.to.y, f.to.z); burst(p.x, p.y, f.color, 4, 60); return false; }
@@ -427,6 +480,7 @@ export function createRenderer(canvas, opts = {}) {
     items.sort((a, b) => b.k - a.k).forEach((it) => it.d());
     if (n > shown) { const q = P(queueW(shown - 1).x + 0.55, 0.3, L.qz); g.fillStyle = '#10246b'; g.font = '800 15px system-ui'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.fillText('+' + (n - shown), q.x, q.y); }
     if (n === 0) { const q = P(L.cx, 0.3, L.qz); g.fillStyle = '#10246b'; g.font = '800 15px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('Everyone is on board!', q.x, q.y); }
+    drawRibbon();
     g.restore();
     const dt = 1 / 60;
     R.particles = R.particles.filter((p) => { p.t += dt; if (p.t >= p.life) return false; p.vy += 420 * dt; p.x += p.vx * dt; p.y += p.vy * dt; g.globalAlpha = 1 - p.t / p.life; g.fillStyle = p.color; g.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size); g.globalAlpha = 1; return true; });

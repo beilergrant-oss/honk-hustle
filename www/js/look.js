@@ -1,12 +1,13 @@
 // look.js - how skins are drawn in 2D: vehicle patterns and toppers, passenger hats. Shared by the board and the shop previews.
 import { DRAW } from './patterns2d.js';
 import { shade } from './busArt.js';
-import { skinById } from './skinData.js';
+import { skinById, vehicleFor } from './skinData.js';
 import { BUS_STYLES } from './busStyles.js';
 import { vehicleSkinId } from './themes.js';
 import { PACK_PAINT } from './packs.js';
 
-export const COLOR_HEX = { magenta: '#ff4fa8', green: '#2fcf6a', yellow: '#ffd23a', blue: '#2f8bff', red: '#ff4545', purple: '#9b5de5' };
+// Bold, very different hues so they are easy to tell apart at a glance.
+export const COLOR_HEX = { magenta: '#ff3fa4', green: '#22c94a', yellow: '#ffd60a', blue: '#2a7bff', red: '#ff3030', purple: '#9345e8', orange: '#ff8a00', cyan: '#12d4e8', brown: '#a8693a', lime: '#b7ee1c' };
 
 export const TOPPER_EMOJI = {
   taxiSign: '\u{1F695}', lightBar: '\u{1F6A8}', rocket: '\u{1F680}', horn: '\u{1F984}', crown: '\u{1F451}', surfboard: '\u{1F3C4}', flag: '\u{1F6A9}', snowCap: '❄️',
@@ -27,6 +28,7 @@ const HATS = {
   flowerCrown: ['band', '#ff7aa8', '#ffe14d'], shades: ['visor', '#1d1d1d', '#444444'], acorn: ['dome', '#9b6a2f', '#6b4a1f'], earmuffs: ['band', '#444444', '#ff9ad5'],
   santa: ['cone', '#ff3b3b', '#ffffff'], pumpkinHat: ['dome', '#ff8a1f', '#3c7a2a'], heartBand: ['band', '#ff9ac2', '#ff3b6b'], leprechaun: ['brim', '#2f9e44', '#1d1d1d'],
   bunnyEars: ['ears', '#ffffff', '#ffb3d1'], rainbowBand: ['band', '#ff9f1c', '#3b82f6'],
+  policeCap: ['dome', '#1e3a8a', '#ffd23f'], racerHelmet: ['dome', '#e32d2d', '#ffffff'], unicornHorn: ['cone', '#ffd9f3', '#ffe14d'], cabbie: ['dome', '#ffd23f', '#111111'], goldCrown: ['crown', '#ffd700', '#ffffff'],
 };
 
 // ---- helpers ----
@@ -75,6 +77,12 @@ export function paintFor(skinId) {
   return PACK_PAINT[skinId] || SKIN_PAINT[skinId] || null;
 }
 
+// A passenger skin's outfit is the paint of the bus skin it is paired with, so riders match their bus.
+export function outfitFor(passengerSkinId) {
+  const v = vehicleFor(passengerSkinId), pa = v && paintFor(v);
+  return pa ? { c1: pa.body, c2: pa.trim, pattern: pa.pattern } : null;
+}
+
 // The skin for the player's equipped ids -> what the board needs.
 export function resolveLook(profile) {
   const v = skinById(profile.equippedVehicleSkin || 'v_classic'), p = skinById(profile.equippedPassengerSkin || 'p_classic');
@@ -83,6 +91,7 @@ export function resolveLook(profile) {
     vehicle: { pattern: vs.pattern || null, accents: vs.accents || (vs.accent ? [vs.accent] : ['#ffffff']), topper: vs.topper || null, glossy: !!vs.glossy, emissive: vs.emissive || 0, metal: vs.metalness || 0 },
     accessory: (p && p.style && p.style.accessory) || null,
     paint: paintFor(profile.equippedVehicleSkin || 'v_classic'),
+    outfit: outfitFor(profile.equippedPassengerSkin || 'p_classic'),
   };
 }
 
@@ -94,24 +103,49 @@ export function patternFill(g, look, scale, alpha = 0.85) {
   g.save(); g.clip(); g.globalAlpha = alpha; g.fillStyle = pat; g.fillRect(-4000, -4000, 8000, 8000); g.restore();
 }
 
-// ---- passenger: a bean with eyes, a smile and the equipped hat. (x, y) = centre of the body, s = height ----
-export function drawPassenger(g, x, y, s, hex, accessory, wobble = 0, cheer = false) {
+// ---- passenger: a chunky cartoon bean with big eyes, rosy cheeks and the equipped hat and outfit. (x, y) = centre of the body, s = height ----
+// outfit = { c1, c2, pattern } is the passenger skin's matching outfit (a vest in the bus skin's colours). The face and upper body keep the game colour.
+const INK = '#14205a';
+export function drawPassenger(g, x, y, s, hex, accessory, wobble = 0, cheer = false, outfit = null) {
   g.save(); g.translate(x, y); g.rotate(wobble);
-  const w = s * 0.76;
+  const w = s * 0.86, lw = Math.max(1.5, s * 0.075), t = performance.now();
+  g.fillStyle = 'rgba(10,15,40,.22)'; g.beginPath(); g.ellipse(0, s * 0.5, w * 0.55, s * 0.09, 0, 0, 7); g.fill();
+  g.lineJoin = 'round'; g.lineCap = 'round'; g.strokeStyle = INK; g.lineWidth = lw;
   if (cheer) {   // little arms in the air
-    const wig = Math.sin(performance.now() / 180 + x) * 0.25;
-    g.fillStyle = shade(hex, -0.08); g.strokeStyle = shade(hex, -0.5); g.lineWidth = Math.max(1, s * 0.035);
-    for (const sx of [-1, 1]) { g.save(); g.translate(sx * w * 0.46, -s * 0.05); g.rotate(sx * (0.5 + (sx > 0 ? wig : -wig))); g.beginPath(); g.ellipse(0, -s * 0.2, s * 0.085, s * 0.22, 0, 0, 7); g.fill(); g.stroke(); g.restore(); }
+    const wig = Math.sin(t / 180 + x) * 0.3;
+    for (const sx of [-1, 1]) { g.save(); g.translate(sx * w * 0.46, -s * 0.02); g.rotate(sx * (0.55 + (sx > 0 ? wig : -wig))); g.fillStyle = hex; g.beginPath(); g.ellipse(0, -s * 0.2, s * 0.1, s * 0.23, 0, 0, 7); g.fill(); g.stroke(); g.restore(); }
   }
-  g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(0, s * 0.5, w * 0.5, s * 0.08, 0, 0, 7); g.fill();
-  const grad = g.createRadialGradient(-w * 0.22, -s * 0.28, s * 0.04, 0, 0, s * 0.62); grad.addColorStop(0, shade(hex, 0.5)); grad.addColorStop(0.5, hex); grad.addColorStop(1, shade(hex, -0.36));
+  g.fillStyle = shade(hex, -0.3); for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(sx * w * 0.2, s * 0.47, w * 0.17, s * 0.07, 0, 0, 7); g.fill(); g.stroke(); }
+  const grad = g.createLinearGradient(0, -s / 2, 0, s / 2); grad.addColorStop(0, shade(hex, 0.38)); grad.addColorStop(0.45, hex); grad.addColorStop(1, shade(hex, -0.14));
   g.fillStyle = grad; rr(g, -w / 2, -s / 2, w, s, w / 2); g.fill();
-  g.strokeStyle = shade(hex, -0.5); g.lineWidth = Math.max(1, s * 0.04); g.stroke();
-  g.fillStyle = '#1b1d2b'; g.beginPath(); g.arc(-w * 0.2, -s * 0.08, s * 0.065, 0, 7); g.arc(w * 0.2, -s * 0.08, s * 0.065, 0, 7); g.fill();
-  g.strokeStyle = '#1b1d2b'; g.lineWidth = Math.max(1, s * 0.06); g.lineCap = 'round'; g.beginPath(); g.arc(0, s * 0.02, s * 0.13, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke();
-  g.fillStyle = 'rgba(255,255,255,.7)'; g.beginPath(); g.ellipse(-w * 0.2, -s * 0.34, w * 0.15, s * 0.075, -0.5, 0, 7); g.fill();
+  if (outfit) {   // vest in the matching bus colours
+    g.save(); rr(g, -w / 2, -s / 2, w, s, w / 2); g.clip();
+    g.fillStyle = outfit.c1; g.fillRect(-w, s * 0.16, w * 2, s); g.fillStyle = outfit.c2; g.fillRect(-w, s * 0.16, w * 2, s * 0.07);
+    if (outfit.pattern && outfit.pattern !== 'none') { g.fillStyle = outfit.c2; g.globalAlpha = 0.85; for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(-w * 0.33 + i * w * 0.22, s * 0.34 + (i % 2) * s * 0.06, s * 0.035, 0, 7); g.fill(); } g.globalAlpha = 1; }
+    g.restore();
+  }
+  rr(g, -w / 2, -s / 2, w, s, w / 2); g.stroke();
+  g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(-w * 0.24, -s * 0.36, w * 0.14, s * 0.07, -0.6, 0, 7); g.fill();
+  // eyes: big whites, dark pupils, a glint
+  const blink = (t + x * 40) % 3200 < 110 ? 0.12 : 1;
+  for (const sx of [-1, 1]) {
+    g.fillStyle = '#fff'; g.lineWidth = Math.max(1, s * 0.04); g.beginPath(); g.ellipse(sx * w * 0.2, -s * 0.1, s * 0.115, s * 0.15 * blink, 0, 0, 7); g.fill(); g.stroke();
+    if (blink > 0.5) { g.fillStyle = INK; g.beginPath(); g.arc(sx * w * 0.2 + s * 0.015, -s * 0.09, s * 0.07, 0, 7); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(sx * w * 0.2 + s * 0.035, -s * 0.12, s * 0.025, 0, 7); g.fill(); }
+  }
+  g.fillStyle = 'rgba(255,70,110,.4)'; for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(sx * w * 0.36, s * 0.07, s * 0.07, s * 0.045, 0, 0, 7); g.fill(); }
+  g.strokeStyle = INK; g.lineWidth = Math.max(1.2, s * 0.06); g.beginPath(); g.arc(0, s * 0.03, s * 0.11, 0.1 * Math.PI, 0.9 * Math.PI); g.stroke();
   if (accessory && HATS[accessory]) drawHat(g, HATS[accessory], 0, -s / 2, w, s);
   g.restore();
+}
+const previews = new Map();
+// A small picture of a passenger (same drawing as in the game) as a data URL, for the Garage and the Shop.
+export function passengerPreview(hex, accessory, outfit, size = 96) {
+  const key = [hex, accessory, outfit && outfit.c1 + outfit.c2 + outfit.pattern, size].join('|');
+  if (previews.has(key)) return previews.get(key);
+  const c = document.createElement('canvas'); c.width = c.height = size; const g = c.getContext('2d');
+  drawPassenger(g, size / 2, size * 0.62, size * 0.62, hex, accessory, 0, false, outfit);
+  let url = ''; try { url = c.toDataURL('image/png'); } catch (e) { /* tainted or blocked */ }
+  previews.set(key, url); return url;
 }
 function drawHat(g, [kind, c1, c2], x, y, w, s) {
   g.save(); g.translate(x, y); g.lineWidth = Math.max(1, s * 0.03); g.strokeStyle = 'rgba(0,0,0,.35)';
