@@ -7,6 +7,7 @@ import { COLOR_HEX, TOPPER_EMOJI, rr, drawPassenger } from './look.js';
 import { sfx, haptic } from './sfx.js';
 import { BACKDROPS } from './backdrops.js';
 import { blocker } from './game.js';
+import { decorImg, iconImg } from './decorArt.js';
 
 const DIR_VEC = { E: [1, 0], S: [0, 1], W: [-1, 0], N: [0, -1] };       // grid directions (grid y grows toward the player)
 const ease = (t) => 1 - Math.pow(1 - t, 3);
@@ -268,13 +269,13 @@ export function createRenderer(canvas, opts = {}) {
       const rr2 = c.u * 0.27 * sc;
       g.fillStyle = frozen ? '#1f6fb0' : '#10246b'; g.beginPath(); g.arc(c.x, c.y - rr2 * 0.3, rr2, 0, 7); g.fill(); g.strokeStyle = frozen ? '#e6f8ff' : '#ffe14d'; g.lineWidth = 2; g.stroke();
       g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      if (frozen) { g.font = Math.round(rr2 * 1.0) + 'px ' + EMOJI_FONT; g.fillText('\u2744\uFE0F', c.x, c.y - rr2 * 0.3); if (v.ice > 1) { g.fillStyle = '#e6f8ff'; g.font = '900 ' + Math.round(rr2 * 0.8) + 'px system-ui'; g.fillText('x' + v.ice, c.x + rr2 * 1.05, c.y - rr2 * 1.3); } }
+      if (frozen) { const im = iconImg('snow'); if (im.complete && im.naturalWidth) g.drawImage(im, c.x - rr2 * 0.75, c.y - rr2 * 1.05, rr2 * 1.5, rr2 * 1.5); if (v.ice > 1) { g.fillStyle = '#e6f8ff'; g.font = '900 ' + Math.round(rr2 * 0.8) + 'px system-ui'; g.fillText('x' + v.ice, c.x + rr2 * 1.05, c.y - rr2 * 1.3); } }
       else { g.font = '900 ' + Math.round(rr2 * 1.3) + 'px system-ui'; g.fillText('?', c.x, c.y - rr2 * 0.3); }
     }
     if (locked) {
       const need = Math.max(1, v.lock - R.game.departures), r = c.u * 0.27 * sc;
       g.fillStyle = '#10246b'; g.beginPath(); g.arc(c.x, c.y - r * 0.3, r, 0, 7); g.fill(); g.strokeStyle = '#ffe14d'; g.lineWidth = 2; g.stroke();
-      g.font = Math.round(r * 1.0) + 'px ' + EMOJI_FONT; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('\u{1F512}', c.x, c.y - r * 0.3);
+      { const im = iconImg('lock'); if (im.complete && im.naturalWidth) g.drawImage(im, c.x - r * 0.75, c.y - r * 1.05, r * 1.5, r * 1.5); }
       g.fillStyle = '#ffe14d'; g.font = '900 ' + Math.round(r * 0.8) + 'px system-ui'; g.fillText(need, c.x + r * 1.05, c.y - r * 1.3);
     }
   }
@@ -470,7 +471,7 @@ export function createRenderer(canvas, opts = {}) {
     const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, bd.band[0]); gr.addColorStop(1, bd.band[1]);
     rr(g, x, y, w, h, 12); g.fillStyle = gr; g.fill(); g.lineWidth = 1.5; g.strokeStyle = shade(bd.band[1], -0.4); g.stroke();
     g.fillStyle = 'rgba(255,255,255,.28)'; rr(g, x + 3, y + 3, w - 6, h * 0.38, 8); g.fill();
-    g.font = '18px ' + EMOJI_FONT; g.textBaseline = 'middle'; g.textAlign = 'center'; g.fillStyle = '#000'; g.fillText(bd.icon, x + 20, y + h / 2 + 1);
+    { const im = decorImg(bd.icon); if (im.complete && im.naturalWidth) g.drawImage(im, x + 6, y + 3, 28, 28); }
     g.font = '900 15px Poppins, system-ui, sans-serif'; g.textAlign = 'left'; g.lineWidth = 4; g.strokeStyle = INK; g.strokeText(name, x + 38, y + h / 2 + 1); g.fillStyle = '#fff'; g.fillText(name, x + 38, y + h / 2 + 1);
     g.restore();
   }
@@ -494,7 +495,7 @@ export function createRenderer(canvas, opts = {}) {
     // everything that stands up is collected, sorted far to near, then drawn
     const items = [];
     const decor = decorFor(L);
-    for (const d of decor) items.push({ k: dist2(d.x, d.z), d: () => { const p = P(d.x, 0, d.z); g.fillStyle = 'rgba(10,15,40,.18)'; g.beginPath(); g.ellipse(p.x, p.y, p.u * 0.45 * d.s, p.u * 0.14 * d.s, 0, 0, 7); g.fill(); g.fillStyle = '#000'; g.font = Math.round(p.u * d.s) + 'px ' + EMOJI_FONT; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(d.e, p.x, p.y + p.u * 0.08); } });
+    for (const d of decor) items.push({ k: dist2(d.x, d.z), d: () => { const p = P(d.x, 0, d.z); g.fillStyle = 'rgba(10,15,40,.18)'; g.beginPath(); g.ellipse(p.x, p.y, p.u * 0.45 * d.s, p.u * 0.14 * d.s, 0, 0, 7); g.fill(); const im = decorImg(d.e), sz = p.u * d.s * 1.15; if (im.complete && im.naturalWidth) g.drawImage(im, p.x - sz / 2, p.y + p.u * 0.08 - sz * 0.94, sz, sz); } });
     for (const w of gm.walls) { const c = cellW(w.x, w.y); items.push({ k: dist2(c.x, c.z), d: () => drawWall(c.x, c.z, gm.wallSkin) }); }
     for (const b of gm.barriers) if (gm.departures < b.until) { const c = cellW(b.x, b.y), need = b.until - gm.departures; items.push({ k: dist2(c.x, c.z), d: () => drawBarrier(c.x, c.z, need) }); }
     for (let i = 0; i < gm.bay; i++) if (gm.blockedSlots.includes(i)) { const c = slotC(i); items.push({ k: dist2(c.x, c.z), d: () => drawCone(c.x, c.z) }); }

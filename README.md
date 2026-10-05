@@ -64,3 +64,6 @@ Holidays: Christmas, Halloween, Valentine's, St. Patrick's, Easter, Pride. Previ
 - A new obstacle arrives every 100-200 levels (see `OBSTACLES` in `levelGen.js`): cones (1), padlocks (40), barriers that lift after N departures (200), frozen buses (350), mystery buses (500), blocked bay slots (650), deep freeze (800), roadworks (950).
 - Every 150 levels the newest obstacle is always in play plus a changing mix of older ones, so some leave and come back later. The wall look changes every 200 levels (cone, barrel, rock, crate, bush).
 - Every level is solvable by construction; `game.js` plays the generator's solution in tests.
+
+## Drawn scenery instead of emoji
+Scenery on the home screen, loading screen and in levels, the home buttons, the power-up bar, the top pills and the lock/ice badges are drawn vector graphics (`www/js/decorArt.js`). The backdrop data still names each sprite by an emoji key, but the emoji is never shown. Add a new scenery sprite by adding a template there and an `add('<emoji>', 'sprite', colour)` line.

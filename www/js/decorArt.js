@@ -1,0 +1,217 @@
+// decorArt.js - drawn scenery graphics (soft-shaded vector sprites) that replace the emoji used as decoration on the home screen and in levels.
+// decorSvg(key) -> SVG text, decorUrl(key) -> data URL (for <img>), decorImg(key) -> cached Image (for canvas). `key` is the emoji the backdrop data names,
+// so the data files stay readable; the emoji itself is never shown. iconSvg(name) gives the small UI icons.
+import { shade } from './busArt.js';
+
+let gid = 0, defs = [];
+const fl = (c) => { const id = 'g' + gid++; defs.push(`<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${shade(c, 0.38)}"/><stop offset=".55" stop-color="${c}"/><stop offset="1" stop-color="${shade(c, -0.2)}"/></linearGradient>`); return `url(#${id})`; };
+const sk = (c, w = 2.4) => `stroke="${shade(c, -0.5)}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+const el = (cx, cy, rx, ry, c, rot = 0) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fl(c)}" ${sk(c)} transform="rotate(${rot} ${cx} ${cy})"/>`;
+const ci = (cx, cy, r, c) => el(cx, cy, r, r, c);
+const rc = (x, y, w, h, r, c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fl(c)}" ${sk(c)}/>`;
+const pa = (d, c, w) => `<path d="${d}" fill="${fl(c)}" ${sk(c, w)}/>`;
+const ln = (d, c, w = 3) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+const hi = (cx, cy, rx, ry, rot = -30) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#fff" opacity=".45" transform="rotate(${rot} ${cx} ${cy})"/>`;
+const eyes = (cx, cy, d = 9, r = 4) => `<circle cx="${cx - d}" cy="${cy}" r="${r}" fill="#fff"/><circle cx="${cx + d}" cy="${cy}" r="${r}" fill="#fff"/><circle cx="${cx - d + 1}" cy="${cy + 0.5}" r="${r * 0.55}" fill="#1c2340"/><circle cx="${cx + d + 1}" cy="${cy + 0.5}" r="${r * 0.55}" fill="#1c2340"/>`;
+const star = (cx, cy, R, r, c) => { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 5, q = i % 2 ? r : R; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * q).toFixed(1) + ' ' + (cy + Math.sin(a) * q).toFixed(1); } return pa(d + 'Z', c); };
+const TRUNK = '#8a5a2b';
+
+const S = {
+  tree: (c) => rc(44, 56, 12, 36, 3, TRUNK) + ci(50, 38, 26, c) + ci(30, 52, 18, c) + ci(70, 52, 18, c) + hi(40, 28, 10, 6),
+  pine: (c) => rc(45, 74, 10, 18, 3, TRUNK) + pa('M50 8 L76 42 L24 42Z', c) + pa('M50 26 L82 64 L18 64Z', c) + pa('M50 46 L88 84 L12 84Z', c) + hi(42, 40, 5, 9, 20),
+  palm: (c) => ln('M52 92 Q58 60 48 34', '#9a6a35', 9) + [[-60, 30, 26], [-25, 24, 30], [10, 26, 30], [45, 28, 26], [78, 32, 22]].map(([a, x, l]) => el(48 + Math.sin((a * Math.PI) / 180) * 18, 32 - Math.cos((a * Math.PI) / 180) * 6 + 4, l * 0.55, 7, c, a - 90 + 90 * 0 + (a > 0 ? 20 : -20))).join('') + ci(48, 36, 5, '#6b4a22'),
+  cactus: (c) => rc(38, 18, 24, 74, 12, c) + ln('M38 56 Q22 56 22 40', shade(c, -0.3), 9) + ln('M62 48 Q80 48 80 32', shade(c, -0.3), 9) + hi(46, 34, 3, 12, 0) + '<path d="M50 24v6M44 40v5M56 56v5" stroke="#fff" stroke-width="2" opacity=".6"/>',
+  bush: (c) => ci(30, 64, 20, c) + ci(70, 64, 20, c) + ci(50, 52, 26, c) + hi(42, 44, 9, 5),
+  flower: (c) => ln('M50 92 L50 52', '#3a9a3a', 5) + el(36, 76, 12, 5, '#4cb04c', -25) + [0, 72, 144, 216, 288].map((a) => el(50 + Math.cos(((a - 90) * Math.PI) / 180) * 17, 40 + Math.sin(((a - 90) * Math.PI) / 180) * 17, 12, 12, c)).join('') + ci(50, 40, 9, '#ffd23f'),
+  mush: (c) => rc(38, 50, 24, 40, 9, '#f4e6cf') + pa('M12 56 Q12 14 50 14 Q88 14 88 56Z', c) + ci(34, 34, 6, '#fff') + ci(60, 28, 5, '#fff') + ci(70, 44, 4, '#fff') + hi(30, 24, 8, 4),
+  rock: (c) => pa('M12 86 L18 54 L40 30 L66 36 L86 60 L90 86Z', c) + pa('M40 30 L52 56 L66 36Z', shade(c, 0.15), 1.5) + hi(40, 50, 9, 4),
+  crystal: (c) => pa('M50 6 L72 40 L60 90 L40 90 L28 40Z', c) + pa('M20 50 L32 36 L38 90 L16 90Z', shade(c, 0.1)) + pa('M80 54 L70 40 L64 90 L86 90Z', shade(c, -0.1)) + hi(44, 30, 4, 12, 10),
+  mount: (c, snow = '#fff') => pa('M4 90 L40 16 L62 52 L72 38 L96 90Z', c) + pa('M40 16 L28 42 L36 38 L42 48 L50 36Z', snow, 1.5),
+  house: (wall, roof) => rc(18, 46, 64, 44, 4, wall) + pa('M8 50 L50 14 L92 50Z', roof) + rc(42, 64, 16, 26, 3, '#8a5a2b') + rc(24, 56, 13, 13, 2, '#bfe9ff') + rc(63, 56, 13, 13, 2, '#bfe9ff'),
+  tower: (wall, floors = 4) => rc(22, 90 - floors * 18 - 8, 56, floors * 18 + 8, 3, wall) + Array.from({ length: floors }, (_, i) => [0, 1, 2].map((j) => rc(29 + j * 17, 90 - floors * 18 + i * 18 + 2, 11, 11, 2, '#bfe9ff')).join('')).join('') + rc(44, 78, 12, 12, 2, '#6b4a22'),
+  shop: (wall, awn) => rc(14, 38, 72, 52, 3, wall) + pa('M8 40 L16 18 L84 18 L92 40Z', awn) + [0, 1, 2, 3].map((i) => `<rect x="${12 + i * 19}" y="18" width="9.5" height="22" fill="#fff" opacity=".6"/>`).join('') + rc(22, 54, 26, 20, 2, '#bfe9ff') + rc(58, 54, 18, 36, 2, '#8a5a2b'),
+  car: (c) => pa('M6 66 Q6 52 18 50 L30 32 Q34 28 40 28 L62 28 Q68 28 72 34 L82 50 Q94 52 94 66 L94 74 L6 74Z', c) + pa('M34 34 L40 46 L48 46 L48 34Z M54 34 L54 46 L70 46 L64 34Z', '#bfe9ff', 1.5) + ci(28, 74, 11, '#2c3252') + ci(72, 74, 11, '#2c3252') + ci(28, 74, 5, '#c8cfe6') + ci(72, 74, 5, '#c8cfe6'),
+  bstop: (c) => rc(46, 20, 8, 72, 3, '#9aa4c4') + rc(24, 12, 52, 30, 7, c) + ci(50, 27, 8, '#fff') + '<path d="M46 27h8M50 23v8" stroke="' + c + '" stroke-width="3"/>',
+  tent: (c) => pa('M50 10 L94 88 L6 88Z', c) + pa('M50 10 L62 88 L38 88Z', shade(c, -0.15)) + pa('M50 44 L58 88 L42 88Z', '#2c3252', 1.5),
+  circus: (c) => pa('M50 6 L58 20 L92 40 L92 88 L8 88 L8 40 L42 20Z', c) + [0, 1, 2, 3].map((i) => `<rect x="${12 + i * 20}" y="40" width="10" height="48" fill="#fff" opacity=".85"/>`).join('') + pa('M8 40 Q50 24 92 40 Q50 52 8 40Z', shade(c, -0.1)) + rc(40, 62, 20, 26, 8, '#2c3252') + `<path d="M50 6V-2" stroke="#8a5a2b" stroke-width="3"/>`,
+  castle: (wall) => rc(14, 40, 72, 50, 3, wall) + rc(8, 18, 24, 72, 3, shade(wall, 0.05)) + rc(68, 18, 24, 72, 3, shade(wall, 0.05)) + pa('M6 20 L20 2 L34 20Z', '#d94848') + pa('M66 20 L80 2 L94 20Z', '#d94848') + pa('M40 90 L40 66 Q50 54 60 66 L60 90Z', '#6b4a22') + rc(15, 34, 8, 12, 3, '#2c3252') + rc(77, 34, 8, 12, 3, '#2c3252'),
+  gift: (c) => rc(14, 38, 72, 52, 5, c) + rc(10, 28, 80, 16, 4, shade(c, 0.1)) + rc(44, 28, 12, 62, 0, '#ffd23f') + el(38, 20, 12, 8, '#ffd23f', -25) + el(62, 20, 12, 8, '#ffd23f', 25),
+  balloon: (c) => ln('M50 76 Q44 88 52 96', '#8a93ad', 2.5) + el(50, 40, 26, 32, c) + pa('M44 72 L56 72 L50 80Z', c, 1.5) + hi(40, 26, 6, 10, 20),
+  cake: (c) => rc(14, 54, 72, 36, 6, c) + rc(22, 34, 56, 24, 6, shade(c, 0.15)) + pa('M14 56 Q24 70 34 56 Q44 70 54 56 Q64 70 74 56 Q80 66 86 56 L86 52 L14 52Z', '#fff', 1.5) + rc(47, 14, 6, 22, 2, '#ffd23f') + el(50, 10, 4, 6, '#ff8a2a'),
+  cupcake: (c) => pa('M22 54 L30 90 L70 90 L78 54Z', '#e8a66a') + ci(50, 44, 24, c) + ci(50, 26, 15, shade(c, 0.1)) + ci(50, 14, 6, '#ff3b5c'),
+  lolly: (c) => rc(47, 52, 6, 40, 3, '#fff') + ci(50, 34, 28, c) + ln('M50 34 m-3 0 a3 3 0 1 1 6 0 a8 8 0 1 1 -14 0 a14 14 0 1 1 26 0', '#fff', 4),
+  candy: (c) => pa('M4 34 L28 50 L4 66Z', c) + pa('M96 34 L72 50 L96 66Z', c) + el(50, 50, 28, 20, c) + ln('M40 34 L34 66 M56 34 L50 66', '#fff', 4),
+  donut: (c) => ci(50, 54, 36, '#e8a66a') + ci(50, 50, 34, c) + ci(50, 50, 11, '#e8f4ff') + ['#fff', '#ffd23f', '#3fc1ff', '#fff', '#ffd23f'].map((k, i) => `<rect x="${[28, 60, 70, 40, 52][i]}" y="${[32, 28, 52, 66, 62][i]}" width="9" height="4" rx="2" fill="${k}"/>`).join(''),
+  cookie: (c) => ci(50, 54, 36, c) + ['#5a3416', '#5a3416', '#5a3416', '#5a3416'].map((k, i) => ci([36, 62, 50, 70][i], [44, 40, 66, 62][i], 5.5, k)).join('') + hi(36, 34, 10, 5),
+  star: (c) => star(50, 52, 42, 19, c) + hi(40, 38, 7, 4),
+  snowflake: () => '<g stroke="#bfe6ff" stroke-width="5" stroke-linecap="round">' + [0, 60, 120].map((a) => `<path d="M50 8V92" transform="rotate(${a} 50 50)"/>`).join('') + '</g><g stroke="#fff" stroke-width="2.5" stroke-linecap="round">' + [0, 60, 120].map((a) => `<path d="M50 8V92" transform="rotate(${a} 50 50)"/>`).join('') + '</g>',
+  snowman: () => ci(50, 72, 24, '#fff') + ci(50, 38, 17, '#fff') + rc(36, 12, 28, 16, 3, '#2c3252') + rc(30, 24, 40, 6, 3, '#2c3252') + pa('M50 38 L68 42 L50 45Z', '#ff8a2a', 1.5) + '<circle cx="44" cy="34" r="2.4" fill="#222"/><circle cx="56" cy="34" r="2.4" fill="#222"/>' + ci(50, 62, 3, '#2c3252') + ci(50, 74, 3, '#2c3252'),
+  pumpkin: (c) => ci(30, 58, 22, shade(c, -0.08)) + ci(70, 58, 22, shade(c, -0.08)) + el(50, 58, 26, 30, c) + rc(46, 18, 8, 14, 3, '#3a8a3a') + pa('M36 50 L44 50 L40 58Z M56 50 L64 50 L60 58Z', '#3a1c05', 1) + pa('M36 68 Q50 78 64 68 L60 66 L56 70 L50 66 L44 70 L40 66Z', '#3a1c05', 1),
+  xtree: () => S.pine('#2f9e48') + star(50, 10, 8, 3.5, '#ffd23f') + ci(40, 50, 4, '#ff3b3b') + ci(62, 62, 4, '#ffd23f') + ci(34, 74, 4, '#3fa7ff') + ci(66, 78, 4, '#ff3b3b'),
+  lantern: (c) => ln('M50 4V16', '#8a5a2b', 3) + rc(36, 14, 28, 8, 3, '#ffd23f') + el(50, 50, 30, 28, c) + rc(36, 76, 28, 7, 3, '#ffd23f') + ln('M50 83V96', '#ffd23f', 3) + ln('M50 22 Q36 50 50 76 M50 22 Q64 50 50 76', shade(c, -0.3), 2),
+  firework: (c) => '<g stroke="' + c + '" stroke-width="5" stroke-linecap="round">' + Array.from({ length: 10 }, (_, i) => `<path d="M50 26V12" transform="rotate(${i * 36} 50 50)"/>`).join('') + '</g>' + ci(50, 50, 6, '#fff'),
+  crown: (c) => pa('M12 80 L8 28 L32 52 L50 16 L68 52 L92 28 L88 80Z', c) + rc(12, 76, 76, 12, 4, shade(c, -0.1)) + ci(50, 62, 5, '#ff3b5c') + ci(28, 66, 4, '#3fa7ff') + ci(72, 66, 4, '#3fa7ff'),
+  gem: (c) => pa('M24 22 L76 22 L94 42 L50 92 L6 42Z', c) + '<path d="M6 42H94M24 22L36 42L50 92L64 42L76 22M36 42L50 22L64 42" fill="none" stroke="#fff" stroke-width="2" opacity=".6"/>',
+  moneybag: (c) => pa('M30 24 Q50 14 70 24 L62 38 Q92 56 84 80 Q78 92 50 92 Q22 92 16 80 Q8 56 38 38Z', c) + rc(36, 18, 28, 8, 3, '#8a5a2b') + '<text x="50" y="76" text-anchor="middle" font-family="Poppins,system-ui" font-weight="900" font-size="30" fill="#5a3b00">$</text>',
+  fire: () => pa('M50 6 Q70 34 78 52 Q90 76 66 90 Q50 98 34 90 Q10 76 24 52 Q30 38 38 22 Q42 34 50 6Z', '#ff7a1a') + pa('M50 44 Q62 62 64 74 Q66 88 50 90 Q34 88 36 74 Q38 62 50 44Z', '#ffd23f'),
+  candle: () => rc(38, 42, 24, 50, 4, '#fff3d6') + el(50, 28, 7, 13, '#ff9a2a') + el(50, 31, 3.5, 7, '#ffe14d') + ln('M50 40V44', '#5a3b00', 2),
+  rocket: (c) => pa('M50 4 Q74 26 70 62 L30 62 Q26 26 50 4Z', '#f4f6ff') + ci(50, 36, 9, '#3fa7ff') + pa('M30 50 L10 74 L30 68Z', c) + pa('M70 50 L90 74 L70 68Z', c) + pa('M38 62 L62 62 L56 74 L44 74Z', '#ffd23f') + pa('M44 74 L56 74 L50 94Z', '#ff7a1a'),
+  saucer: (c) => el(50, 38, 20, 18, '#bfe9ff') + el(50, 58, 44, 16, c) + [24, 50, 76].map((x) => ci(x, 58, 4, '#ffd23f')).join(''),
+  planet: (c) => `<ellipse cx="50" cy="50" rx="48" ry="12" fill="none" stroke="${shade(c, -0.3)}" stroke-width="5" transform="rotate(-20 50 50)"/>` + ci(50, 50, 28, c) + `<path d="M26 56 Q50 66 74 50" fill="none" stroke="${shade(c, 0.3)}" stroke-width="4" opacity=".7"/>` + `<path d="M6 60 Q30 74 94 40" fill="none" stroke="${shade(c, -0.3)}" stroke-width="5" transform="rotate(0)" opacity=".0"/>`,
+  moon: (c) => pa('M62 8 A42 42 0 1 0 92 66 A34 34 0 1 1 62 8Z', c),
+  comet: () => pa('M92 8 Q60 12 30 42 Q8 66 26 78 Q44 90 62 66 Q86 38 92 8Z', '#bfe9ff') + ci(30, 70, 14, '#fff3b0'),
+  train: (c) => rc(8, 40, 64, 40, 5, c) + rc(56, 24, 28, 56, 5, shade(c, -0.1)) + rc(60, 30, 20, 16, 3, '#bfe9ff') + rc(14, 26, 14, 16, 3, '#2c3252') + ci(24, 82, 10, '#2c3252') + ci(52, 82, 10, '#2c3252') + ci(76, 82, 10, '#2c3252') + pa('M72 76 L92 86 L72 86Z', '#9aa4c4'),
+  tractor: (c) => rc(36, 30, 40, 36, 5, c) + rc(44, 20, 26, 22, 4, '#bfe9ff') + rc(10, 52, 36, 16, 4, shade(c, -0.1)) + ci(26, 74, 18, '#2c3252') + ci(26, 74, 8, '#e8c04a') + ci(74, 80, 11, '#2c3252') + ci(74, 80, 5, '#e8c04a') + rc(12, 28, 6, 24, 2, '#6b6f86'),
+  ferris: (c) => ln('M50 50 L26 92 M50 50 L74 92', '#8a93ad', 5) + `<circle cx="50" cy="44" r="34" fill="none" stroke="${shade(c, -0.1)}" stroke-width="5"/>` + ln('M50 10V78M16 44H84M26 20L74 68M74 20L26 68', c, 2.5) + [0, 60, 120, 180, 240, 300].map((a) => ci(50 + Math.cos((a * Math.PI) / 180) * 34, 44 + Math.sin((a * Math.PI) / 180) * 34, 7, ['#ff4d6d', '#ffd23f', '#3fc1ff'][(a / 60) % 3])).join('') + ci(50, 44, 6, '#fff'),
+  carousel: (c) => ln('M50 18V84', '#ffd23f', 5) + pa('M10 30 Q50 -6 90 30Z', c) + rc(14, 78, 72, 12, 5, '#8a5a2b') + [24, 50, 76].map((x, i) => ln(`M${x} 36V80`, '#ffd23f', 3) + el(x, 62, 9, 7, ['#fff', '#ffd9e8', '#fff'][i])).join('') + ci(50, 14, 4, '#ffd23f'),
+  die: (c) => rc(12, 12, 76, 76, 14, c) + [[30, 30], [70, 30], [50, 50], [30, 70], [70, 70]].map(([x, y]) => ci(x, y, 6, '#2c3252')).join(''),
+  target: () => ci(50, 50, 40, '#fff') + ci(50, 50, 30, '#ff4d4d') + ci(50, 50, 20, '#fff') + ci(50, 50, 10, '#ff4d4d'),
+  puzzle: (c) => pa('M16 30 H40 Q36 14 50 14 Q64 14 60 30 H84 V54 Q68 50 68 64 Q68 78 84 74 V90 H16Z', c),
+  compass: (c) => ci(50, 50, 40, c) + ci(50, 50, 32, '#fff') + pa('M50 22 L58 50 L50 78 L42 50Z', '#ff4d4d', 1.5) + pa('M50 78 L58 50 L50 50Z', '#4a5578', 1) + ci(50, 50, 4, '#2c3252'),
+  extinguisher: (c) => rc(32, 28, 36, 62, 12, c) + rc(40, 14, 20, 14, 4, '#2c3252') + ln('M60 20 H80 V36', '#2c3252', 5) + rc(36, 50, 28, 16, 3, '#fff'),
+  brick: (c) => [0, 1, 2].map((i) => rc(i % 2 ? 24 : 6, 14 + i * 26, 68, 22, 3, c)).join('') + rc(66, 66, 28, 22, 3, c),
+  teddy: (c) => ci(26, 26, 14, c) + ci(74, 26, 14, c) + ci(50, 62, 28, c) + ci(50, 36, 24, c) + ci(50, 44, 11, shade(c, 0.35)) + eyes(50, 32, 9, 4) + ci(50, 42, 4, '#3b2a1a'),
+  log: (c) => rc(8, 34, 84, 40, 14, c) + ci(86, 54, 20, shade(c, 0.35)) + `<circle cx="86" cy="54" r="12" fill="none" stroke="${shade(c, -0.3)}" stroke-width="2.5"/><circle cx="86" cy="54" r="5" fill="none" stroke="${shade(c, -0.3)}" stroke-width="2.5"/>`,
+  coral: (c) => ln('M50 92 V50 M50 66 Q30 60 28 36 M50 56 Q70 50 72 26 M28 36 Q22 28 24 20 M72 26 Q78 20 76 12 M50 50 Q50 34 56 24', c, 11) + ln('M50 92 V50', shade(c, 0.3), 3),
+  shell: (c) => pa('M50 90 L8 52 Q8 14 50 12 Q92 14 92 52Z', c) + ln('M50 90 L22 40 M50 90 L38 24 M50 90 L62 24 M50 90 L78 40', shade(c, -0.25), 3) + rc(36, 84, 28, 8, 3, shade(c, -0.1)),
+  wave: (c) => pa('M4 70 Q22 24 52 38 Q62 20 46 14 Q86 14 94 60 Q96 82 74 88 L4 88Z', c) + pa('M4 80 Q24 66 44 80 T84 80 L84 90 L4 90Z', shade(c, 0.2), 1.5),
+  volcano: (c) => pa('M4 92 L38 24 L62 24 L96 92Z', c) + pa('M38 24 Q50 34 62 24 Q56 14 50 18 Q44 14 38 24Z', '#ff7a1a') + pa('M50 30 L56 52 L46 70 L52 92 L42 92 L40 60Z', '#ff9a2a', 1) + ci(44, 12, 7, '#9aa4c4') + ci(54, 6, 5, '#b5bdd6'),
+  rainbow: () => ['#ff5a5a', '#ff9a2a', '#ffd23f', '#4cd964', '#3fa7ff', '#9a5af2'].map((k, i) => `<path d="M${6 + i * 5} 88 A${44 - i * 5} ${44 - i * 5} 0 0 1 ${94 - i * 5} 88" fill="none" stroke="${k}" stroke-width="6"/>`).join('') + ci(10, 88, 9, '#fff') + ci(90, 88, 9, '#fff'),
+  board: (c) => el(50, 52, 14, 46, c, 20) + `<path d="M43 20 L58 84" stroke="#fff" stroke-width="3" opacity=".7"/>` + ci(30, 36, 7, '#ffd9b0') + rc(24, 42, 12, 24, 5, '#ff5a5a'),
+  umbrella: (c) => ln('M50 90 L50 30', '#8a5a2b', 5) + pa('M6 40 Q50 -14 94 40Z', c) + [0, 1, 2].map((i) => `<path d="M${6 + i * 29} 40 Q${22 + i * 29} 22 ${35 + i * 29} 40Z" fill="#fff" opacity=".55"/>`).join('') + el(50, 92, 28, 5, '#f1d38a'),
+  skis: (c) => rc(30, 6, 8, 86, 4, c) + rc(56, 6, 8, 86, 4, shade(c, -0.1)) + rc(24, 40, 20, 8, 3, '#2c3252') + rc(50, 40, 20, 8, 3, '#2c3252'),
+  diya: (c) => pa('M10 56 Q50 98 90 56Z', c) + el(50, 54, 40, 7, shade(c, 0.1)) + el(50, 34, 8, 16, '#ff9a2a') + el(50, 38, 4, 8, '#ffe14d'),
+  envelope: (c) => rc(14, 20, 72, 64, 7, c) + ln('M14 34 Q50 62 86 34', '#ffd23f', 3) + ci(50, 56, 12, '#ffd23f'),
+  shield: (c) => pa('M50 6 L88 20 Q88 66 50 94 Q12 66 12 20Z', c) + star(50, 46, 20, 9, '#fff3b0'),
+  swords: (c) => ln('M18 14 L74 70 M82 14 L26 70', '#d3dae8', 8) + ln('M62 62 L84 84 M38 62 L16 84', '#8a5a2b', 7) + ln('M54 54 L74 74 M46 54 L26 74', c, 6),
+  anchor: (c) => ci(50, 16, 9, 'none') + `<circle cx="50" cy="16" r="9" fill="none" stroke="${c}" stroke-width="6"/>` + ln('M50 26 V86 M30 44 H70 M16 62 Q22 88 50 88 Q78 88 84 62', c, 7),
+  tomb: (c) => pa('M22 92 V40 Q22 12 50 12 Q78 12 78 40 V92Z', c) + ln('M50 28V58M38 40H62', shade(c, -0.35), 5),
+  web: () => '<g stroke="#dfe6f5" stroke-width="3" fill="none" stroke-linecap="round"><path d="M6 6 L94 94 M50 4 V96 M4 50 H96 M94 6 L6 94"/><path d="M50 50 m-12 0 a12 12 0 1 0 24 0 a12 12 0 1 0 -24 0 M50 50 m-26 0 a26 26 0 1 0 52 0 a26 26 0 1 0 -52 0 M50 50 m-40 0 a40 40 0 1 0 80 0"/></g>',
+  skull: (c) => el(50, 44, 34, 32, c) + rc(34, 66, 32, 22, 8, c) + ci(38, 46, 9, '#2c3252') + ci(62, 46, 9, '#2c3252') + pa('M50 56 L45 66 H55Z', '#2c3252', 1) + '<path d="M42 78V88M50 78V88M58 78V88" stroke="#2c3252" stroke-width="2.5"/>',
+  maple: (c) => ln('M50 92 V60', '#8a5a2b', 5) + pa('M50 6 L58 26 L74 20 L68 40 L90 40 L74 54 L84 70 L62 66 L58 80 L50 70 L42 80 L38 66 L16 70 L26 54 L10 40 L32 40 L26 20 L42 26Z', c, 2),
+  leaf: (c) => pa('M12 88 Q8 30 52 12 Q92 14 88 50 Q84 86 24 92Z', c) + ln('M18 84 Q50 56 78 24', shade(c, 0.3), 3),
+  herb: (c) => ln('M50 92 V20', '#3a9a3a', 4) + [[30, 30], [30, 54], [30, 74]].map(([_, y], i) => el(34, y, 14, 7, c, -30) + el(66, y - 6, 14, 7, c, 30)).join('') + el(50, 14, 7, 12, c),
+  melon: (c) => pa('M6 40 A44 44 0 0 0 94 40Z', '#3a9a3a') + pa('M12 40 A38 38 0 0 0 88 40Z', '#ff5a6e') + [32, 50, 68].map((x) => el(x, 52, 2.5, 4, '#2c1a1a')).join(''),
+  icecream: (c) => pa('M30 52 L50 94 L70 52Z', '#e8a66a') + ci(50, 42, 22, c) + ci(50, 24, 14, shade(c, 0.15)),
+  pie: (c) => pa('M6 58 L94 58 Q94 82 70 84 H30 Q6 82 6 58Z', c) + ci(50, 46, 34, shade(c, 0.1)) + ln('M30 40 L70 56 M70 40 L30 56', shade(c, -0.3), 3),
+  egg: (c) => el(50, 54, 28, 38, c) + `<path d="M26 54 Q38 44 50 54 T74 54" stroke="#fff" stroke-width="4" fill="none" opacity=".7"/>` + hi(40, 34, 5, 9, 20),
+  bottle: (c) => rc(38, 40, 24, 52, 8, c) + rc(44, 8, 12, 36, 4, shade(c, 0.1)) + rc(42, 4, 16, 8, 3, '#ffd23f') + rc(38, 60, 24, 16, 2, '#fff'),
+  mug: (c) => rc(18, 28, 48, 62, 8, c) + `<path d="M66 40 Q92 40 92 58 Q92 76 66 76" fill="none" stroke="${shade(c, -0.3)}" stroke-width="7"/>` + pa('M18 28 Q24 14 36 22 Q46 8 58 20 Q70 18 66 28Z', '#fff', 1.5),
+  flag: (c) => ln('M26 94 V10', '#8a5a2b', 5) + pa('M28 12 H88 L74 32 L88 52 H28Z', c),
+  heart: (c) => pa('M50 90 Q8 56 8 32 Q8 10 30 10 Q44 10 50 26 Q56 10 70 10 Q92 10 92 32 Q92 56 50 90Z', c) + hi(30, 28, 6, 9, 30),
+  letter: (c) => rc(10, 22, 80, 58, 6, '#fff') + ln('M10 28 L50 58 L90 28', c, 4) + ci(50, 62, 9, '#ff4d6d'),
+  rose: (c) => ln('M50 92 V50', '#3a9a3a', 5) + el(36, 78, 12, 5, '#4cb04c', -25) + ci(50, 36, 24, c) + `<path d="M50 20 Q36 30 50 40 Q62 30 50 20 M38 40 Q50 52 62 40" fill="none" stroke="${shade(c, -0.4)}" stroke-width="3"/>`,
+  tulip: (c) => ln('M50 92 V52', '#3a9a3a', 5) + el(34, 76, 14, 5, '#4cb04c', -35) + pa('M26 20 L38 34 L50 16 L62 34 L74 20 Q80 56 50 62 Q20 56 26 20Z', c),
+  bee: () => el(50, 56, 26, 20, '#ffd23f') + '<path d="M40 38V74M54 38V74M66 44V70" stroke="#2c3252" stroke-width="6"/>' + el(36, 30, 14, 10, '#dff3ff', -30) + el(60, 30, 14, 10, '#dff3ff', 30) + eyes(26, 52, 0, 4),
+  ladybug: () => ci(50, 56, 34, '#ff3b3b') + `<path d="M50 24V90" stroke="#2c3252" stroke-width="4"/>` + ci(50, 24, 14, '#2c3252') + [[34, 50], [66, 50], [36, 72], [64, 72]].map(([x, y]) => ci(x, y, 6, '#2c3252')).join(''),
+  butterfly: (c) => el(28, 38, 24, 28, c, -20) + el(72, 38, 24, 28, c, 20) + el(32, 70, 16, 16, shade(c, 0.1), 20) + el(68, 70, 16, 16, shade(c, 0.1), -20) + rc(46, 24, 8, 56, 4, '#2c3252') + ci(28, 38, 8, '#fff') + ci(72, 38, 8, '#fff'),
+  fish: (c) => pa('M72 50 L96 28 L96 72Z', shade(c, -0.1)) + el(44, 50, 32, 22, c) + eyes(30, 44, 0, 5) + `<path d="M50 32 Q58 50 50 68" stroke="#fff" stroke-width="3" fill="none" opacity=".6"/>`,
+  octopus: (c) => ci(50, 36, 28, c) + [10, 28, 46, 64, 82].map((x) => ln(`M${x + 4} 54 Q${x - 8} 74 ${x + 2} 88`, c, 9)).join('') + eyes(50, 38, 11, 6),
+  turtle: (c) => ci(50, 52, 34, '#3a9a3a') + el(50, 50, 28, 22, c) + ln('M32 50H68M50 30V70', shade(c, -0.3), 3) + ci(86, 46, 11, '#8ad07a') + ci(14, 52, 6, '#8ad07a') + eyes(88, 42, 0, 3),
+  crab: (c) => el(50, 56, 32, 22, c) + ci(14, 34, 12, c) + ci(86, 34, 12, c) + ln('M30 44 L16 36 M70 44 L84 36 M22 60 L8 70 M78 60 L92 70', c, 6) + ln('M38 38 V30 M62 38 V30', c, 4) + eyes(50, 32, 12, 6),
+  ghost: (c) => pa('M16 90 V44 Q16 8 50 8 Q84 8 84 44 V90 L70 78 L58 90 L46 78 L34 90 L28 78Z', c) + eyes(50, 42, 12, 7) + ci(50, 62, 5, '#2c3252'),
+  bat: (c) => pa('M50 26 L58 16 L62 30 Q74 26 94 36 Q82 40 82 56 Q72 48 64 56 Q58 70 50 74 Q42 70 36 56 Q28 48 18 56 Q18 40 6 36 Q26 26 38 30 L42 16Z', c) + eyes(50, 38, 6, 3.5),
+  alien: (c) => el(50, 46, 34, 36, c) + el(34, 46, 10, 14, '#1c2340', 20) + el(66, 46, 10, 14, '#1c2340', -20) + `<path d="M42 72 Q50 78 58 72" fill="none" stroke="#1c2340" stroke-width="3"/>`,
+  critter: (c, ears = 'round', belly = '#fff3dc') => (ears === 'round' ? ci(26, 28, 12, c) + ci(74, 28, 12, c) : ears === 'long' ? el(36, 16, 8, 24, c) + el(64, 16, 8, 24, c) : ears === 'point' ? pa('M18 40 L22 6 L42 26Z', c) + pa('M82 40 L78 6 L58 26Z', c) : ears === 'horn' ? pa('M50 2 L56 28 L44 28Z', '#fff3b0') : '') + ci(50, 62, 30, c) + ci(50, 44, 26, c) + el(50, 54, 14, 10, belly) + eyes(50, 40, 10, 5) + ci(50, 50, 3.5, '#3b2a1a') + `<path d="M44 58 Q50 63 56 58" stroke="#3b2a1a" stroke-width="2" fill="none"/>`,
+  bird: (c, beak = '#ff9a2a') => ci(46, 58, 32, c) + ci(60, 30, 20, c) + pa('M76 30 L94 36 L76 42Z', beak) + eyes(62, 26, 0, 4.5) + el(34, 62, 16, 11, shade(c, -0.12), -20) + pa('M44 12 Q50 2 56 12Z', '#ff4d4d', 1),
+  eagle: (c) => S.bird(c, '#ffd23f') + pa('M14 60 L2 42 L26 52Z', shade(c, -0.2)),
+  parrot: () => S.bird('#e8453c', '#ffd23f') + el(30, 72, 12, 22, '#3fa7ff', 18),
+  trex: (c) => el(46, 62, 30, 26, c) + el(70, 34, 22, 18, c) + pa('M20 70 L2 86 L28 82Z', c) + rc(60, 62, 8, 28, 4, shade(c, -0.1)) + rc(34, 74, 8, 18, 4, shade(c, -0.1)) + eyes(76, 30, 0, 4) + ln('M76 42 H90', '#fff', 3),
+  lizard: (c) => el(48, 56, 30, 14, c) + el(80, 50, 12, 9, c) + pa('M20 56 Q4 56 6 74 Q12 62 24 62Z', c) + ln('M38 66 L30 82 M62 66 L70 82 M38 48 L30 34 M62 48 L70 34', c, 6) + eyes(82, 46, 0, 3),
+  giraffe: (c) => rc(54, 12, 14, 56, 6, c) + ci(66, 18, 14, c) + el(46, 74, 30, 18, c) + rc(24, 84, 8, 10, 3, shade(c, -0.1)) + rc(56, 84, 8, 10, 3, shade(c, -0.1)) + [[60, 36], [62, 52], [40, 72], [54, 78]].map(([x, y]) => ci(x, y, 4, '#b8721e')).join('') + eyes(68, 16, 0, 3.5) + rc(60, 2, 4, 8, 2, '#b8721e') + rc(70, 2, 4, 8, 2, '#b8721e'),
+  zebra: () => S.critter('#ffffff', 'long', '#e8e8f0') + '<path d="M30 40V58M70 40V58M40 30V40M60 30V40M24 66V76M76 66V76" stroke="#2c3252" stroke-width="4"/>',
+  hedgehog: (c) => pa('M8 74 Q4 30 40 22 Q70 16 92 56 Q94 74 80 80Z', c) + el(80, 62, 14, 12, '#f4d6a8') + ci(88, 62, 3.5, '#2c3252') + '<path d="M22 50 L14 40 M34 38 L30 26 M48 32 L48 20 M62 36 L68 24 M76 46 L86 38" stroke="' + shade(c, -0.4) + '" stroke-width="3" stroke-linecap="round"/>',
+  elephant: (c) => ci(22, 42, 18, shade(c, -0.1)) + ci(50, 54, 30, c) + ln('M60 62 Q84 66 80 92 Q76 98 70 92', c, 12) + eyes(46, 46, 12, 4.5) + ci(68, 48, 3.5, '#fff'),
+  sheep: () => ci(28, 56, 20, '#fff') + ci(50, 46, 24, '#fff') + ci(72, 56, 20, '#fff') + ci(50, 66, 22, '#fff') + ci(50, 56, 17, '#4a4d63') + eyes(50, 54, 7, 3.5),
+  cow: () => S.critter('#ffffff', 'point', '#ffc8d8') + ci(34, 36, 9, '#2c3252') + ci(72, 56, 8, '#2c3252') + pa('M24 22 L18 6 L30 14Z M76 22 L82 6 L70 14Z', '#fff3b0', 1.5),
+  pig: () => S.critter('#ffb0c8', 'point', '#ff8fb0') + ci(50, 52, 9, '#ff8fb0') + '<circle cx="47" cy="52" r="1.6" fill="#a8305a"/><circle cx="53" cy="52" r="1.6" fill="#a8305a"/>',
+  camel: (c) => el(46, 58, 32, 20, c) + ci(36, 36, 12, shade(c, -0.1)) + ci(56, 36, 12, shade(c, -0.1)) + ln('M74 52 Q84 36 88 24', c, 11) + ci(90, 20, 9, c) + rc(24, 70, 7, 22, 3, c) + rc(60, 70, 7, 22, 3, c) + eyes(92, 18, 0, 3),
+  lion: (c) => ci(50, 52, 40, '#c8721e') + ci(50, 52, 28, c) + ci(26, 24, 9, c) + ci(74, 24, 9, c) + eyes(50, 48, 10, 4.5) + ci(50, 58, 5, '#b8721e') + `<path d="M42 66 Q50 72 58 66" stroke="#3b2a1a" stroke-width="2" fill="none"/>`,
+  scorpion: (c) => el(44, 66, 24, 14, c) + ln('M66 62 Q92 56 86 30 Q84 18 74 14', c, 9) + pa('M74 14 L84 6 L80 20Z', '#ff4d4d', 1.5) + ln('M26 62 L12 50 M26 72 L10 78', c, 6) + ci(22, 62, 8, c) + eyes(22, 58, 5, 2.5),
+  turkey: () => [0, 1, 2, 3, 4].map((i) => el(50 + (i - 2) * 16, 26 + Math.abs(i - 2) * 6, 10, 26, ['#e8453c', '#ff9a2a', '#ffd23f', '#ff9a2a', '#e8453c'][i], (i - 2) * 22)).join('') + ci(50, 62, 26, '#8a5a2b') + ci(50, 56, 12, '#b8721e') + pa('M44 58 L50 66 L56 58Z', '#ffd23f', 1) + eyes(50, 52, 6, 3),
+  chick: () => S.bird('#ffd23f', '#ff9a2a'),
+  rooster: () => S.bird('#fff3e0', '#ffd23f') + pa('M40 14 Q46 0 52 10 Q58 0 62 14Z', '#e8453c', 1),
+  unicorn: () => S.critter('#ffffff', 'horn', '#ffd9f0') + pa('M26 24 L20 10 L34 18Z M74 24 L80 10 L66 18Z', '#ffd9f0', 1.5) + ln('M24 40 Q14 56 20 74', '#ff7ab8', 8) + ln('M76 40 Q86 56 80 74', '#9a7af2', 8),
+  dragon: (c) => S.critter(c, 'point', '#ffe9a0') + pa('M10 56 L0 40 L22 50Z M90 56 L100 40 L78 50Z', shade(c, -0.15), 1.5) + pa('M40 20 L50 8 L60 20Z', '#ffd23f', 1.5),
+  fox: () => S.critter('#ff8a2a', 'point', '#fff3dc'),
+  rabbit: () => S.critter('#fff', 'long', '#ffd9e8'),
+  deer: () => S.critter('#b8721e', 'point', '#f4d6a8') + ln('M30 16 L22 2 M26 10 L14 8 M70 16 L78 2 M74 10 L86 8', '#8a5a2b', 3),
+  monkey: () => S.critter('#8a5a2b', 'round', '#f4d6a8'),
+  chipmunk: () => S.critter('#c8721e', 'round', '#fff3dc') + '<path d="M40 22V34M50 20V32M60 22V34" stroke="#3b2a1a" stroke-width="3"/>',
+  yoyo: (c) => ci(50, 50, 34, c) + ci(50, 50, 20, shade(c, 0.2)) + ln('M50 16 Q40 4 30 8', '#ffd23f', 3),
+  carousel2: (c) => S.carousel(c),
+  chestnut: (c) => ci(50, 58, 32, c) + pa('M30 36 Q50 14 70 36Z', shade(c, -0.25)) + hi(40, 56, 6, 10, 20),
+  jigsaw: (c) => S.puzzle(c),
+  sparkle: (c) => star(50, 50, 44, 8, c) + star(26, 26, 14, 3, '#fff'),
+  cloud: () => ci(30, 62, 22, '#fff') + ci(54, 48, 28, '#fff') + ci(76, 62, 20, '#fff') + rc(12, 62, 84, 22, 11, '#fff'),
+  sun: () => '<g stroke="#ffb02a" stroke-width="6" stroke-linecap="round">' + Array.from({ length: 8 }, (_, i) => `<path d="M50 8V20" transform="rotate(${i * 45} 50 50)"/>`).join('') + '</g>' + ci(50, 50, 24, '#ffd23f'),
+  island: () => pa('M8 90 Q50 60 92 90Z', '#f1d38a') + S.palm('#3fb04a').replace('<svg', '<svg'),
+  beach: () => S.umbrella('#ff5a5a'),
+  city: () => S.tower('#8fa6cf', 4) + S.tower('#b5c4e0', 3).replace(/translate/, 'translate'),
+  desert: (c) => pa('M2 90 Q30 40 56 70 Q74 50 98 90Z', c),
+  gift2: (c) => S.gift(c),
+  cap: (c) => S.cloud(),
+  blank: () => '',
+};
+
+// emoji (as the backdrop data writes it) -> [sprite, colour, ...]
+const M = {};
+const add = (chars, ...spec) => { for (const ch of [...chars]) if (ch !== '️') M[ch.codePointAt(0)] = spec; };
+add('\u{1F695}', 'car', '#ffc41f'); add('\u{1F697}', 'car', '#ff5a5a'); add('\u{1F3E2}', 'tower', '#8fa6cf', 5); add('\u{1F3E0}', 'house', '#ffe9c4', '#e8604a'); add('\u{1F3E1}', 'house', '#e4f4d8', '#5a8a3a');
+add('\u{1F333}', 'tree', '#3fb04a'); add('\u{1F68F}', 'bstop', '#2a7bff'); add('\u{1F3EA}', 'shop', '#ffe9c4', '#3fa7ff'); add('\u{1F9EF}', 'extinguisher', '#e8453c');
+add('\u{1F334}', 'palm', '#3fb04a'); add('⛱', 'umbrella', '#ff5a5a'); add('\u{1F41A}', 'shell', '#ffd0e0'); add('⭐', 'star', '#ffd23f'); add('\u{1F3D6}', 'umbrella', '#3fa7ff'); add('\u{1F980}', 'crab', '#ff6a3a'); add('\u{1F3C4}', 'board', '#3fc1ff');
+add('\u{1F332}', 'pine', '#2f9e48'); add('\u{1F344}', 'mush', '#ff4d4d'); add('\u{1FAB5}', 'log', '#a8703a'); add('\u{1F338}', 'flower', '#ffb0d0'); add('\u{1F98A}', 'fox'); add('\u{1F43F}', 'chipmunk');
+add('⛄', 'snowman'); add('❄', 'snowflake'); add('\u{1F3BF}', 'skis', '#3fa7ff'); add('\u{1F9CA}', 'crystal', '#bfe9ff'); add('\u{1F3D4}', 'mount', '#8fa0c4', '#ffffff'); add('\u{1F3D9}', 'tower', '#8fa6cf', 6);
+add('\u{1F383}', 'pumpkin', '#ff8a2a'); add('\u{1F987}', 'bat', '#4a3a6a'); add('\u{1F47B}', 'ghost', '#f4f6ff'); add('\u{1F56F}', 'candle'); add('\u{1F578}', 'web'); add('\u{1F480}', 'skull', '#f4f1e6'); add('☠', 'skull', '#f4f1e6'); add('\u{1FAA6}', 'tomb', '#a9b0c4');
+add('\u{1F680}', 'rocket', '#ff4d4d'); add('\u{1FA90}', 'planet', '#ffb02a'); add('\u{1F319}', 'moon', '#fff3b0'); add('☄', 'comet'); add('\u{1F6F8}', 'saucer', '#9aa4c4'); add('\u{1F47D}', 'alien', '#7ee27a'); add('✨', 'sparkle', '#fff3b0');
+add('\u{1F341}', 'maple', '#e8531c'); add('\u{1F342}', 'leaf', '#c8761e'); add('\u{1F343}', 'leaf', '#6cc04a'); add('\u{1F330}', 'chestnut', '#9a5a2a'); add('\u{1F33D}', 'leaf', '#ffd23f'); add('\u{1F33E}', 'herb', '#d8b24a'); add('\u{1F33F}', 'herb', '#4cb04c');
+add('\u{1F335}', 'cactus', '#4cb04c'); add('\u{1F337}', 'tulip', '#ff6a8a'); add('\u{1F339}', 'rose', '#ff3b5c'); add('\u{1F33A}', 'flower', '#ff6aa0'); add('\u{1F33C}', 'flower', '#ffd23f');
+add('\u{1F349}', 'melon'); add('\u{1F366}', 'icecream', '#ffb0d0'); add('\u{1F369}', 'donut', '#ff8fb8'); add('\u{1F36A}', 'cookie', '#d29a52'); add('\u{1F36C}', 'candy', '#ff5a9a'); add('\u{1F36D}', 'lolly', '#ff5a9a'); add('\u{1F37A}', 'mug', '#ffc41f'); add('\u{1F37E}', 'bottle', '#3a9a5a');
+add('\u{1F381}', 'gift', '#e8453c'); add('\u{1F382}', 'cake', '#ffb0d0'); add('\u{1F384}', 'xtree'); add('\u{1F386}', 'firework', '#ff5a9a'); add('\u{1F388}', 'balloon', '#ff4d6d'); add('\u{1F389}', 'firework', '#ffd23f'); add('\u{1F9C1}', 'cupcake', '#ff9ac0');
+add('\u{1F3A0}', 'carousel', '#ff6aa0'); add('\u{1F3A1}', 'ferris', '#3fa7ff'); add('\u{1F3AA}', 'circus', '#e8453c'); add('\u{1F3AF}', 'target'); add('\u{1F3B2}', 'die', '#ffffff'); add('\u{1F921}', 'balloon', '#9a5af2'); add('\u{1F973}', 'balloon', '#ffd23f');
+add('\u{1F3DC}', 'desert', '#e8c070'); add('\u{1F3DD}', 'island'); add('\u{1F3EE}', 'lantern', '#e8453c'); add('\u{1F3F0}', 'castle', '#c9d0e4'); add('\u{1F3F4}', 'flag', '#2c3252'); add('⚓', 'anchor', '#4a5578'); add('⚔', 'swords', '#c8a24a');
+add('\u{1F404}', 'cow'); add('\u{1F409}', 'dragon', '#4cc06a'); add('\u{1F411}', 'sheep'); add('\u{1F412}', 'monkey'); add('\u{1F413}', 'rooster'); add('\u{1F418}', 'elephant', '#a9b4cc'); add('\u{1F419}', 'octopus', '#c06af2'); add('\u{1F41D}', 'bee'); add('\u{1F41E}', 'ladybug'); add('\u{1F420}', 'fish', '#ff9a2a'); add('\u{1F422}', 'turtle', '#4cb04c'); add('\u{1F423}', 'chick'); add('\u{1F42A}', 'camel', '#d8a45a'); add('\u{1F430}', 'rabbit'); add('\u{1F437}', 'pig');
+add('\u{1F451}', 'crown', '#ffd23f'); add('\u{1F48C}', 'letter', '#ff4d6d'); add('\u{1F48E}', 'gem', '#3fc1ff'); add('\u{1F496}', 'heart', '#ff4d8a'); add('\u{1F4B0}', 'moneybag', '#d8b24a'); add('\u{1F525}', 'fire');
+add('\u{1F682}', 'train', '#e8453c'); add('\u{1F69C}', 'tractor', '#3fb04a'); add('\u{1F6E1}', 'shield', '#3fa7ff'); add('\u{1F920}', 'balloon', '#c8761e'); add('\u{1F95A}', 'egg', '#ffb0d0'); add('\u{1F967}', 'pie', '#d29a52'); add('\u{1F981}', 'lion', '#ffc41f');
+add('\u{1F982}', 'scorpion', '#c8761e'); add('\u{1F983}', 'turkey'); add('\u{1F984}', 'unicorn'); add('\u{1F985}', 'eagle', '#8a5a2b'); add('\u{1F98B}', 'butterfly', '#3fa7ff'); add('\u{1F98C}', 'deer'); add('\u{1F98E}', 'lizard', '#4cb04c'); add('\u{1F992}', 'giraffe', '#ffc41f'); add('\u{1F993}', 'zebra'); add('\u{1F994}', 'hedgehog', '#8a5a2b'); add('\u{1F996}', 'trex', '#4cb04c'); add('\u{1F99C}', 'parrot');
+add('\u{1F9E7}', 'envelope', '#e8453c'); add('\u{1F9E8}', 'firework', '#ff4d4d'); add('\u{1F9E9}', 'puzzle', '#3fa7ff'); add('\u{1F9ED}', 'compass', '#c8a24a'); add('\u{1F9F1}', 'brick', '#d2693a'); add('\u{1F9F8}', 'teddy', '#c8761e'); add('\u{1FA80}', 'yoyo', '#ff4d6d'); add('\u{1FA94}', 'diya', '#e8802a'); add('\u{1FAA8}', 'rock', '#9aa3b8'); add('\u{1FAB8}', 'coral', '#ff6a8a');
+add('\u{1F308}', 'rainbow'); add('\u{1F30A}', 'wave', '#3fa7ff'); add('\u{1F30B}', 'volcano', '#8a5a4a'); add('☘', 'herb', '#2fa34a'); add('\u{1F3F4}', 'flag', '#2c3252'); add('\u{1F1FA}\u{1F1F8}', 'flag', '#3a5ad8');
+
+const cache = new Map(), urls = new Map(), imgs = new Map();
+export function decorSvg(key) {
+  if (cache.has(key)) return cache.get(key);
+  defs = []; const spec = M[[...key][0].codePointAt(0)] || ['rock', '#9aa3b8'];
+  const body = S[spec[0]](...spec.slice(1));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>${defs.join('')}</defs><ellipse cx="50" cy="94" rx="30" ry="4.5" fill="rgba(10,15,40,.18)"/>${body}</svg>`;
+  cache.set(key, svg); return svg;
+}
+export function decorUrl(key) {
+  if (!urls.has(key)) urls.set(key, 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(decorSvg(key)));
+  return urls.get(key);
+}
+export function decorImg(key) {
+  if (!imgs.has(key)) { const im = new Image(); im.src = decorUrl(key); imgs.set(key, im); }
+  return imgs.get(key);
+}
+export const decorHtml = (key) => `<img class="dimg" src="${decorUrl(key)}" alt="" draggable="false">`;
+export const hasDecor = (key) => !!M[[...key][0].codePointAt(0)];
+
+// Small icons for the buttons and the world ribbon.
+const ICONS = {
+  map: '<path d="M10 22 L34 14 L58 22 L82 14 V76 L58 84 L34 76 L10 84Z" fill="#ffe9a8" stroke="#8a5a2b" stroke-width="4" stroke-linejoin="round"/><path d="M34 14V76M58 22V84" stroke="#8a5a2b" stroke-width="3"/><path d="M62 44 l14 14 M76 44 l-14 14" stroke="#e8453c" stroke-width="5" stroke-linecap="round"/>',
+  bus: '<rect x="10" y="22" width="80" height="50" rx="12" fill="#ffc41f" stroke="#a86a00" stroke-width="4"/><rect x="18" y="30" width="26" height="18" rx="4" fill="#bfe9ff"/><rect x="50" y="30" width="26" height="18" rx="4" fill="#bfe9ff"/><rect x="10" y="56" width="80" height="6" fill="#2a7bff"/><circle cx="28" cy="74" r="9" fill="#2c3252"/><circle cx="72" cy="74" r="9" fill="#2c3252"/>',
+  cart: '<path d="M8 20 H22 L32 62 H78 L88 30 H28" fill="#3fc1ff" stroke="#1d6fa8" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="40" cy="78" r="7" fill="#2c3252"/><circle cx="70" cy="78" r="7" fill="#2c3252"/>',
+  gear: '<g fill="#9aa4c4" stroke="#5a6690" stroke-width="4" stroke-linejoin="round"><path d="M42 8 h16 l3 12 l10 4 l11 -7 l11 11 l-7 11 l4 10 l12 3 v16 l-12 3 l-4 10 l7 11 l-11 11 l-11 -7 l-10 4 l-3 12 h-16 l-3 -12 l-10 -4 l-11 7 l-11 -11 l7 -11 l-4 -10 l-12 -3 v-16 l12 -3 l4 -10 l-7 -11 l11 -11 l11 7 l10 -4Z" transform="translate(0 0) scale(.8) translate(12 12)"/></g><circle cx="50" cy="50" r="14" fill="#e8eefc" stroke="#5a6690" stroke-width="4"/>',
+  heli: '<rect x="30" y="38" width="44" height="26" rx="13" fill="#e8453c" stroke="#8f1c1c" stroke-width="4"/><path d="M12 24 H88 M52 24 V38" stroke="#4a5578" stroke-width="5" stroke-linecap="round"/><path d="M74 50 H92 M92 42 V58" stroke="#8f1c1c" stroke-width="5" stroke-linecap="round"/><rect x="36" y="44" width="18" height="12" rx="5" fill="#bfe9ff"/><path d="M34 72 H70" stroke="#4a5578" stroke-width="4" stroke-linecap="round"/>',
+  park: '<rect x="14" y="14" width="72" height="72" rx="16" fill="#2a7bff" stroke="#10246b" stroke-width="5"/><path d="M40 72 V30 H56 Q70 30 70 44 Q70 58 56 58 H40" fill="none" stroke="#fff" stroke-width="9" stroke-linejoin="round"/>',
+  key: '<circle cx="30" cy="38" r="20" fill="#ffd23f" stroke="#a86a00" stroke-width="5"/><circle cx="30" cy="38" r="7" fill="#a86a00"/><path d="M46 52 L88 84 M72 72 L80 62 M82 80 L90 70" stroke="#ffd23f" stroke-width="9" stroke-linecap="round" fill="none"/>',
+  lock: '<path d="M30 44 V32 a20 20 0 0 1 40 0 V44" fill="none" stroke="#ffd23f" stroke-width="9" stroke-linecap="round"/><rect x="20" y="44" width="60" height="46" rx="10" fill="#ffc41f" stroke="#a86a00" stroke-width="5"/><circle cx="50" cy="64" r="7" fill="#5a3b00"/><rect x="47" y="64" width="6" height="16" rx="3" fill="#5a3b00"/>',
+  snow: '<g stroke="#e6f8ff" stroke-width="8" stroke-linecap="round">' + [0, 60, 120].map((a) => `<path d="M50 8V92" transform="rotate(${a} 50 50)"/>`).join('') + '</g>',
+  coin: '<circle cx="50" cy="50" r="38" fill="#ffc41f" stroke="#a86a00" stroke-width="5"/><circle cx="50" cy="50" r="28" fill="none" stroke="#fff3b0" stroke-width="4"/><path d="M50 30 V70 M40 40 Q50 32 60 40 Q40 50 40 56 Q50 72 60 60" fill="none" stroke="#a86a00" stroke-width="5" stroke-linecap="round"/>',
+  flame: '<path d="M50 6 Q70 34 78 52 Q90 76 66 90 Q50 98 34 90 Q10 76 24 52 Q30 38 38 22 Q42 34 50 6Z" fill="#ff7a1a" stroke="#a84a00" stroke-width="3"/><path d="M50 44 Q62 62 64 74 Q66 88 50 90 Q34 88 36 74 Q38 62 50 44Z" fill="#ffd23f"/>',
+  gift: '<rect x="14" y="40" width="72" height="48" rx="6" fill="#e8453c" stroke="#8f1c1c" stroke-width="4"/><rect x="10" y="28" width="80" height="16" rx="4" fill="#ff6a5a" stroke="#8f1c1c" stroke-width="4"/><rect x="44" y="28" width="12" height="60" fill="#ffd23f"/><ellipse cx="38" cy="20" rx="12" ry="8" fill="#ffd23f" transform="rotate(-25 38 20)"/><ellipse cx="62" cy="20" rx="12" ry="8" fill="#ffd23f" transform="rotate(25 62 20)"/>',
+};
+export const iconSvg = (name, size = 24) => `<svg class="ic2" width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+export const iconUrl = (name) => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${ICONS[name] || ''}</svg>`);
+const iconImgs = new Map();
+export const iconImg = (name) => { if (!iconImgs.has(name)) { const im = new Image(); im.src = iconUrl(name); iconImgs.set(name, im); } return iconImgs.get(name); };

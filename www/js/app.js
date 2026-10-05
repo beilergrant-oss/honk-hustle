@@ -13,6 +13,7 @@ import { streakProgress } from './rounds.js';
 import { POWERUPS, usePowerup, availability } from './powerups.js';
 import { createGame, tapVehicle, drainEvents, failStuck } from './game.js';
 import { OBSTACLES } from './levelGen.js';
+import { decorHtml, iconSvg } from './decorArt.js';
 import { createRenderer } from './render.js';
 import { resolveLook, paintFor } from './look.js';
 import { mountGarage } from './garageScreen.js';
@@ -49,12 +50,12 @@ function go(name) {
   if (name === 'game' && S.renderer) S.renderer.start();
 }
 const backBar = (title, right = '') => `<div class="bar"><button class="round-btn" data-go="home" aria-label="Back">‹</button><h1 class="title">${title}</h1>${right}</div>`;
-const coinsPill = () => `<span class="pill" aria-label="Coins">\u{1FA99} <span data-coins>${fmt(S.profile.coins)}</span></span>`;
+const coinsPill = () => `<span class="pill" aria-label="Coins">${iconSvg('coin', 22)} <span data-coins>${fmt(S.profile.coins)}</span></span>`;
 
 // ======================================================================= home
 function flamePill(streak) {
   const sp = streakProgress(streak), golden = sp.special && streak >= 10;
-  return `<span class="pill flame${golden ? ' golden' : ''}" title="Win levels first try in a row for free power-ups">\u{1F525} ${streak}${golden ? ' GOLDEN' : `<i class="fbar"><b style="width:${Math.round((sp.progress || 0) * 100)}%"></b></i><small>${sp.next ? 'next ' + sp.next : ''}</small>`}</span>`;
+  return `<span class="pill flame${golden ? ' golden' : ''}" title="Win levels first try in a row for free power-ups">${iconSvg('flame', 20)} ${streak}${golden ? ' GOLDEN' : `<i class="fbar"><b style="width:${Math.round((sp.progress || 0) * 100)}%"></b></i><small>${sp.next ? 'next ' + sp.next : ''}</small>`}</span>`;
 }
 function showDaily(auto) {
   const d = dailyState(S.profile); if (auto && !d.claimable) return;
@@ -71,7 +72,7 @@ function homeArt(p, picked) {
   const bd = BACKDROPS[info.world.bd] || BACKDROPS.city, vid = p.equippedVehicleSkin || 'v_classic', pid = p.equippedPassengerSkin || 'p_classic';
   const sky = festive ? t.sky : bd.sky, ground = festive ? t.ground : bd.ground, dset = (festive && FEST[t.id]) || bd.decor;
   const spots = [[4, 12, 62], [78, 9, 70], [-2, 32, 56], [86, 34, 60], [2, 56, 66], [84, 58, 64], [10, 80, 70], [70, 82, 72]];
-  const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;font-size:${sz}px;animation-delay:${-i * 0.7}s">${dset[i % dset.length]}</span>`).join('');
+  const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;width:${Math.round(sz * 1.15)}px;height:${Math.round(sz * 1.15)}px;animation-delay:${-i * 0.7}s">${decorHtml(dset[i % dset.length])}</span>`).join('');
   const crowd = [0, 1, 2, 3, 4, 5].map((i) => `<span class="hr" style="animation-delay:${-i * 0.18}s">${riderPic(pid, i, 84)}</span>`).join('');
   return `<div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)"><div class="hb-road"></div>${decor}</div><div class="hhero lhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>`;
 }
@@ -84,12 +85,12 @@ function renderHome() {
   const sky = festive ? t.sky : bd.sky, ground = festive ? t.ground : bd.ground;
   const spots = [[4, 12, 62], [78, 9, 70], [-2, 32, 56], [86, 34, 60], [2, 56, 66], [84, 58, 64], [10, 80, 70], [70, 82, 72]];
   const dset = (festive && FEST[t.id]) || bd.decor;
-  const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;font-size:${sz}px;animation-delay:${-i * 0.7}s">${dset[i % dset.length]}</span>`).join('');
+  const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;width:${Math.round(sz * 1.15)}px;height:${Math.round(sz * 1.15)}px;animation-delay:${-i * 0.7}s">${decorHtml(dset[i % dset.length])}</span>`).join('');
   const crowd = ['#ff3fa4', '#22c94a', '#ffd60a', '#2a7bff', '#ff3030', '#9345e8'].map((c, i) => `<span class="hr" style="animation-delay:${-i * 0.18}s">${riderPic(pid, i, 84)}</span>`).join('');
   $('#home').innerHTML = `
     <div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)"><div class="hb-road"></div>${decor}</div>
     <div class="home-fx">${festive || picked.reason === 'season' ? particlesHtml(t) : ''}</div>
-    <div class="home-top">${coinsPill()}${flamePill(streak)}${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">\u{1F381} Daily</button>' : ''}</div>
+    <div class="home-top">${coinsPill()}${flamePill(streak)}${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">' + iconSvg('gift', 20) + ' Daily</button>' : ''}</div>
     <div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
       <span class="w w1" data-t="${w1}">${w1}</span><span class="w w2" data-t="${rest.join(' ')}!">${rest.join(' ')}!</span>
       ${picked.reason !== 'regular' ? `<div class="home-chip">${esc(t.name)}</div>` : ''}
@@ -98,10 +99,10 @@ function renderHome() {
     <div class="home-bottom">
       <div class="home-play"><button class="btn green big" data-act="play" style="width:100%">Play</button><small>Level ${next}${info.tier === 'hard' ? ' • Hard' : info.tier === 'extraHard' ? ' • Extra Hard' : ''} • ${esc(info.world.name)}</small></div>
       <div class="home-row">
-        <button data-go="levels"><span>\u{1F5FA}️</span>Levels</button>
-        <button data-go="garage"><span>\u{1F68C}</span>Garage</button>
-        <button data-go="shop"><span>\u{1F6D2}</span>Shop</button>
-        <button data-go="settings"><span>⚙️</span>Settings</button>
+        <button data-go="levels"><span>${iconSvg('map', 30)}</span>Levels</button>
+        <button data-go="garage"><span>${iconSvg('bus', 30)}</span>Garage</button>
+        <button data-go="shop"><span>${iconSvg('cart', 30)}</span>Shop</button>
+        <button data-go="settings"><span>${iconSvg('gear', 30)}</span>Settings</button>
       </div>
     </div>`;
   const bg = $('#home .home-bg'); bg.style.pointerEvents = 'none';
@@ -132,7 +133,7 @@ function buildGameDom() {
       <div class="lvl"><b data-lvname>Level 1</b><small data-lvtier></small></div>
       <span class="pill moves" data-moves aria-live="polite">Moves 0</span>${coinsPill()}</div>
     <div class="stage"><canvas id="board" aria-label="Game board"></canvas><div class="banner" data-banner hidden></div></div>
-    <div class="powerbar">${['heli', 'bay', 'key'].map((k) => `<button class="pw" data-pw="${k}" aria-label="${POWERUPS[k].name}"><span class="i">${POWERUPS[k].icon}</span>${POWERUPS[k].name}<span class="n" data-n></span></button>`).join('')}</div>`;
+    <div class="powerbar">${['heli', 'bay', 'key'].map((k) => `<button class="pw" data-pw="${k}" aria-label="${POWERUPS[k].name}"><span class="i">${iconSvg({ heli: 'heli', bay: 'park', key: 'key' }[k], 26)}</span>${POWERUPS[k].name}<span class="n" data-n></span></button>`).join('')}</div>`;
   S.renderer = createRenderer($('#board'), {
     onTapVehicle: onTapVehicle, onMoves: setMoves, onStatus: onStatus,
   });
