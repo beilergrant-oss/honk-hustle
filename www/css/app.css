@@ -217,11 +217,11 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .busimg{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 0 rgba(20,32,90,.22))}
 .gc .gp .busimg,.pkpic .busimg{filter:drop-shadow(0 3px 0 rgba(20,32,90,.2))}
 .home-logo .w,.hh-word{filter:drop-shadow(0 3px 0 #0b1c5c) drop-shadow(0 6px 0 #0b1c5c) drop-shadow(0 9px 6px rgba(0,0,0,.35))}
-.hbus .busimg,.gbus .busimg{border-radius:28px;border:4px solid #14205a;box-shadow:0 6px 0 rgba(20,32,90,.35),inset 0 0 0 3px #fff;filter:none}
+.hbus .busimg,.gbus .busimg{border-radius:0;border:0;box-shadow:none;object-fit:contain;filter:drop-shadow(0 8px 0 rgba(20,32,90,.22))}
 
 /* ---- softer buttons for the shop/garage screens (home screen keeps its original look) ---- */
 :root{--soft:0 6px 14px rgba(20,40,100,.18)}
 /* home: original look, Play just smaller */
-.home-play .btn.big{width:150px!important;font-size:17px;padding:10px 16px;border-radius:16px;box-shadow:0 5px 0 #13783a,0 0 0 3px #bfffd4,inset 0 3px 0 rgba(255,255,255,.5)}
+.home-play .btn.big{width:112px!important;font-size:15px;padding:8px 12px;border-radius:16px;box-shadow:0 5px 0 #13783a,0 0 0 3px #bfffd4,inset 0 3px 0 rgba(255,255,255,.5)}
 .busimg{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 0 rgba(20,32,90,.22))}
-.hbus .busimg,.gbus .busimg{border-radius:28px;border:4px solid #14205a;box-shadow:0 6px 0 rgba(20,32,90,.35),inset 0 0 0 3px #fff;filter:none}
+.hbus .busimg,.gbus .busimg{border-radius:0;border:0;box-shadow:none;object-fit:contain;filter:drop-shadow(0 8px 0 rgba(20,32,90,.22))}
