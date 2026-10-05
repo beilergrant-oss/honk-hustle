@@ -6,6 +6,7 @@ import { shade } from './busArt.js';
 import { COLOR_HEX, TOPPER_EMOJI, rr, drawPassenger } from './look.js';
 import { sfx, haptic } from './sfx.js';
 import { BACKDROPS } from './backdrops.js';
+import { blocker } from './game.js';
 
 const DIR_VEC = { E: [1, 0], S: [0, 1], W: [-1, 0], N: [0, -1] };       // grid directions (grid y grows toward the player)
 const ease = (t) => 1 - Math.pow(1 - t, 3);
@@ -62,7 +63,7 @@ export function createRenderer(canvas, opts = {}) {
     R.L = { W, H, bw, bh, bay, cx, roadW, sw, roadX0: cx - roadW / 2, roadZ0, roadZ1, slotZ, qz, qMax, qx0: cx - ((Math.min(qMax, 99) - 1) * PASS_GAP) / 2 };
     // fit the whole scene on screen: find the closest camera that keeps everything inside the margins
     F = (H / 2) / Math.tan(FOV / 2);
-    const tz = (qz + 0.2 - 0.5) / 2, m = 8;
+    const tz = (qz + 0.2 - 0.5) / 2, m = 4;
     const pts = [[-0.45, 0, -0.55], [bw + 0.45, 0, -0.55], [cx - roadW / 2 - 0.2, PASS_H * 1.3, qz + 0.2], [cx + roadW / 2 + 0.2, PASS_H * 1.3, qz + 0.2], [cx + roadW / 2 + 1.0, 0.3, qz], [-0.45, 0.6, bh], [bw + 0.45, 0.6, bh]];
     const place = (d) => { cam = { x: cx, y: d * SINP, z: tz - d * COSP }; cy0 = H / 2; return pts.map((p) => P(p[0], p[1], p[2])); };
     let lo = 3, hi = 400;
@@ -122,6 +123,11 @@ export function createRenderer(canvas, opts = {}) {
       } else if (e.t === 'locked') {
         R.fx[e.id] = { shake: now }; sfx.locked(); haptic('light');
         const v = gm.vehicles.find((x) => x.id === e.id), c = vehCenter(v); floatText(e.need > 0 ? e.need + ' more to go' : 'Locked', c.x, c.y - R.L.cell * 0.4, '#fff3b0');
+      } else if (e.t === 'thaw') {
+        R.fx[e.id] = { shake: now }; sfx.locked(); haptic('light');
+        const v = gm.vehicles.find((x) => x.id === e.id), c = vehCenter(v); burst(c.x, c.y, ['#bfefff', '#ffffff'], 10, 110); floatText(e.left > 0 ? 'Still frozen' : 'Thawed!', c.x, c.y - R.L.cell * 0.4, '#d7f3ff');
+      } else if (e.t === 'barrierOpen') {
+        const c0 = cellW(e.x, e.y), p = P(c0.x, 0.3, c0.z); burst(p.x, p.y, ['#ffd23f', '#ffffff'], 12, 120); floatText('Road open!', p.x, p.y - R.L.cell * 0.5, '#fff3b0'); sfx.locked();
       } else if (e.t === 'unlock') {
         R.fx[e.id] = { ...(R.fx[e.id] || {}), pop: now };
         const v = gm.vehicles.find((x) => x.id === e.id); if (v) { const c = vehCenter(v); burst(c.x, c.y, ['#ffe14d', '#ffffff'], 12, 120); }
@@ -213,7 +219,7 @@ export function createRenderer(canvas, opts = {}) {
     return { sc, wd, hl, hw, ab, lift };
   }
   function drawCar(v, pose) {
-    const st = R.look.vehicle || {}, hex = COLOR_HEX[v.color] || '#ccc', locked = v.lock > 0, { sc, wd, hl, hw, ab } = carGeom(v, pose);
+    const st = R.look.vehicle || {}, mystery = !!v.mystery && v.state === 'grid' && !!R.game && !!blocker(R.game, v), hex = mystery ? '#7d869f' : (COLOR_HEX[v.color] || '#ccc'), locked = v.lock > 0, frozen = v.ice > 0, { sc, wd, hl, hw, ab } = carGeom(v, pose);
     g.save(); if (pose.alpha !== undefined) g.globalAlpha = pose.alpha;
     const lat = wd[0] !== 0 ? [0, 1] : [1, 0];   // lateral axis (x or z)
     const sideVis = (s) => { const nx = lat[0] * s, nz = lat[1] * s; return nx * (cam.x - pose.cx) + nz * (cam.z - pose.cz) > 0; };
@@ -253,10 +259,18 @@ export function createRenderer(canvas, opts = {}) {
     for (let i = 0; i < v.seats; i++) { const q = pt(cmid + (i - (v.seats - 1) / 2) * step, 0), sp = P(q[0], q[1], q[2]); ball(sp.x, sp.y - sp.u * 0.05 * sc, Math.max(2, 0.055 * sc * sp.u), '#ffffff'); }
     flat([pt(hl - 0.12 * sc, 0), pt(hl - 0.3 * sc, -0.13 * sc), pt(hl - 0.3 * sc, 0.13 * sc)], 'rgba(255,255,255,.95)');
     if (locked) { flat([pt(ct0, -hw * 0.74), pt(ct1, -hw * 0.74), pt(ct1, hw * 0.74), pt(ct0, hw * 0.74)], 'rgba(20,24,50,.5)'); }
+    if (frozen) { flat([pt(ct0 - 0.05, -hw * 1.0), pt(ct1 + 0.2, -hw * 1.0), pt(ct1 + 0.2, hw * 1.0), pt(ct0 - 0.05, hw * 1.0)], 'rgba(170,228,255,.55)'); }
     g.restore();
     // things that must stay upright
     const tp = pt(cmid, 0), c = P(tp[0], tp[1], tp[2]);
     if (st.topper && TOPPER_EMOJI[st.topper] && !locked) { g.save(); g.fillStyle = '#000'; if (pose.alpha !== undefined) g.globalAlpha = pose.alpha; g.font = Math.round(c.u * 0.42 * sc) + 'px ' + EMOJI_FONT; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(TOPPER_EMOJI[st.topper], c.x, c.y + c.u * 0.1); g.restore(); }
+    if (frozen || mystery) {
+      const rr2 = c.u * 0.27 * sc;
+      g.fillStyle = frozen ? '#1f6fb0' : '#10246b'; g.beginPath(); g.arc(c.x, c.y - rr2 * 0.3, rr2, 0, 7); g.fill(); g.strokeStyle = frozen ? '#e6f8ff' : '#ffe14d'; g.lineWidth = 2; g.stroke();
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      if (frozen) { g.font = Math.round(rr2 * 1.0) + 'px ' + EMOJI_FONT; g.fillText('\u2744\uFE0F', c.x, c.y - rr2 * 0.3); if (v.ice > 1) { g.fillStyle = '#e6f8ff'; g.font = '900 ' + Math.round(rr2 * 0.8) + 'px system-ui'; g.fillText('x' + v.ice, c.x + rr2 * 1.05, c.y - rr2 * 1.3); } }
+      else { g.font = '900 ' + Math.round(rr2 * 1.3) + 'px system-ui'; g.fillText('?', c.x, c.y - rr2 * 0.3); }
+    }
     if (locked) {
       const need = Math.max(1, v.lock - R.game.departures), r = c.u * 0.27 * sc;
       g.fillStyle = '#10246b'; g.beginPath(); g.arc(c.x, c.y - r * 0.3, r, 0, 7); g.fill(); g.strokeStyle = '#ffe14d'; g.lineWidth = 2; g.stroke();
@@ -283,6 +297,39 @@ export function createRenderer(canvas, opts = {}) {
     g.fillStyle = '#ff7a1a'; g.beginPath(); g.moveTo(0, -c * 0.62); g.lineTo(c * 0.24, -c * 0.02); g.lineTo(-c * 0.24, -c * 0.02); g.closePath(); g.fill();
     g.fillStyle = '#fff'; g.beginPath(); g.moveTo(-c * 0.12, -c * 0.33); g.lineTo(c * 0.12, -c * 0.33); g.lineTo(c * 0.16, -c * 0.22); g.lineTo(-c * 0.16, -c * 0.22); g.closePath(); g.fill();
     g.fillStyle = '#d95f00'; rr(g, -c * 0.28, -c * 0.07, c * 0.56, c * 0.09, c * 0.03); g.fill(); g.restore();
+  }
+  // Other things that stand in the lot. The look changes every 200 levels; cones always mark blocked bay slots.
+  function drawWall(x, z, skin) {
+    if (!skin || skin === 'cone') return drawCone(x, z);
+    const p = P(x, 0, z), c = p.u; g.save(); g.translate(p.x, p.y);
+    g.fillStyle = 'rgba(10,15,40,.25)'; g.beginPath(); g.ellipse(c * 0.06, c * 0.02, c * 0.34, c * 0.11, 0, 0, 7); g.fill();
+    g.lineJoin = 'round'; g.lineWidth = Math.max(1, c * 0.03);
+    if (skin === 'barrel') {
+      const gr = g.createLinearGradient(-c * 0.3, 0, c * 0.3, 0); gr.addColorStop(0, '#d98a3a'); gr.addColorStop(0.5, '#f0aa55'); gr.addColorStop(1, '#a8651f');
+      g.fillStyle = gr; g.strokeStyle = '#6b3d0e'; rr(g, -c * 0.27, -c * 0.62, c * 0.54, c * 0.6, c * 0.12); g.fill(); g.stroke();
+      g.fillStyle = '#4a4f66'; for (const yy of [-0.5, -0.2]) g.fillRect(-c * 0.27, c * yy, c * 0.54, c * 0.06);
+    } else if (skin === 'rock') {
+      const gr = g.createLinearGradient(0, -c * 0.6, 0, 0); gr.addColorStop(0, '#c9ced9'); gr.addColorStop(1, '#7c8398');
+      g.fillStyle = gr; g.strokeStyle = '#4b5166'; g.beginPath(); g.moveTo(-c * 0.34, -c * 0.02); g.lineTo(-c * 0.3, -c * 0.34); g.lineTo(-c * 0.08, -c * 0.58); g.lineTo(c * 0.22, -c * 0.46); g.lineTo(c * 0.36, -c * 0.1); g.lineTo(c * 0.28, -c * 0.02); g.closePath(); g.fill(); g.stroke();
+      g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.ellipse(-c * 0.1, -c * 0.4, c * 0.1, c * 0.05, -0.5, 0, 7); g.fill();
+    } else if (skin === 'crate') {
+      g.fillStyle = '#c98a45'; g.strokeStyle = '#6b3d0e'; rr(g, -c * 0.3, -c * 0.6, c * 0.6, c * 0.58, c * 0.05); g.fill(); g.stroke();
+      g.strokeStyle = '#8a5424'; g.lineWidth = Math.max(1.5, c * 0.05); g.beginPath(); g.moveTo(-c * 0.28, -c * 0.58); g.lineTo(c * 0.28, -c * 0.04); g.moveTo(c * 0.28, -c * 0.58); g.lineTo(-c * 0.28, -c * 0.04); g.stroke();
+    } else {   // bush
+      for (const [bx, by, br, col] of [[-0.16, -0.22, 0.2, '#2f9e48'], [0.16, -0.22, 0.2, '#2f9e48'], [0, -0.38, 0.24, '#3fbf5a']]) { g.fillStyle = col; g.strokeStyle = '#1d6a30'; g.beginPath(); g.arc(c * bx, c * by, c * br, 0, 7); g.fill(); g.stroke(); }
+    }
+    g.restore();
+  }
+  // A road barrier that lifts once enough vehicles have left; the number shows how many more.
+  function drawBarrier(x, z, need) {
+    const p = P(x, 0, z), c = p.u; g.save(); g.translate(p.x, p.y);
+    g.fillStyle = 'rgba(10,15,40,.25)'; g.beginPath(); g.ellipse(c * 0.04, c * 0.02, c * 0.4, c * 0.1, 0, 0, 7); g.fill();
+    g.fillStyle = '#4a4f66'; g.fillRect(-c * 0.34, -c * 0.34, c * 0.07, c * 0.34); g.fillRect(c * 0.27, -c * 0.34, c * 0.07, c * 0.34);
+    g.lineJoin = 'round'; g.lineWidth = Math.max(1, c * 0.03); g.strokeStyle = '#7a1f1f';
+    for (const [yy, hh] of [[-0.6, 0.17], [-0.38, 0.17]]) { g.save(); rr(g, -c * 0.44, c * yy, c * 0.88, c * hh, c * 0.04); g.clip(); g.fillStyle = '#fff'; g.fillRect(-c * 0.5, c * yy, c, c * hh); g.fillStyle = '#e8412c'; for (let k = -4; k < 5; k++) { g.beginPath(); g.moveTo(c * (k * 0.22), c * yy); g.lineTo(c * (k * 0.22 + 0.11), c * yy); g.lineTo(c * (k * 0.22 + 0.11 - 0.08), c * (yy + hh)); g.lineTo(c * (k * 0.22 - 0.08), c * (yy + hh)); g.closePath(); g.fill(); } g.restore(); rr(g, -c * 0.44, c * yy, c * 0.88, c * hh, c * 0.04); g.stroke(); }
+    const r2 = c * 0.2; g.fillStyle = '#10246b'; g.beginPath(); g.arc(0, -c * 0.8, r2, 0, 7); g.fill(); g.strokeStyle = '#ffe14d'; g.lineWidth = 2; g.stroke();
+    g.fillStyle = '#ffe14d'; g.font = '900 ' + Math.round(r2 * 1.3) + 'px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(need, 0, -c * 0.79);
+    g.restore();
   }
   function ball(x, y, r, hex, face = false) {   // a little shaded sphere
     g.fillStyle = 'rgba(10,15,40,.3)'; g.beginPath(); g.ellipse(x + r * 0.2, y + r * 0.85, r * 0.9, r * 0.3, 0, 0, 7); g.fill();
@@ -448,7 +495,8 @@ export function createRenderer(canvas, opts = {}) {
     const items = [];
     const decor = decorFor(L);
     for (const d of decor) items.push({ k: dist2(d.x, d.z), d: () => { const p = P(d.x, 0, d.z); g.fillStyle = 'rgba(10,15,40,.18)'; g.beginPath(); g.ellipse(p.x, p.y, p.u * 0.45 * d.s, p.u * 0.14 * d.s, 0, 0, 7); g.fill(); g.fillStyle = '#000'; g.font = Math.round(p.u * d.s) + 'px ' + EMOJI_FONT; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(d.e, p.x, p.y + p.u * 0.08); } });
-    for (const w of gm.walls) { const c = cellW(w.x, w.y); items.push({ k: dist2(c.x, c.z), d: () => drawCone(c.x, c.z) }); }
+    for (const w of gm.walls) { const c = cellW(w.x, w.y); items.push({ k: dist2(c.x, c.z), d: () => drawWall(c.x, c.z, gm.wallSkin) }); }
+    for (const b of gm.barriers) if (gm.departures < b.until) { const c = cellW(b.x, b.y), need = b.until - gm.departures; items.push({ k: dist2(c.x, c.z), d: () => drawBarrier(c.x, c.z, need) }); }
     for (let i = 0; i < gm.bay; i++) if (gm.blockedSlots.includes(i)) { const c = slotC(i); items.push({ k: dist2(c.x, c.z), d: () => drawCone(c.x, c.z) }); }
     const hi = {};
     for (const v of gm.vehicles) {

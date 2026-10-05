@@ -4,16 +4,17 @@
 //  - Tap a vehicle. If its way out of the jam is clear it drives to a free parking slot in the bay.
 //  - Passengers wait in one line. The first passenger boards any parked vehicle of their colour that still has a seat.
 //  - A full vehicle drives away and frees its slot. Empty the line to win.
-//  - Every tap on an unlocked vehicle costs a move, even a blocked one. Locked vehicles cost nothing.
+//  - Every tap on an unlocked vehicle costs a move, even a blocked one (and a thaw tap on a frozen one). Locked vehicles cost nothing.
+//  - Barriers block a lane until enough vehicles have left; frozen buses need thaw taps; mystery buses only hide their colour.
 //  - Lose when moves run out, or when the bay is full and nobody can board (Bay+ can rescue that).
 import { pathOf, cellsOf } from './levelGen.js';
 import { spendMove, movesLeft } from './rounds.js';
 
 export function createGame(level, round) {
-  const vehicles = level.vehicles.map((v) => ({ ...v, lock: v.lock || 0, state: 'grid', slot: -1, seatsLeft: v.seats, parkedAt: -1 }));
+  const vehicles = level.vehicles.map((v) => ({ ...v, lock: v.lock || 0, ice: v.ice || 0, state: 'grid', slot: -1, seatsLeft: v.seats, parkedAt: -1 }));
   const g = {
     level, w: level.w, h: level.h, round,
-    vehicles, walls: level.walls.map((c) => ({ ...c })),
+    vehicles, walls: level.walls.map((c) => ({ ...c })), barriers: (level.barriers || []).map((b) => ({ ...b })), wallSkin: level.wallSkin || 'cone',
     queue: [...level.queue], totalPassengers: level.queue.length,
     bay: round.bay, blockedSlots: [...level.blockedSlots],
     slots: [], departures: 0, parkSeq: 0,
@@ -24,7 +25,7 @@ export function createGame(level, round) {
     bayIsFull() { return freeSlot(g) === -1; },
     sendToBay(id, opts = {}) { return depart(g, id, opts); },
     refreshBayUI() { resizeSlots(g); settle(g); finish(g); g.events.push({ t: 'bay' }); },
-    unlockVehicle(id) { const v = byId(g, id); if (v && v.lock > 0) { v.lock = 0; g.events.push({ t: 'unlock', id }); } },
+    unlockVehicle(id) { const v = byId(g, id); if (v && (v.lock > 0 || v.ice > 0)) { v.lock = 0; v.ice = 0; g.events.push({ t: 'unlock', id }); } },
   };
   resizeSlots(g);
   return g;
@@ -47,11 +48,13 @@ export function blocker(g, v) {
   const path = pathOf(v, g.w, g.h);
   for (const c of path) {
     if (g.walls.some((wl) => wl.x === c.x && wl.y === c.y)) return { wall: c };
+    if (g.barriers.some((b) => b.x === c.x && b.y === c.y && g.departures < b.until)) return { wall: c, barrier: true };
     for (const o of gridVehicles(g)) if (o.id !== v.id && cellsOf(o).some((k) => k.x === c.x && k.y === c.y)) return { vehicle: o.id };
   }
   return null;
 }
 export const isLocked = (v) => v.lock > 0;
+export const isFrozen = (v) => v.ice > 0;
 
 // ---- tapping ----
 // Returns { result: 'ignored' | 'locked' | 'blocked' | 'go' }. Read g.events afterwards.
@@ -61,6 +64,7 @@ export function tapVehicle(g, id) {
   if (isLocked(v)) { g.events.push({ t: 'locked', id, need: v.lock - g.departures }); return { result: 'locked' }; }
   spendMove(g.round);
   g.events.push({ t: 'moves', left: movesLeft(g.round) });
+  if (isFrozen(v)) { v.ice--; g.events.push({ t: 'thaw', id, left: v.ice }); finish(g); return { result: 'frozen' }; }
   const b = blocker(g, v);
   if (b) { g.events.push({ t: 'blocked', id, by: b.vehicle || null, wall: b.wall || null }); finish(g); return { result: 'blocked' }; }
   depart(g, id, {});
@@ -77,6 +81,7 @@ function depart(g, id, { ignoreBlockers = false } = {}) {
   g.events.push({ t: 'depart', id, slot, from: { x: v.x, y: v.y }, path: ignoreBlockers ? [] : pathOf(v, g.w, g.h), heli: ignoreBlockers });
   // vehicles whose lock count has now been reached unlock themselves
   for (const o of gridVehicles(g)) if (o.lock > 0 && g.departures >= o.lock) { o.lock = 0; g.events.push({ t: 'unlock', id: o.id }); }
+  for (const b of g.barriers) if (!b.open && g.departures >= b.until) { b.open = true; g.events.push({ t: 'barrierOpen', x: b.x, y: b.y }); }
   settle(g);
   finish(g);
   return true;

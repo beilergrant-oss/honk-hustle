@@ -12,6 +12,7 @@ import { STREAK_CYCLE, dailyState, claimDaily } from './daily.js';
 import { streakProgress } from './rounds.js';
 import { POWERUPS, usePowerup, availability } from './powerups.js';
 import { createGame, tapVehicle, drainEvents, failStuck } from './game.js';
+import { OBSTACLES } from './levelGen.js';
 import { createRenderer } from './render.js';
 import { resolveLook, paintFor } from './look.js';
 import { mountGarage } from './garageScreen.js';
@@ -154,7 +155,7 @@ function startLevel(n, { retry = false } = {}) {
   $('[data-lvtier]').textContent = (level.tier === 'hard' ? 'HARD' : level.tier === 'extraHard' ? 'EXTRA HARD' : level.info.world.name.toUpperCase()) + (S.round.special ? ' • GOLDEN STREAK' : '');
   setMoves(S.game.round.moveLimit - S.game.round.movesUsed);
   refreshPowerbar();
-  showHint(n); resetCombo();
+  showHint(n, level); resetCombo();
   if (level.info.firstOfWorld && !retry) showWorldBanner(level.info);
   prefetch(n, 3);
 }
@@ -165,9 +166,12 @@ function showWorldBanner(info) {
   el.innerHTML = `<small>World ${info.worldIndex + 1} of ${WORLDS.length}</small><h2>${esc(w.name)}</h2><i style="background:${w.ground}"></i><small>Tap to start</small>`;
   el.onclick = () => el.remove(); st.appendChild(el); setTimeout(() => el.remove(), 2600);
 }
-function showHint(n) {
+function showHint(n, level) {
   const b = $('[data-banner]'), msgs = { 1: 'Tap a vehicle to send it to the bay. Passengers board a bus of their colour.', 2: 'Blocked? Move the vehicle in front first. Every tap costs a move.', 3: 'Locked vehicles open after enough others have left.' };
-  if (msgs[n] && !S.seenHint[n]) { b.textContent = msgs[n]; b.hidden = false; S.seenHint[n] = true; setTimeout(() => { b.hidden = true; }, 6000); } else b.hidden = true;
+  const seen = S.profile.seenObstacles || [], fresh = level && OBSTACLES.find((o) => o.id !== 'cone' && (level.obstacles || []).includes(o.id) && !seen.includes(o.id));
+  if (msgs[n] && !S.seenHint[n]) { b.textContent = msgs[n]; b.hidden = false; S.seenHint[n] = true; setTimeout(() => { b.hidden = true; }, 6000); }
+  else if (fresh) { b.textContent = fresh.icon + ' New: ' + fresh.name + ' - ' + fresh.desc; b.hidden = false; save({ seenObstacles: [...seen, fresh.id] }); setTimeout(() => { b.hidden = true; }, 7000); }
+  else b.hidden = true;
 }
 function setMoves(left) { const m = $('[data-moves]'); if (!m) return; m.textContent = 'Moves ' + Math.max(0, left); m.classList.toggle('low', left <= 3); }
 
@@ -204,7 +208,7 @@ function pressPower(type) {
 function applyPowerup(type, targetId) {
   const g = S.game, res = usePowerup(type, g, g.round, S.profile.powerups || {}, targetId);
   S.targeting = false; S.renderer.setTargeting(false); $('[data-banner]').hidden = true;
-  if (!res.ok) { toast(res.reason === 'no-effect' ? (type === 'key' ? 'Nothing is locked right now.' : 'That one cannot be lifted.') : 'None left.'); refreshPowerbar(); return false; }
+  if (!res.ok) { toast(res.reason === 'no-effect' ? (type === 'key' ? 'Nothing is locked or frozen right now.' : 'That one cannot be lifted.') : 'None left.'); refreshPowerbar(); return false; }
   g.round = res.round; S.round = res.round; save({ powerups: res.inventory });
   sfx.power(); haptic('medium'); playEvents(); refreshPowerbar(); setMoves(g.round.moveLimit - g.round.movesUsed);
   if (g.status === 'playing' && S.modalStuck) { S.modalStuck = false; closeModal(); }

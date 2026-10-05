@@ -58,7 +58,10 @@ function blockPattern(b) {
 export function tierOf(n) {
   if (n <= TUTORIAL_LEVELS) return 'easy';
   const i = n - TUTORIAL_LEVELS - 1;
-  return blockPattern(Math.floor(i / 20))[i % 20];
+  const t = blockPattern(Math.floor(i / 20))[i % 20];
+  if (n <= 15) return 'easy';                       // a gentle start
+  if (n < 40 && t === 'extraHard') return 'hard';
+  return t;
 }
 
 // Cheap info for the level-select map. Does NOT generate the level.

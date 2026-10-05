@@ -57,3 +57,10 @@ Holidays: Christmas, Halloween, Valentine's, St. Patrick's, Easter, Pride. Previ
 - **Colours grow with the level**: 10 bus and passenger colours (`COLORS`, `colorsFor` in `levelGen.js`); easy levels start with 3, harder tiers with more, up to all 10 around level 7,000+.
 - **Garage** (`garageScreen.js`) lists every bus and rider skin you own, greyed out when locked; equipping a bus also equips the rider that matches it (`PASSENGER_FOR_VEHICLE` in `skinData.js`). Riders wear a vest in their bus's colours (`outfitFor` in `look.js`). Season Pack buses each come with a matching rider.
 - Two new rider products were added to `store/iap_products.csv` (Unicorn Kid, Golden Star).
+
+## Obstacles and difficulty
+- Levels are still Easy / Hard / Extra Hard (12 / 5 / 3 per block of 20), but the first levels are gentler: levels 1-15 are all easy, no Extra Hard before level 40, and the vehicle count, tightness of the move limit and share of free vehicles ramp smoothly up to about level 5,000.
+- Boards are a little bigger: Easy 7x7, Hard 8x8 then 9x9 (from level 120), Extra Hard 10x10 then 11x11 (from level 300).
+- A new obstacle arrives every 100-200 levels (see `OBSTACLES` in `levelGen.js`): cones (1), padlocks (40), barriers that lift after N departures (200), frozen buses (350), mystery buses (500), blocked bay slots (650), deep freeze (800), roadworks (950).
+- Every 150 levels the newest obstacle is always in play plus a changing mix of older ones, so some leave and come back later. The wall look changes every 200 levels (cone, barrel, rock, crate, bush).
+- Every level is solvable by construction; `game.js` plays the generator's solution in tests.

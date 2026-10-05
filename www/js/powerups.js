@@ -2,7 +2,7 @@
 export const POWERUPS = {
   heli: { name: 'Heli-Lift',  icon: '🚁', desc: 'Lift any vehicle straight into the bay, ignoring blockers.' },
   bay:  { name: 'Bay+',       icon: '🅿️', desc: 'Clears a blocked bay slot, or adds one extra slot.' },
-  key:  { name: 'Master Key', icon: '🔑', desc: 'Instantly unlocks every locked block.' },
+  key:  { name: 'Master Key', icon: '🔑', desc: 'Instantly unlocks every locked and frozen block.' },
 };
 
 // round.freeUses = streak bonus uses left this round (any power-up). inventory = what the player owns.
@@ -27,7 +27,7 @@ const effects = {
     return true;
   },
   key(game) {
-    const locked = game.vehicles.filter((v) => v.lock > 0);
+    const locked = game.vehicles.filter((v) => v.state === 'grid' && (v.lock > 0 || v.ice > 0));
     if (!locked.length) return false;          // nothing locked: don't waste it
     locked.forEach((v) => game.unlockVehicle(v.id));
     return true;

@@ -9,26 +9,71 @@ export function colorsFor(tier, n) {
   return Math.min(COLORS.length, tier === 'easy' ? 3 + grow : tier === 'hard' ? 5 + grow : 6 + grow);
 }
 
+// ---- Obstacles ----
+// A new kind arrives every 100-200 levels. After that, each stretch of 150 levels uses the newest kind plus a changing mix of the older ones,
+// so some old obstacles leave for a while and come back in higher levels.
+export const OBSTACLES = [
+  { id: 'cone',    intro: 1,   name: 'Cones',            icon: '\u{1F6A7}', desc: 'Cones fill parts of the lot.' },
+  { id: 'lock',    intro: 40,  name: 'Padlocks',         icon: '\u{1F512}', desc: 'Opens after that many have left.' },
+  { id: 'barrier', intro: 200, name: 'Barriers',         icon: '\u{1F6A7}', desc: 'Lifts after that many have left.' },
+  { id: 'ice',     intro: 350, name: 'Frozen buses',     icon: '\u2744\uFE0F', desc: 'Tap to thaw (costs a move), tap again to go.' },
+  { id: 'mystery', intro: 500, name: 'Mystery buses',    icon: '\u2753',     desc: 'Colour shows once its way is clear.' },
+  { id: 'slot',    intro: 650, name: 'Blocked bay slots', icon: '\u26D4',    desc: 'A cone blocks a bay slot.' },
+  { id: 'deepice', intro: 800, name: 'Deep freeze',      icon: '\u{1F9CA}', desc: 'Two thaw taps before it can go.' },
+  { id: 'gate',    intro: 950, name: 'Roadworks',        icon: '\u{1F6A7}', desc: 'More barriers, each lifting at its own time.' },
+];
+export const ERA = 150;
+export const WALL_SKINS = ['cone', 'barrel', 'rock', 'crate', 'bush'];
+export const wallSkinFor = (n) => WALL_SKINS[Math.floor(n / 200) % WALL_SKINS.length];
+const hash = (a, b) => { let x = (a * 374761393 + b * 668265263) >>> 0; x = ((x ^ (x >>> 13)) * 1274126177) >>> 0; return (x ^ (x >>> 16)) >>> 0; };
+export const introducedAt = (n) => OBSTACLES.filter((o) => o.intro <= n);
+export const newestObstacle = (n) => { const ps = introducedAt(n); const o = ps[ps.length - 1]; return o && o.intro > 1 && n - o.intro < ERA ? o.id : null; };
+// Which obstacle kinds are in play at level n for a tier. Easy levels get at most one gentle kind.
+export function activeObstacles(n, tier) {
+  if (n <= 3) return [];
+  const pool = introducedAt(n), era = Math.floor(n / ERA), newest = newestObstacle(n), on = new Set();
+  if (newest) on.add(newest);
+  pool.forEach((o, i) => { if (hash(era + 1, i + 7) % 100 < 55) on.add(o.id); });
+  for (let i = 0; on.size < Math.min(2, pool.length) && i < 20; i++) on.add(pool[hash(era, i) % pool.length].id);
+  let list = pool.map((o) => o.id).filter((id) => on.has(id));
+  if (tier === 'easy') { const gentle = list.filter((id) => ['cone', 'lock', 'barrier', 'ice'].includes(id)); list = gentle.length ? [gentle[hash(n, 3) % gentle.length]] : []; }
+  return list;
+}
+
 // slack = extra moves allowed on top of "one tap per vehicle" (every tap on a vehicle costs 1 move).
 export const DIFFICULTY = {
-  easy:      { w: 6,  h: 6,  vehicles: 8,  colors: 3, locks: 0, cones: 0, bay: 7, blockedSlots: 0, shuffle: 0,   maxFree: 0.8,  slack: 1.8, coins: 40 },
-  hard:      { w: 8,  h: 8,  vehicles: 22, colors: 5, locks: 2, cones: 4, bay: 7, blockedSlots: 0, shuffle: 0.2, maxFree: 0.45, slack: 1.5, coins: 100 },
-  extraHard: { w: 10, h: 10, vehicles: 28, colors: 6, locks: 4, cones: 8, bay: 7, blockedSlots: 1, shuffle: 0.3, maxFree: 0.35, slack: 1.3, coins: 200 },
+  easy:      { w: 7,  h: 7,  vehicles: 8,  colors: 3, locks: 0, cones: 0, bay: 7, blockedSlots: 0, shuffle: 0,   maxFree: 0.85, slack: 1.8, coins: 40 },
+  hard:      { w: 9,  h: 9,  vehicles: 14, colors: 5, locks: 0, cones: 0, bay: 7, blockedSlots: 0, shuffle: 0.2, maxFree: 0.55, slack: 1.7, coins: 100 },
+  extraHard: { w: 10, h: 10, vehicles: 18, colors: 6, locks: 0, cones: 0, bay: 7, blockedSlots: 0, shuffle: 0.3, maxFree: 0.45, slack: 1.5, coins: 200 },
 };
 
-// Difficulty also creeps up slowly over the whole campaign (reaches its cap around level 6000).
+// Difficulty rises smoothly with the level number (reaches its cap around level 5000): early levels are gentle, later ones are tight.
 export function configFor(tier, n) {
   const c = { ...DIFFICULTY[tier] };
-  const p = Math.min(1, n / 6000);
-  if (n <= 3) return { ...c, w: 5, h: 5, vehicles: 3 + n, colors: 2, maxFree: 1 }; // tutorial
+  const p = Math.min(1, n / 5000), q = Math.sqrt(p);   // q rises faster at first
+  c.ice = 0; c.mystery = 0; c.barriers = 0; c.wallSkin = wallSkinFor(n); c.active = [];
+  if (n <= 3) return { ...c, w: 6, h: 6, vehicles: 3 + n, colors: 2, maxFree: 1 }; // tutorial
+  const on = activeObstacles(n, tier), has = (id) => on.includes(id); c.active = on;
+  const k = tier === 'easy' ? 0 : tier === 'hard' ? 1 : 2;
   if (tier === 'easy') {
-    c.vehicles = 6 + Math.round(p * 6);          // 6 -> 12
-    c.locks = p > 0.3 ? 1 : 0;
-    c.cones = p > 0.5 ? 2 : 0;
+    c.vehicles = 5 + Math.round(q * 8);               // 5 -> 13
+    c.maxFree = 0.85 - 0.25 * p; c.slack = 1.85 - 0.3 * p;
+  } else if (tier === 'hard') {
+    c.vehicles = 10 + Math.round(q * 16);             // 10 -> 26
+    c.maxFree = 0.6 - 0.2 * p; c.slack = 1.75 - 0.35 * p;
   } else {
-    c.vehicles += Math.round(p * 4);
-    c.locks += p > 0.6 ? 1 : 0;
+    c.vehicles = 14 + Math.round(q * 18);             // 14 -> 32
+    c.w = c.h = n < 300 ? 10 : 11; c.maxFree = 0.5 - 0.17 * p; c.slack = 1.6 - 0.3 * p;
   }
+  if (tier === 'hard' && n >= 120) c.w = c.h = 9;
+  if (tier === 'hard' && n < 120) c.w = c.h = 8;
+  if (has('cone')) c.cones = [1, 3 + Math.round(q * 3), 5 + Math.round(q * 4)][k];
+  if (has('lock')) c.locks = [1, 1 + Math.round(q * 2), 2 + Math.round(q * 3)][k];
+  if (has('barrier') || has('gate')) c.barriers = [1, 2 + Math.round(q * 2), 3 + Math.round(q * 3)][k] + (has('gate') ? 2 : 0);
+  if (has('ice') || has('deepice')) { c.ice = [1, 2 + Math.round(q * 2), 3 + Math.round(q * 3)][k]; c.iceTaps = has('deepice') ? 2 : 1; }
+  if (has('mystery') && k) c.mystery = [0, 3 + Math.round(q * 3), 4 + Math.round(q * 6)][k];
+  if (has('slot') && k) c.blockedSlots = k === 1 ? (p > 0.4 ? 1 : 0) : 1 + (p > 0.6 ? 1 : 0);
+  c.vehicles = Math.max(c.vehicles, 4);
   c.colors = colorsFor(tier, n);
   return c;
 }
@@ -149,6 +194,22 @@ function tryBuild(n, tier, cfg, r) {
     .slice(0, cfg.locks)
     .forEach((o) => { byId[o.id].lock = 1 + Math.floor(r() * Math.min(o.p, 6)); });
 
+  // Frozen buses (extra thaw taps), mystery buses (colour hidden until the way is clear) and barriers (lift after N departures).
+  const pos = Object.fromEntries(solution.map((id, p) => [id, p]));
+  let iceTaps = 0;
+  shuffled(vehicles.filter((v) => !v.lock), r).slice(0, cfg.ice).forEach((v) => { v.ice = cfg.iceTaps || 1; iceTaps += v.ice; });
+  shuffled(vehicles, r).slice(0, cfg.mystery).forEach((v) => { v.mystery = true; });
+  const barriers = [], bocc = new Set(), paths = vehicles.map((v) => ({ v, cells: pathIdx(v, w, h) }));
+  for (const o of shuffled(solution.map((id) => ({ id, p: pos[id] })).filter((o) => o.p >= 1), r)) {
+    if (barriers.length >= cfg.barriers) break;
+    const mine = paths.find((q) => q.v.id === o.id).cells.filter((c) => !occ[c] && !bocc.has(c));
+    if (!mine.length) continue;
+    const cell = mine[Math.floor(r() * mine.length)];
+    const minq = Math.min(...paths.filter((q) => q.cells.includes(cell)).map((q) => pos[q.v.id]));
+    if (minq < 1) continue;
+    bocc.add(cell); barriers.push({ x: cell % w, y: Math.floor(cell / w), until: 1 + Math.floor(r() * Math.min(minq, 6)) });
+  }
+
   const blocks = solution.map((id) => Array(byId[id].seats).fill(byId[id].color));
   for (let s = 0, k = Math.floor(blocks.length * cfg.shuffle); s < k; s++) {
     const i = Math.floor(r() * (blocks.length - 1));
@@ -157,10 +218,10 @@ function tryBuild(n, tier, cfg, r) {
   const blockedSlots = shuffled([...Array(cfg.bay).keys()], r).slice(0, cfg.blockedSlots);
 
   const level = {
-    n, tier, w, h, bay: cfg.bay, blockedSlots, walls, vehicles, queue: blocks.flat(), solution,
-    moveLimit: Math.ceil(vehicles.length * cfg.slack), coinReward: cfg.coins,
+    n, tier, w, h, bay: cfg.bay, blockedSlots, walls, barriers, wallSkin: cfg.wallSkin, vehicles, queue: blocks.flat(), solution, obstacles: cfg.active,
+    moveLimit: Math.ceil((vehicles.length + iceTaps) * cfg.slack), coinReward: cfg.coins,
   };
-  const free = vehicles.filter((v) => !pathIdx(v, w, h).some((c) => occ[c])).length;
+  const free = vehicles.filter((v) => !pathIdx(v, w, h).some((c) => occ[c] || bocc.has(c))).length;
   if (free > cfg.maxFree * vehicles.length) return null;
   return simulate(level, solution) ? level : null;
 }
