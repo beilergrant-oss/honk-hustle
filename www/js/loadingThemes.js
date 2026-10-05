@@ -93,6 +93,62 @@ export const THEMES = {
   },
 };
 export const THEME_IDS = Object.keys(THEMES);
+
+// ---- Special events (loading screen only: they take priority over holidays and seasons while they last) ----
+THEMES.newyear = {
+  id: 'newyear', name: "New Year's Eve", sky: ['#070b2e', '#2b2f87'], celestial: 'moon', stars: true, sea: null,
+  trees: 'pine', treeColors: ['#1f5f7a', '#ffd23f'], hills: ['#2a2f6e', '#1d2158'], skyline: ['#3a3f9a', '#5a4fc0', '#2f6fd0', '#7a5ae0'],
+  ground: '#4a4f80', sidewalk: '#7f86c8', particles: { type: 'confetti', colors: ['#ffd23f', '#ff5fa8', '#6ec6ff', '#ffffff', '#9b5de5'], count: 22 },
+  bus: { body: '#2f3ca8', trim: '#ffd23f', pattern: { id: 'sun', colors: ['#ffd23f'] }, roof: ['balloons', 'gifts', 'balloons'], hats: ['crown', 'jester', 'none', 'crown', 'jester'], extras: ['lights'] },
+  sign: ['2027', 'PARTY', 'CHEERS'], title: ['#fff08a', '#ffb21f'], title2: ['#c58cff', '#6a3fe0'],
+};
+THEMES.july4 = {
+  id: 'july4', name: 'Independence Day', sky: ['#1b2f7a', '#7fb0ff'], celestial: 'sunset', stars: false, sea: null,
+  trees: 'round', treeColors: ['#2fae5a', '#7a4a2b'], hills: ['#7fd68a', '#3fb868'], skyline: null,
+  ground: '#7f8cab', sidewalk: '#ffffff', particles: { type: 'confetti', colors: ['#e63946', '#ffffff', '#3b82f6'], count: 20 },
+  bus: { body: '#2f5fd0', trim: '#e63946', pattern: { id: 'stripes', colors: ['#ffffff'] }, roof: ['pennant', 'balloons', 'pennant'], hats: ['sportcap', 'sportcap', 'none', 'sportcap', 'none'], extras: [] },
+  sign: ['USA', 'PARADE', 'BBQ'], title: ['#ff6b6b', '#d62d2d'], title2: ['#ffffff', '#6ea0ff'],
+};
+THEMES.thanksgiving = {
+  id: 'thanksgiving', name: 'Thanksgiving', sky: ['#e8934a', '#ffe2b8'], celestial: 'sunset', stars: false, sea: null,
+  trees: 'round', treeColors: ['#d9731f', '#a8321f'], hills: ['#d9a35a', '#b9772f'], skyline: null,
+  ground: '#85758a', sidewalk: '#e6c28a', particles: { type: 'leaf', colors: ['#d9731f', '#a8321f', '#ffb21f', '#8a4a1f'], count: 20 },
+  bus: { body: '#b8581e', trim: '#ffd27a', pattern: { id: 'leaves', colors: ['#ffd27a'] }, roof: ['pumpkin', 'leafPile', 'pumpkin'], hats: ['acorn', 'acorn', 'none', 'acorn', 'none'], extras: [] },
+  sign: ['GIVE', 'THANKS', 'FEAST'], title: ['#ffd27a', '#e0801f'], title2: ['#ffb067', '#a8321f'],
+};
+THEMES.lunarnewyear = {
+  id: 'lunarnewyear', name: 'Lunar New Year', sky: ['#7a0f1f', '#e8503a'], celestial: 'moon', stars: true, sea: null,
+  trees: 'blossom', treeColors: ['#ff8fb8', '#6a3a2b'], hills: ['#a8202f', '#8a1626'], skyline: ['#c0303f', '#e05a3a', '#ffb02e', '#a8202f'],
+  ground: '#6a3a4a', sidewalk: '#ffd27a', particles: { type: 'sparkle', colors: ['#ffd23f', '#fff3a0', '#ffffff'], count: 18 },
+  bus: { body: '#d6232f', trim: '#ffd23f', pattern: { id: 'sun', colors: ['#ffd23f'] }, roof: ['gifts', 'heartSign', 'gifts'], hats: ['crown', 'crown', 'none', 'crown', 'none'], extras: ['lights'] },
+  sign: ['LUCK', 'JOY', 'FORTUNE'], title: ['#ffe27a', '#ffb21f'], title2: ['#ff7a6a', '#d6232f'],
+};
+THEMES.diwali = {
+  id: 'diwali', name: 'Diwali', sky: ['#1a0b3d', '#a8327a'], celestial: 'moon', stars: true, sea: null,
+  trees: 'round', treeColors: ['#7a3fa8', '#ffd23f'], hills: ['#4a2370', '#38195a'], skyline: ['#7a3fa8', '#c94a9a', '#ffb02e', '#5a3fd0'],
+  ground: '#5a4a7a', sidewalk: '#ffd27a', particles: { type: 'sparkle', colors: ['#ffd23f', '#ff9f1c', '#ffffff', '#ff5fa8'], count: 24 },
+  bus: { body: '#c0308a', trim: '#ffb21f', pattern: { id: 'sun', colors: ['#ffd23f'] }, roof: ['balloons', 'gifts', 'balloons'], hats: ['crown', 'crown', 'none', 'crown', 'none'], extras: ['lights'] },
+  sign: ['LIGHTS', 'JOY', 'SWEETS'], title: ['#ffe27a', '#ff9f1c'], title2: ['#ff8ad0', '#a8327a'],
+};
+THEME_IDS.push('newyear', 'july4', 'thanksgiving', 'lunarnewyear', 'diwali');
+
+// Each event: [name, ms-range from a UTC-noon day] -> returns { start, end } when the date falls inside.
+const LUNAR_NY = { 2026: '02-17', 2027: '02-06', 2028: '01-26', 2029: '02-13', 2030: '02-03', 2031: '01-23', 2032: '02-11', 2033: '01-31', 2034: '02-19', 2035: '02-08' };
+const DIWALI = { 2026: '11-08', 2027: '10-29', 2028: '10-17', 2029: '11-05', 2030: '10-26', 2031: '11-14', 2032: '11-02', 2033: '10-22', 2034: '11-10', 2035: '10-30' };
+const dayOf = (y, md) => { const [m, d] = md.split('-').map(Number); return Date.UTC(y, m - 1, d, 12); };
+function thanksgivingDay(y) { const first = new Date(Date.UTC(y, 10, 1)).getUTCDay(); return Date.UTC(y, 10, 1 + ((4 - first + 7) % 7) + 21, 12); }
+export const EVENTS = [
+  { id: 'newyear', windows: (y) => [[Date.UTC(y, 11, 29, 12), Date.UTC(y + 1, 0, 2, 12)], [Date.UTC(y - 1, 11, 29, 12), Date.UTC(y, 0, 2, 12)]] },
+  { id: 'july4', windows: (y) => [[Date.UTC(y, 5, 30, 12), Date.UTC(y, 6, 5, 12)]] },
+  { id: 'thanksgiving', windows: (y) => [[thanksgivingDay(y) - 6 * DAY, thanksgivingDay(y) + DAY]] },
+  { id: 'lunarnewyear', windows: (y) => (LUNAR_NY[y] ? [[dayOf(y, LUNAR_NY[y]) - 2 * DAY, dayOf(y, LUNAR_NY[y]) + 7 * DAY]] : []) },
+  { id: 'diwali', windows: (y) => (DIWALI[y] ? [[dayOf(y, DIWALI[y]) - 3 * DAY, dayOf(y, DIWALI[y]) + 2 * DAY]] : []) },
+];
+export function activeEvent(t) {
+  const y = new Date(t).getUTCFullYear();
+  for (const e of EVENTS) for (const [a, b] of e.windows(y)) if (t >= a && t <= b) return { id: e.id, end: b };
+  return null;
+}
 export const PASSENGER_PALETTE = PASSENGER_COLORS;
 
 // Day each holiday is "about" (used to break ties when two holiday windows overlap, e.g. St. Patrick's vs Easter)
@@ -115,8 +171,11 @@ export function localDayAsUtc(now = new Date()) {
 export function pickTheme(now = new Date(), opts = {}) {
   const { hemisphere = 'north', seasonal = true, seasonMode = 'full', force = null } = opts;
   if (force && THEMES[force]) return { theme: THEMES[force], reason: 'forced', endsAt: null };
+  if (globalThis.__HH_DATE) now = new Date(globalThis.__HH_DATE + 'T12:00:00');   // ?date=YYYY-MM-DD preview
   const t = localDayAsUtc(now);
   if (!seasonal || Number.isNaN(t)) return { theme: THEMES.regular, reason: 'regular', endsAt: null };
+  const ev = activeEvent(t);
+  if (ev) return { theme: THEMES[ev.id], reason: 'holiday', endsAt: new Date(ev.end) };
   const holidays = SETS.filter((s) => s.kind === 'holiday').map((s) => ({ s, w: activeWindow(s, t, hemisphere) })).filter((x) => x.w);
   if (holidays.length) {
     holidays.sort((a, b) => distToAnchor(a.s.id, t) - distToAnchor(b.s.id, t));

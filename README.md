@@ -46,3 +46,8 @@ Four packs (Spring, Summer, Autumn, Winter) each unlock the season set plus thre
 
 ## Testing in a browser
 `npm run serve` then open http://localhost:8080. Useful URL params: `?fast=1&go=game&level=N`.
+
+## Loading screen by holiday or event
+`www/js/loadingThemes.js` picks the loading and home look by the player's local date: **special event > holiday > season > regular**.
+Events: New Year, Independence Day, Thanksgiving, Lunar New Year, Diwali (dates in `EVENTS`; Lunar New Year and Diwali use a table through 2035).
+Holidays: Christmas, Halloween, Valentine's, St. Patrick's, Easter, Pride. Preview any day with `?date=YYYY-MM-DD` (or force a look with `?theme=halloween`).

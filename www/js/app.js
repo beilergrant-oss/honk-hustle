@@ -409,6 +409,7 @@ async function boot() {
   try { if (cap && cap.SplashScreen) cap.SplashScreen.hide(); } catch (e) {}
   initIap();                                                    // no-op in the browser or without a RevenueCat key
   const q = new URLSearchParams(location.search), result = {};
+  if (/^\d{4}-\d{2}-\d{2}$/.test(q.get('date') || '')) globalThis.__HH_DATE = q.get('date');   // preview any day's loading screen
   const boot = bootLoadingScreen($('#loading'), {
     tasks: makeBootTasks({ base44, pingUrl: null, result }),
     canPlayOffline: true, embedded: true, hemisphere: S.profile.hemisphere, seasonal: S.profile.settings.seasonal,
