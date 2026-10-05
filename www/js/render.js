@@ -7,7 +7,8 @@ import { COLOR_HEX, rr, drawPassenger } from './look.js';
 import { sfx, haptic } from './sfx.js';
 import { BACKDROPS } from './backdrops.js';
 import { blocker } from './game.js';
-import { decorImg, iconImg, topperImg, hasTopper } from './decorArt.js';
+import { iconImg, topperImg, hasTopper } from './decorArt.js';
+import { propImg, BD_PROPS, SEASON_PROPS, horizonImg } from './sceneArt.js';
 
 const DIR_VEC = { E: [1, 0], S: [0, 1], W: [-1, 0], N: [0, -1] };       // grid directions (grid y grows toward the player)
 const ease = (t) => 1 - Math.pow(1 - t, 3);
@@ -430,6 +431,7 @@ export function createRenderer(canvas, opts = {}) {
     poly([[-60, 0, -8], [60, 0, -8], [60, 0, 80], [-60, 0, 80]]);
     const gg = g.createLinearGradient(0, 0, 0, H); gg.addColorStop(0, bd.sky[1]); gg.addColorStop(0.3, ground); gg.addColorStop(1, shade(ground, -0.16)); g.fillStyle = gg; g.fill();
     for (const d of specksFor(L)) { const p = P(d.x, 0.002, d.z); if (p.x > -40 && p.x < W + 40 && p.y > -40 && p.y < H + 40) drawSpeck(bd.speck, p, d); }
+    { const im = horizonImg(R.world.bd || 'city', bd); if (im.complete && im.naturalWidth) { const hh = Math.min(H * 0.26, W * 0.4); g.drawImage(im, 0, 0, W, hh); const fade = g.createLinearGradient(0, hh * 0.78, 0, hh + 6); fade.addColorStop(0, rgba(ground, 0)); fade.addColorStop(1, rgba(ground, 1)); g.fillStyle = fade; g.fillRect(0, hh * 0.78, W, hh * 0.22 + 6); } }
     if (bd.crosswalk) { for (let i = -2; i < L.bw + 2; i += 0.8) poly([[i, 0.002, -1.45], [i + 0.45, 0.002, -1.45], [i + 0.45, 0.002, -0.8], [i, 0.002, -0.8]]), g.fillStyle = 'rgba(255,255,255,.8)', g.fill(); }
     const fog = g.createLinearGradient(0, 0, 0, H * 0.3); fog.addColorStop(0, rgba(bd.sky[0], 0.55)); fog.addColorStop(1, rgba(bd.sky[0], 0)); g.fillStyle = fog; g.fillRect(0, 0, W, H * 0.3);
     // board: a framed plate with a visible edge and a checker of two tile colours
@@ -451,15 +453,12 @@ export function createRenderer(canvas, opts = {}) {
     for (const v of gm.vehicles) if (v.state === 'grid') { const pose = Object.assign(poseOf(v), vehFx(v, now)); shadow(carFootprint(v, pose)); }
     for (let i = 0; i < gm.bay; i++) { const s = R.vslots[i]; if (s) { const c = slotC(i), hw = L.sw * 0.4; shadow([c.x - hw, c.x + hw, c.z - 0.52, c.z + 0.52]); } }
   }
-  // seasons and holidays sprinkle a few of their own sprites into the world's scenery
-  const SEASON_DECOR = { spring: ['\u{1F338}', '\u{1F337}', '\u{1F98B}'], summer: ['\u{1F334}', '⛱️', '\u{1F349}'], autumn: ['\u{1F341}', '\u{1F383}', '\u{1F330}'], winter: ['\u{1F332}', '⛄', '❄️'],
-    christmas: ['\u{1F384}', '\u{1F381}', '⛄'], halloween: ['\u{1F383}', '\u{1F987}', '\u{1F47B}'], valentine: ['\u{1F496}', '\u{1F339}', '\u{1F48C}'], stpatrick: ['☘️', '\u{1F308}', '\u{1F4B0}'], easter: ['\u{1F95A}', '\u{1F430}', '\u{1F337}'], pride: ['\u{1F308}', '\u{1F984}', '\u{1F496}'] };
   let decorKey = '', decorList = [];
   function decorFor(L) {
     const dt = R.world.decorTheme, bd = bdOf(), key = (R.world.bd || '') + '|' + L.bw + 'x' + L.bh + '|' + L.bay + '|' + (dt || ''); if (key === decorKey) return decorList;
-    const seas = SEASON_DECOR[dt];
+    const seas = ['space', 'ocean', 'candy', 'toy', 'circus', 'castle', 'volcano', 'city'].includes(R.world.bd) ? null : SEASON_PROPS[dt], list = BD_PROPS[R.world.bd] || BD_PROPS.city;
     let seed = 7; for (const ch of key) seed = (seed * 31 + ch.charCodeAt(0)) % 9973; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);
-    let n = 0; const pick = () => { n++; return seas && n % 6 === 0 ? seas[n % seas.length] : bd.decor[Math.floor(rnd() * bd.decor.length)]; };
+    let n = 0; const pick = () => { n++; return seas && n % 5 === 0 ? seas[n % seas.length] : list[Math.floor(rnd() * list.length)]; };
     decorList = [];
     const zTop = L.qz + 1.5, step = 1.9;
     for (let z = -0.6; z < zTop; z += step * (0.8 + rnd() * 0.5)) {    // down both sides
@@ -477,7 +476,7 @@ export function createRenderer(canvas, opts = {}) {
     g.save(); g.font = '900 17px Poppins, system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.lineJoin = 'round';
     const tw = g.measureText(name).width, iw = 26, total = iw + 6 + tw, x0 = L.W / 2 - total / 2, y = 24;
     g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 6; g.shadowOffsetY = 2;
-    { const im = decorImg(bd.icon); if (im.complete && im.naturalWidth) g.drawImage(im, x0, y - iw / 2, iw, iw); }
+    { const im = propImg((BD_PROPS[R.world.bd] || BD_PROPS.city)[0]); if (im.complete && im.naturalWidth) g.drawImage(im, x0, y - iw / 2, iw, iw); }
     const tx = x0 + iw + 6; g.lineWidth = 5; g.strokeStyle = shade(bd.band[1], -0.55); g.strokeText(name, tx, y + 1);
     g.shadowColor = 'transparent'; const gr = g.createLinearGradient(0, y - 9, 0, y + 9); gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, shade(bd.band[0], 0.55)); g.fillStyle = gr; g.fillText(name, tx, y + 1);
     g.restore();
@@ -513,7 +512,7 @@ export function createRenderer(canvas, opts = {}) {
     // everything that stands up is collected, sorted far to near, then drawn
     const items = [];
     const decor = decorFor(L);
-    for (const d of decor) items.push({ k: dist2(d.x, d.z), d: () => { const p = P(d.x, 0, d.z); g.fillStyle = 'rgba(10,15,40,.18)'; g.beginPath(); g.ellipse(p.x, p.y, p.u * 0.45 * d.s, p.u * 0.14 * d.s, 0, 0, 7); g.fill(); const im = decorImg(d.e), sz = p.u * d.s * 1.15; if (im.complete && im.naturalWidth) g.drawImage(im, p.x - sz / 2, p.y + p.u * 0.08 - sz * 0.94, sz, sz); } });
+    for (const d of decor) items.push({ k: dist2(d.x, d.z), d: () => { const p = P(d.x, 0, d.z); g.fillStyle = 'rgba(10,15,40,.18)'; g.beginPath(); g.ellipse(p.x, p.y, p.u * 0.45 * d.s, p.u * 0.14 * d.s, 0, 0, 7); g.fill(); const im = propImg(d.e), sz = p.u * d.s * 1.35; if (im.complete && im.naturalWidth) g.drawImage(im, p.x - sz / 2, p.y + p.u * 0.08 - sz * 0.94, sz, sz); } });
     for (const w of gm.walls) { const c = cellW(w.x, w.y); items.push({ k: dist2(c.x, c.z), d: () => drawWall(c.x, c.z, gm.wallSkin) }); }
     for (const b of gm.barriers) if (gm.departures < b.until) { const c = cellW(b.x, b.y), need = b.until - gm.departures; items.push({ k: dist2(c.x, c.z), d: () => drawBarrier(c.x, c.z, need) }); }
     for (let i = 0; i < gm.bay; i++) if (gm.blockedSlots.includes(i)) { const c = slotC(i); items.push({ k: dist2(c.x, c.z), d: () => drawCone(c.x, c.z) }); }
