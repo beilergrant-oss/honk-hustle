@@ -57,7 +57,7 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .home-play{width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:1px}
 .home-play small{font-weight:700;font-size:13px;opacity:.9}
 .home-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:340px}
-.home-row button{background:#fff;border:0;border-radius:18px;padding:10px 4px 8px;font-weight:800;font-size:12px;color:var(--navy);box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;gap:2px}
+.home-row button{background:rgba(16,36,107,.24);border:0;border-radius:18px;padding:9px 4px 7px;font-weight:800;font-size:12px;color:#fff;text-shadow:0 1px 3px rgba(10,20,55,.7);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.4),0 3px 10px rgba(10,20,55,.22);display:flex;flex-direction:column;align-items:center;gap:2px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .home-row button span{font-size:24px;line-height:1}
 .home-row button:active{transform:translateY(2px)}
 
@@ -159,7 +159,7 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 /* ---- key-art home + sunnier screens ---- */
 .home-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:53% 0;display:block}
 .home-play small{color:#fff;-webkit-text-stroke:3px #0a2a68;paint-order:stroke fill;font-size:14px;opacity:1}
-.home-row button{border:3px solid #fff;background:linear-gradient(#fff,#e6f3ff)}
+
 .sky{background:radial-gradient(ellipse 60px 22px at 18% 14%,rgba(255,255,255,.9) 98%,transparent),radial-gradient(ellipse 90px 28px at 82% 22%,rgba(255,255,255,.85) 98%,transparent),radial-gradient(ellipse 70px 24px at 40% 6%,rgba(255,255,255,.7) 98%,transparent),linear-gradient(#2fb0ff,#8fdcff 38%,#d9f4ff 75%,#fff7d6)}
 .title{-webkit-text-stroke:6px #0f2f8f;color:#ffd23a;text-shadow:0 4px 0 rgba(10,35,110,.45)}
 .btn.big{box-shadow:0 6px 0 #13783a,0 0 0 3px #bfffd4,inset 0 3px 0 rgba(255,255,255,.5)}
