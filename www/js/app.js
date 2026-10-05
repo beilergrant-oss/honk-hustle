@@ -416,7 +416,7 @@ async function boot() {
   const boot = bootLoadingScreen($('#loading'), {
     tasks: makeBootTasks({ base44, pingUrl: null, result }),
     canPlayOffline: true, embedded: true, hemisphere: S.profile.hemisphere, seasonal: S.profile.settings.seasonal,
-    artUrl: LOADING_ART, forceTheme: q.get('theme') || null, minShowMs: q.get('fast') ? 0 : 1600,
+    artUrl: LOADING_ART, sceneHtml: () => homeArt(S.profile, pickTheme(new Date(), { hemisphere: S.profile.hemisphere, seasonal: S.profile.settings.seasonal })), forceTheme: q.get('theme') || null, minShowMs: q.get('fast') ? 0 : 1600,
     onDone: () => { boot.destroy(); $('#loading').innerHTML = ''; S.profile = loadProfile(); const go2 = q.get('go'); if (go2 === 'game') startLevel(+q.get('level') || nextLevelNo()); else { go(go2 || 'home'); if (!go2 && !q.get('fast')) setTimeout(() => showDaily(true), 500); } },
   });
 }

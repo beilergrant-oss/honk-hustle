@@ -230,3 +230,10 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .has-home .hh-scenebox .home-bg{position:absolute;inset:0}
 .has-home .hh-scenebox .lhero{position:absolute;left:0;right:0;top:34%;bottom:16%;flex:none}
 .has-home .hh-tip{color:#fff;text-shadow:0 1px 3px rgba(10,30,90,.7)}
+
+/* smaller hero bus so the chip, caption and buttons stay readable */
+.hbus{width:min(58%,230px)}
+.hhero{padding:6px 0 4px}
+.hcrowd .hr img,.hcrowd .hr{max-height:60px}
+.has-home .hh-scenebox .lhero{top:36%;bottom:20%}
+.has-home .hbus{width:min(58%,230px)}
