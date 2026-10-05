@@ -13,7 +13,7 @@ import { streakProgress } from './rounds.js';
 import { POWERUPS, usePowerup, availability } from './powerups.js';
 import { createGame, tapVehicle, drainEvents, failStuck } from './game.js';
 import { OBSTACLES } from './levelGen.js';
-import { decorHtml, iconSvg } from './decorArt.js';
+import { decorHtml, iconSvg, topperSvg } from './decorArt.js';
 import { createRenderer } from './render.js';
 import { resolveLook, paintFor } from './look.js';
 import { mountGarage } from './garageScreen.js';
@@ -25,7 +25,6 @@ import { skinById, isOwned, passengerFor } from './skinData.js';
 import { miniBus, riderPic, busPic } from './cartoon.js';
 import { BACKDROPS } from './backdrops.js';
 import { lookFor, BUS_STYLES } from './busStyles.js';
-import { TOPPER_EMOJI } from './look.js';
 import { configureSfx, sfx, haptic, unlockAudio } from './sfx.js';
 import { nextCombo, resetCombo, comboText, comboColor, floatText } from './juice.js';
 import { initIap } from './iap.js';
@@ -59,8 +58,8 @@ function flamePill(streak) {
 }
 function showDaily(auto) {
   const d = dailyState(S.profile); if (auto && !d.claimable) return;
-  const cells = (granted) => STREAK_CYCLE.map((r, i) => { const st = i < d.index || (granted && i === d.index) ? 'past' : i === d.index ? 'today' : 'next'; return `<div class="dday ${st}"><small>Day ${i + 1}</small><span>${r.coins ? '\u{1FA99} ' + r.coins : POWERUPS[r.powerup].icon}</span>${st === 'past' ? '<i>✓</i>' : ''}</div>`; }).join('');
-  const show = (granted) => modal({ emoji: '\u{1F381}', title: 'Daily Reward', body: `<div class="dgrid">${cells(granted)}</div><small class="muted">${d.streak > 1 ? d.streak + ' day streak' : 'Play daily to build a streak'} • Best ${d.best}</small>`, dismissible: true,
+  const cells = (granted) => STREAK_CYCLE.map((r, i) => { const st = i < d.index || (granted && i === d.index) ? 'past' : i === d.index ? 'today' : 'next'; return `<div class="dday ${st}"><small>Day ${i + 1}</small><span>${r.coins ? iconSvg('coin', 18) + ' ' + r.coins : iconSvg({ heli: 'heli', bay: 'park', key: 'key' }[r.powerup], 20)}</span>${st === 'past' ? '<i>✓</i>' : ''}</div>`; }).join('');
+  const show = (granted) => modal({ icon: 'gift', title: 'Daily Reward', body: `<div class="dgrid">${cells(granted)}</div><small class="muted">${d.streak > 1 ? d.streak + ' day streak' : 'Play daily to build a streak'} • Best ${d.best}</small>`, dismissible: true,
     actions: granted ? [{ label: 'Reward claimed!', cls: 'green' }] : d.claimable ? [{ label: 'Claim', cls: 'green', onClick: () => { const r = claimDaily(S.profile); save(r.profile); sfx.coin(); haptic('success'); $$coins(); if (S.route === 'home') renderHome(); show(true); return false; } }, { label: 'Later', cls: 'ghost' }] : [{ label: 'Come back tomorrow', cls: 'ghost' }] });
   show(false);
 }
@@ -172,11 +171,12 @@ function showWorldBanner(info) {
   el.innerHTML = `<small>World ${info.worldIndex + 1} of ${WORLDS.length}</small><h2>${esc(w.name)}</h2><i style="background:${w.ground}"></i><small>Tap to start</small>`;
   el.onclick = () => el.remove(); st.appendChild(el); setTimeout(() => el.remove(), 2600);
 }
+const OB_ICON = { cone: 'cone', lock: 'lock', barrier: 'cone', ice: 'snow', mystery: 'mystery', slot: 'cone', deepice: 'snow', gate: 'cone' };
 function showHint(n, level) {
   const b = $('[data-banner]'), msgs = { 1: 'Tap a vehicle to send it to the bay. Passengers board a bus of their colour.', 2: 'Blocked? Move the vehicle in front first. Every tap costs a move.', 3: 'Locked vehicles open after enough others have left.' };
   const seen = S.profile.seenObstacles || [], fresh = level && OBSTACLES.find((o) => o.id !== 'cone' && (level.obstacles || []).includes(o.id) && !seen.includes(o.id));
   if (msgs[n] && !S.seenHint[n]) { b.textContent = msgs[n]; b.hidden = false; S.seenHint[n] = true; setTimeout(() => { b.hidden = true; }, 6000); }
-  else if (fresh) { b.textContent = fresh.icon + ' New: ' + fresh.name + ' - ' + fresh.desc; b.hidden = false; save({ seenObstacles: [...seen, fresh.id] }); setTimeout(() => { b.hidden = true; }, 7000); }
+  else if (fresh) { b.innerHTML = iconSvg(OB_ICON[fresh.id] || 'cone', 18) + ' New: ' + esc(fresh.name) + ' - ' + esc(fresh.desc); b.hidden = false; save({ seenObstacles: [...seen, fresh.id] }); setTimeout(() => { b.hidden = true; }, 7000); }
   else b.hidden = true;
 }
 function setMoves(left) { const m = $('[data-moves]'); if (!m) return; m.textContent = 'Moves ' + Math.max(0, left); m.classList.toggle('low', left <= 3); }
@@ -222,7 +222,7 @@ function applyPowerup(type, targetId) {
 }
 function offerBuy(type) {
   const price = SINGLE_POWERUP_COIN_PRICE[type], p = POWERUPS[type], can = S.profile.coins >= price;
-  modal({ emoji: p.icon, title: p.name, body: esc(p.desc) + '<br>You have none left.', dismissible: true, actions: [
+  modal({ icon: { heli: 'heli', bay: 'park', key: 'key' }[type], title: p.name, body: esc(p.desc) + '<br>You have none left.', dismissible: true, actions: [
     { label: `Buy 1 for ${fmt(price)} coins`, cls: 'gold', disabled: !can, onClick: () => { const r = coinPurchase(S.profile, 'powerup', type); if (r.ok) { save(r.profile); refreshPowerbar(); sfx.coin(); toast('Bought ' + p.name); } return true; } },
     { label: can ? 'Not now' : 'Not enough coins yet. Win levels to earn more.', cls: 'ghost' },
   ] });
@@ -241,17 +241,17 @@ function handleWin() {
   const mult = S.round.special ? S.round.special.coinMultiplier : 1, reward = level.coinReward * mult;
   const left = Math.max(0, S.round.moveLimit - S.round.movesUsed), slack = Math.max(1, S.round.moveLimit - level.vehicles.length), ratio = left / slack, stars = ratio >= 0.5 ? 3 : ratio >= 0.2 ? 2 : 1;
   let p = applyResult(S.profile, firstTry ? 'win-first-try' : 'win-retry');
-  const ev = completionEvents(n), lines = [['Stars', '\u2B50'.repeat(stars) + '\u2606'.repeat(3 - stars)], ['Coins', '+' + fmt(reward)]];
+  const ev = completionEvents(n), starRow = { html: Array.from({ length: 3 }, (_, i) => iconSvg(i < stars ? 'starOn' : 'starOff', 20)).join('') }, lines = [['Stars', starRow], ['Coins', '+' + fmt(reward)]];
   let coins = (p.coins || 0) + reward + ev.bonusCoins, owned = [...(p.ownedSkins || [])];
   if (ev.bonusCoins) lines.push([ev.worldUnlocked !== null ? 'World complete!' : 'Area complete!', '+' + fmt(ev.bonusCoins)]);
   for (const s of ev.rewardSkins) { if (!owned.includes(s)) { owned.push(s); const sk = skinById(s); if (sk) lines.push(['New skin', sk.name]); } }
   if (S.round.special) lines.push(['Golden Streak', 'x' + SPECIAL_BONUS.coinMultiplier + ' coins']);
   p = { ...p, coins, ownedSkins: owned, highestLevel: Math.max(p.highestLevel || 0, n), stars: { ...(p.stars || {}), [n]: Math.max((p.stars || {})[n] || 0, stars) } };
   save(p);
-  lines.push(['Win streak', '\u{1F525} ' + p.winStreak + (firstTry ? '' : ' (retries reset it)')]);
+  lines.push(['Win streak', { html: iconSvg('flame', 18) + ' ' + p.winStreak + (firstTry ? '' : ' (retries reset it)') }]);
   sfx.win(); haptic('success'); $$coins();
   const last = n >= TOTAL_LEVELS;
-  modal({ emoji: '\u{1F389}', title: 'Level ' + n + ' cleared!', lines, actions: [
+  modal({ icon: 'trophy', title: 'Level ' + n + ' cleared!', lines, actions: [
     last ? { label: 'You finished the game!', cls: 'green', onClick: () => go('home') } : { label: 'Next level', cls: 'green', onClick: () => { startLevel(n + 1); } },
     { label: 'Home', cls: 'ghost', onClick: () => go('home') },
   ] });
@@ -261,7 +261,7 @@ function handleStuck() {
   S.modalStuck = true;
   const a = availability('bay', S.game.round, S.profile.powerups || {});
   sfx.lose(); haptic('error');
-  modal({ emoji: '\u{1F17F}️', title: 'The bay is full!', body: 'No passenger can board right now.' + (a.canUse ? ' Use Bay+ to add a parking slot and keep going.' : ''), actions: [
+  modal({ icon: 'full', title: 'The bay is full!', body: 'No passenger can board right now.' + (a.canUse ? ' Use Bay+ to add a parking slot and keep going.' : ''), actions: [
     ...(a.canUse ? [{ label: 'Use Bay+' + (a.free > 0 ? ' (free)' : ''), cls: 'green', onClick: () => { applyPowerup('bay'); S.modalStuck = false; return true; } }] : []),
     { label: 'Give up', cls: 'ghost', onClick: () => { S.modalStuck = false; failStuck(S.game); playEvents(); return true; } },
   ] });
@@ -271,7 +271,7 @@ function handleLose(reason) {
   const n = S.levelNo; let p = applyResult(S.profile, 'lose'); p = save(p);
   sfx.lose(); haptic('error');
   const can = p.coins >= SKIP_COST;
-  modal({ emoji: reason === 'out-of-moves' ? '⏰' : '\u{1F6A7}', title: reason === 'out-of-moves' ? 'Out of moves' : 'Bay full', body: 'Your win streak was reset. Try a different order!', actions: [
+  modal({ icon: reason === 'out-of-moves' ? 'clock' : 'full', title: reason === 'out-of-moves' ? 'Out of moves' : 'Bay full', body: 'Your win streak was reset. Try a different order!', actions: [
     { label: 'Try again', cls: 'green', onClick: () => { S.attempts++; startLevel(n, { retry: true }); } },
     { label: `Win level for ${fmt(SKIP_COST)} coins`, cls: 'gold', disabled: !can, onClick: () => skipLevel(n) },
     { label: 'Home', cls: 'ghost', onClick: () => go('home') },
@@ -319,10 +319,10 @@ function renderShop() {
 }
 function setCard(c) {
   const set = c.set, vs = skinById(vehicleSkinId(set.id)), st = BUS_STYLES.find((s) => s.id === set.id);
-  const pic = st ? `<img src="img/buses/${st.id}.png" alt="${esc(set.name)} bus" loading="lazy">` : `<div class="big">${TOPPER_EMOJI[vs.style.topper] || '\u{1F68C}'}</div>`;
+  const pic = st ? `<img src="img/buses/${st.id}.png" alt="${esc(set.name)} bus" loading="lazy">` : `<div class="big">${topperSvg(vs.style.topper) || iconSvg('bus', 64)}</div>`;
   const equipped = S.profile.equippedVehicleSkin === vs.id;
   const acts = c.ownsAll ? `<button class="btn ${equipped ? 'ghost' : 'green'}" data-equipset="${set.id}" ${equipped ? 'disabled' : ''}>${equipped ? 'Equipped' : 'Equip set'}</button>`
-    : `<button class="btn gold" data-buyset="${set.id}">\u{1FA99} ${fmt(c.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneyset="${set.id}">${c.usd}</button>` : ''}`;
+    : `<button class="btn gold" data-buyset="${set.id}">${iconSvg('coin', 18)} ${fmt(c.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneyset="${set.id}">${c.usd}</button>` : ''}`;
   return `<div class="set"><div class="pic">${pic}<span class="tagl">${c.tag}${c.endsAt ? ' • ' + timeLeft(c.endsAt) : ''}</span></div>
     <div class="body"><h3>${esc(set.name)}</h3><div class="muted">Bus: ${esc(set.vehicle.name)} • Outfit: ${esc(set.passenger.name)}</div><div class="acts">${acts}</div></div></div>`;
 }
@@ -330,14 +330,14 @@ function setCard(c) {
 function packsHtml() {
   const packs = getShopPacks(S.profile, new Date()), eq = S.profile.equippedVehicleSkin;
   const cell = (skinId, label, paint, topper, owned, setEquip, riderId, ri) => {
-    const on = eq === skinId, btn = !owned ? '<span class="lockt">\u{1F512} In pack</span>' : `<button class="btn ${on ? 'ghost' : 'green'}" ${setEquip ? `data-equipset="${setEquip}"` : `data-equipskin="${skinId}"`} ${on ? 'disabled' : ''}>${on ? 'Equipped' : 'Equip'}</button>`;
+    const on = eq === skinId, btn = !owned ? `<span class="lockt">${iconSvg('lock', 14)} In pack</span>` : `<button class="btn ${on ? 'ghost' : 'green'}" ${setEquip ? `data-equipset="${setEquip}"` : `data-equipskin="${skinId}"`} ${on ? 'disabled' : ''}>${on ? 'Equipped' : 'Equip'}</button>`;
     return `<div class="pk"><div class="pkpic">${miniBus(paint, '#ffc41f', topper)}<span class="pkr">${riderPic(riderId, ri, 56)}</span></div><b>${esc(label)}</b>${btn}</div>`;
   };
   return packs.map((c) => {
     const p = c.pack, set = setById(p.setId), vid = vehicleSkinId(p.setId), own = c.owned;
     const cells = [cell(vid, set.vehicle.name, paintFor(vid), set.vehicle.style.topper, own.has(vid), p.setId, passengerSkinId(p.setId), 0), ...p.variants.map((v, i) => cell(v.id, v.name, v.paint, v.topper, own.has(v.id), null, v.riderId, i + 1))].join('');
-    const acts = c.ownsAll ? '<div class="muted" style="text-align:center">You own this pack</div>' : `<div class="acts"><button class="btn gold" data-buypack="${p.id}">\u{1FA99} ${fmt(p.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneypack="${p.id}">${p.usd}</button>` : ''}</div>`;
-    return `<div class="pack" style="--s1:${p.sky[0]};--s2:${p.sky[1]}"><div class="packhd"><span class="gl">${p.glyph}</span><div><h3>${esc(p.name)}</h3><small>${c.inSeason ? 'In season now' : 'Any time'} • Bus set + outfit + 3 extra buses</small></div></div><div class="pkgrid">${cells}</div>${acts}</div>`;
+    const acts = c.ownsAll ? '<div class="muted" style="text-align:center">You own this pack</div>' : `<div class="acts"><button class="btn gold" data-buypack="${p.id}">${iconSvg('coin', 18)} ${fmt(p.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneypack="${p.id}">${p.usd}</button>` : ''}</div>`;
+    return `<div class="pack" style="--s1:${p.sky[0]};--s2:${p.sky[1]}"><div class="packhd"><span class="gl">${decorHtml(p.glyph)}</span><div><h3>${esc(p.name)}</h3><small>${c.inSeason ? 'In season now' : 'Any time'} • Bus set + outfit + 3 extra buses</small></div></div><div class="pkgrid">${cells}</div>${acts}</div>`;
   }).join('') + '<p class="muted" style="text-align:center;margin:16px auto;max-width:420px">Packs are yours forever. Each one unlocks the season set plus three more buses with their own colours.</p>';
 }
 function setsHtml() {
@@ -348,12 +348,12 @@ function setsHtml() {
 }
 function powerHtml() {
   const own = S.profile.powerups || {};
-  const singles = ['heli', 'bay', 'key'].map((k) => `<div class="item"><div class="ic">${iconSvg({ heli: 'heli', bay: 'park', key: 'key' }[k], 42)}</div><div class="tx"><b>${POWERUPS[k].name} <small>(you have ${own[k] || 0})</small></b><small>${esc(POWERUPS[k].desc)}</small></div><button class="btn gold" data-buypu="${k}">\u{1FA99} ${fmt(SINGLE_POWERUP_COIN_PRICE[k])}</button></div>`).join('');
-  const bundles = POWERUP_BUNDLES.map((b) => `<div class="item"><div class="ic">${iconSvg(b.art || 'kit1', 46)}</div><div class="tx"><b>${esc(b.name)}</b><small>${b.items.heli} of each power-up</small></div><button class="btn gold" data-buybundle="${b.id}">\u{1FA99} ${fmt(b.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneybundle="${b.id}">${b.price}</button>` : ''}</div>`).join('');
+  const singles = ['heli', 'bay', 'key'].map((k) => `<div class="item"><div class="ic">${iconSvg({ heli: 'heli', bay: 'park', key: 'key' }[k], 42)}</div><div class="tx"><b>${POWERUPS[k].name} <small>(you have ${own[k] || 0})</small></b><small>${esc(POWERUPS[k].desc)}</small></div><button class="btn gold" data-buypu="${k}">${iconSvg('coin', 18)} ${fmt(SINGLE_POWERUP_COIN_PRICE[k])}</button></div>`).join('');
+  const bundles = POWERUP_BUNDLES.map((b) => `<div class="item"><div class="ic">${iconSvg(b.art || 'kit1', 46)}</div><div class="tx"><b>${esc(b.name)}</b><small>${b.items.heli} of each power-up</small></div><button class="btn gold" data-buybundle="${b.id}">${iconSvg('coin', 18)} ${fmt(b.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneybundle="${b.id}">${b.price}</button>` : ''}</div>`).join('');
   return `<div class="section">Single</div>${singles}<div class="section">Bundles</div>${bundles}<p class="muted" style="text-align:center;margin:12px auto;max-width:420px">Win streaks give free power-up uses each round: 1 free after a first-try win, 2 after three in a row.</p>`;
 }
 function coinsHtml() {
-  if (!moneyOk()) return `<div class="card" style="max-width:420px;margin:20px auto;text-align:center"><div style="font-size:42px">\u{1FA99}</div><b>Earn coins by winning levels</b><p class="muted">Every level pays coins, and bonus coins for finishing an area or a world. Coin packs are not available in this build.</p></div>`;
+  if (!moneyOk()) return `<div class="card" style="max-width:420px;margin:20px auto;text-align:center">${iconSvg('coin', 42)}<b>Earn coins by winning levels</b><p class="muted">Every level pays coins, and bonus coins for finishing an area or a world. Coin packs are not available in this build.</p></div>`;
   return COIN_PACKS.map((c) => `<div class="item"><div class="ic">${iconSvg(c.art || 'coins1', 46)}</div><div class="tx"><b>${fmt(c.coins)} coins ${c.badge ? `<small>(${c.badge})</small>` : ''}</b></div><button class="btn" data-moneycoins="${c.id}">${c.price}</button></div>`).join('')
     + `<div style="text-align:center;margin:14px"><button class="btn ghost" data-act="restore">Restore purchases</button></div>`;
 }
@@ -397,7 +397,7 @@ document.addEventListener('click', async (e) => {
   if (d.set) { save({ settings: { ...S.profile.settings, [d.set]: !S.profile.settings[d.set] } }); return renderSettings(); }
   if (d.act === 'restore') { try { const r = await restorePurchases(); S.profile = loadProfile(); toast('Purchases restored'); } catch (err) { toast('Nothing to restore'); } return; }
   if (d.act === 'testcoins') { save({ coins: (S.profile.coins || 0) + 10000 }); sfx.coin(); toast('+10,000 coins'); return renderSettings(); }
-  if (d.act === 'reset') return modal({ emoji: '⚠️', title: 'Reset everything?', body: 'This erases your levels, coins, power-ups and skins on this device.', actions: [{ label: 'Erase progress', cls: 'red', onClick: () => { S.profile = resetProfile(); S.areaView = 1; configureSfx(S.profile.settings); go('home'); } }, { label: 'Cancel', cls: 'ghost' }] });
+  if (d.act === 'reset') return modal({ icon: 'warning', title: 'Reset everything?', body: 'This erases your levels, coins, power-ups and skins on this device.', actions: [{ label: 'Erase progress', cls: 'red', onClick: () => { S.profile = resetProfile(); S.areaView = 1; configureSfx(S.profile.settings); go('home'); } }, { label: 'Cancel', cls: 'ghost' }] });
   if (d.buyset) { const r = coinPurchase(S.profile, 'set', setById(d.buyset), { hemisphere: S.profile.hemisphere }); if (r.ok) { save(r.profile); sfx.coin(); toast('Set unlocked!'); } else toast({ 'not-enough-coins': 'Not enough coins yet.', 'not-in-shop': 'Not in the shop right now.', 'already-owned': 'You already own it.' }[r.reason] || 'Could not buy.'); return renderShop(); }
   if (d.buypack) { const r = coinPurchase(S.profile, 'pack', packById(d.buypack)); if (r.ok) { save(r.profile); sfx.coin(); toast('Pack unlocked!'); } else toast({ 'not-enough-coins': 'Not enough coins yet.', 'already-owned': 'You already own it.' }[r.reason] || 'Could not buy.'); return renderShop(); }
   if (d.moneypack) return shopMoney(packById(d.moneypack).productId, 'Pack');

@@ -9,12 +9,11 @@ import { PACK_PAINT } from './packs.js';
 // Bold, very different hues so they are easy to tell apart at a glance.
 export const COLOR_HEX = { magenta: '#ff3fa4', green: '#22c94a', yellow: '#ffd60a', blue: '#2a7bff', red: '#ff3030', purple: '#9345e8', orange: '#ff8a00', cyan: '#12d4e8', brown: '#a8693a', lime: '#b7ee1c' };
 
-export const TOPPER_EMOJI = {
-  taxiSign: '\u{1F695}', lightBar: '\u{1F6A8}', rocket: '\u{1F680}', horn: '\u{1F984}', crown: '\u{1F451}', surfboard: '\u{1F3C4}', flag: '\u{1F6A9}', snowCap: '❄️',
-  antenna: '\u{1F4E1}', lollipop: '\u{1F36D}', pumpkin: '\u{1F383}', balloon: '\u{1F388}', lifebuoy: '\u{1F6DF}', ladder: '\u{1FA9C}', planet: '\u{1FA90}', controller: '\u{1F3AE}',
-  ball: '\u{1F3C0}', palm: '\u{1F334}', trafficCone: '\u{1F6A7}', jollyFlag: '\u{1F3F4}‍☠️', boltSign: '⚡', speaker: '\u{1F50A}', bigTop: '\u{1F3AA}', flowerPot: '\u{1F338}',
-  umbrella: '⛱️', leafPile: '\u{1F342}', snowman: '⛄', gifts: '\u{1F381}', cauldron: '\u{1F9EA}', heart: '\u{1F496}', potOfGold: '\u{1F4B0}', eggs: '\u{1F95A}', rainbowArch: '\u{1F308}',
-};
+// The list of valid vehicle-topper keys (taxiSign, lightBar, rocket, horn, crown, surfboard, flag,
+// snowCap, antenna, lollipop, pumpkin, balloon, lifebuoy, ladder, planet, controller, ball, palm,
+// trafficCone, jollyFlag, boltSign, speaker, bigTop, flowerPot, umbrella, leafPile, snowman, gifts,
+// cauldron, heart, potOfGold, eggs, rainbowArch) now lives as TOPPER_ART in decorArt.js, which draws
+// each one as a small vector badge instead of this table's old emoji glyphs.
 
 // accessory -> [kind, colour 1, colour 2]
 const HATS = {

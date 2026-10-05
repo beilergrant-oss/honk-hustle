@@ -4,6 +4,7 @@
 import { VEHICLE_SKINS, PASSENGER_SKINS, isOwned, passengerFor, skinById } from './skinData.js';
 import { busPic, riderPic } from './cartoon.js';
 import { COLOR_HEX } from './look.js';
+import { iconSvg } from './decorArt.js';
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const RARITY = { common: '#8fa3c8', rare: '#3b82f6', epic: '#9b5de5', legendary: '#ffb300' };
@@ -21,7 +22,7 @@ export function mountGarage(root, opts = {}) {
     return rows.map(({ s, i, own, eq }) => `<button class="gc ${eq ? 'eq' : ''} ${own ? '' : 'lock'}" data-skin="${s.id}" ${own ? '' : 'data-locked="1"'} aria-label="${esc(s.name)}${own ? '' : ', locked'}">
       <span class="gp">${kind === 'bus' ? busPic(s.id) : riderPic(s.id, i)}</span><b>${esc(s.name)}</b>
       <span class="gs" style="background:${RARITY[s.rarity] || RARITY.common}"></span>
-      <i class="gt">${eq ? '✓ Equipped' : own ? 'Tap to equip' : '\u{1F512} ' + esc(HOW(s))}</i></button>`).join('');
+      <i class="gt">${eq ? '✓ Equipped' : own ? 'Tap to equip' : iconSvg('lock', 14) + ' ' + esc(HOW(s))}</i></button>`).join('');
   }
 
   function render() {
@@ -29,11 +30,11 @@ export function mountGarage(root, opts = {}) {
     const ownedBus = VEHICLE_SKINS.filter((s) => isOwned(profile, s.id)).length, ownedRid = PASSENGER_SKINS.filter((s) => isOwned(profile, s.id)).length;
     const crowd = Object.values(COLOR_HEX).slice(0, 6).map((_, i) => riderPic(pid, i, 64)).join('');
     el.innerHTML = `
-      <div class="gtop"><button class="round-btn" data-g="close" aria-label="Back">‹</button><h1>Garage</h1><span class="pill">\u{1FA99} ${(profile.coins || 0).toLocaleString()}</span></div>
+      <div class="gtop"><button class="round-btn" data-g="close" aria-label="Back">‹</button><h1>Garage</h1><span class="pill">${iconSvg('coin', 18)} ${(profile.coins || 0).toLocaleString()}</span></div>
       <div class="gstage"><div class="gbus">${busPic(vid)}</div><div class="gcrowd">${crowd}</div><div class="gname">${esc((skinById(vid) || {}).name || 'Classic')} <small>+ ${esc((skinById(pid) || {}).name || 'Classic')}</small></div></div>
-      <div class="gtabs"><button class="${tab === 'bus' ? 'on' : ''}" data-tab="bus">\u{1F68C} Buses <small>${ownedBus}/${VEHICLE_SKINS.length}</small></button><button class="${tab === 'rider' ? 'on' : ''}" data-tab="rider">\u{1F9D1} Riders <small>${ownedRid}/${PASSENGER_SKINS.length}</small></button></div>
+      <div class="gtabs"><button class="${tab === 'bus' ? 'on' : ''}" data-tab="bus">${iconSvg('bus', 18)} Buses <small>${ownedBus}/${VEHICLE_SKINS.length}</small></button><button class="${tab === 'rider' ? 'on' : ''}" data-tab="rider">${iconSvg('rider', 18)} Riders <small>${ownedRid}/${PASSENGER_SKINS.length}</small></button></div>
       <div class="gscroll"><div class="ggrid">${tab === 'bus' ? cards(VEHICLE_SKINS, 'bus') : cards(PASSENGER_SKINS, 'rider')}</div>
-        <div class="gshop"><button class="btn gold" data-g="shop">\u{1F6D2} Get more in the Shop</button></div></div>`;
+        <div class="gshop"><button class="btn gold" data-g="shop">${iconSvg('cart', 18)} Get more in the Shop</button></div></div>`;
   }
   el.addEventListener('click', (e) => {
     const t = e.target.closest('[data-g],[data-tab],[data-skin]'); if (!t) return;

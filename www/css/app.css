@@ -152,7 +152,7 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 
 /* ---- Season Packs ---- */
 .pack{background:linear-gradient(var(--s1,#cfe8ff),var(--s2,#fff));border-radius:22px;padding:12px;margin:0 auto 14px;max-width:640px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
-.packhd{display:flex;align-items:center;gap:10px}.packhd .gl{font-size:34px}
+.packhd{display:flex;align-items:center;gap:10px}.packhd .gl{width:34px;height:34px;flex:none}.packhd .gl .dimg{display:block;width:100%;height:100%;object-fit:contain}
 .packhd h3{margin:0;font-size:19px;font-weight:900;color:var(--navy)}.packhd small{font-weight:700;opacity:.75;font-size:12px}
 .pkgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 @media (max-width:420px){.pkgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -250,3 +250,5 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .ic2{display:block;margin:0 auto}.home-row button span{display:block;height:30px}
 .pw .i{display:inline-flex;align-items:center;justify-content:center}.pw .i .ic2{display:block}
 .pill .ic2{display:inline-block;margin:0;vertical-align:middle}
+.btn .ic2,.lockt .ic2,.gl .ic2,.gt .ic2,.dday .ic2,.banner .ic2,.gtabs .ic2{display:inline-block;vertical-align:-5px;margin:0 2px 0 0}
+.gl{display:inline-flex}

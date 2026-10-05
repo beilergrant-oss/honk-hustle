@@ -3,16 +3,15 @@
 // World: x = right, y = up, z = away from the player. The board sits in front (z 0..h), then the parking bay, then the passenger queue.
 import { cellsOf } from './levelGen.js';
 import { shade } from './busArt.js';
-import { COLOR_HEX, TOPPER_EMOJI, rr, drawPassenger } from './look.js';
+import { COLOR_HEX, rr, drawPassenger } from './look.js';
 import { sfx, haptic } from './sfx.js';
 import { BACKDROPS } from './backdrops.js';
 import { blocker } from './game.js';
-import { decorImg, iconImg } from './decorArt.js';
+import { decorImg, iconImg, topperImg, hasTopper } from './decorArt.js';
 
 const DIR_VEC = { E: [1, 0], S: [0, 1], W: [-1, 0], N: [0, -1] };       // grid directions (grid y grows toward the player)
 const ease = (t) => 1 - Math.pow(1 - t, 3);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const EMOJI_FONT = '"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
 const PITCH = 1.16, SINP = Math.sin(PITCH), COSP = Math.cos(PITCH), FOV = 36 * Math.PI / 180;
 const LIGHT = (() => { const v = [-0.45, 0.85, -0.35], n = Math.hypot(...v); return v.map((x) => x / n); })();
 const BODY_H = 0.34, CAB_H = 0.3;
@@ -264,7 +263,7 @@ export function createRenderer(canvas, opts = {}) {
     g.restore();
     // things that must stay upright
     const tp = pt(cmid, 0), c = P(tp[0], tp[1], tp[2]);
-    if (st.topper && TOPPER_EMOJI[st.topper] && !locked) { g.save(); g.fillStyle = '#000'; if (pose.alpha !== undefined) g.globalAlpha = pose.alpha; g.font = Math.round(c.u * 0.42 * sc) + 'px ' + EMOJI_FONT; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillText(TOPPER_EMOJI[st.topper], c.x, c.y + c.u * 0.1); g.restore(); }
+    if (st.topper && hasTopper(st.topper) && !locked) { g.save(); if (pose.alpha !== undefined) g.globalAlpha = pose.alpha; const im = topperImg(st.topper), sz = c.u * 0.46 * sc; if (im.complete && im.naturalWidth) g.drawImage(im, c.x - sz / 2, c.y - sz * 0.78, sz, sz); g.restore(); }
     if (frozen || mystery) {
       const rr2 = c.u * 0.27 * sc;
       g.fillStyle = frozen ? '#1f6fb0' : '#10246b'; g.beginPath(); g.arc(c.x, c.y - rr2 * 0.3, rr2, 0, 7); g.fill(); g.strokeStyle = frozen ? '#e6f8ff' : '#ffe14d'; g.lineWidth = 2; g.stroke();

@@ -155,7 +155,46 @@ const S = {
   gift2: (c) => S.gift(c),
   cap: (c) => S.cloud(),
   blank: () => '',
+  // Small roof-ornament shapes for vehicle toppers (see TOPPER_ART below) - not used as scenery.
+  taxisign: () => rc(24, 30, 52, 30, 6, '#fff3d6') + rc(24, 30, 52, 9, 2, '#2c3252') + [0, 1, 2, 3].map((i) => `<rect x="${28 + i * 12}" y="41" width="6" height="13" fill="${i % 2 ? '#2c3252' : '#ffd23f'}"/>`).join('') + rc(44, 60, 12, 14, 2, '#2c3252'),
+  lightbar: () => rc(12, 56, 76, 18, 8, '#2c3252') + ci(34, 52, 15, '#ff3b3b') + ci(66, 52, 15, '#2a7bff') + hi(28, 46, 5, 4) + hi(60, 46, 5, 4),
+  dish: () => ln('M50 66 L50 92', '#8a93ad', 6) + pa('M12 46 Q50 14 88 46 Q50 30 12 46Z', '#dfe6f5', 2) + ci(50, 46, 7, '#5a2ea8') + ln('M50 40 L66 22', '#5a2ea8', 3),
+  buoy: () => ci(50, 50, 34, '#ff3b3b') + ci(50, 50, 16, '#eef4ff') + '<circle cx="50" cy="50" r="25" fill="none" stroke="#fff" stroke-width="9" stroke-dasharray="10 10"/>',
+  ladder: () => rc(26, 4,10, 92, 3, '#e8c070') + rc(64, 4, 10, 92, 3, '#e8c070') + [0, 1, 2, 3, 4].map((i) => rc(26, 16 + i * 18, 48, 8, 2, '#c8963e')).join(''),
+  pad: () => rc(8, 34, 84, 36, 18, '#4a4d63') + ci(30, 52, 13, '#2c3252') + '<path d="M30 44v16M22 52h16" stroke="#dfe6f5" stroke-width="4" stroke-linecap="round"/>' + ci(68, 44, 7, '#ff3b3b') + ci(80, 52, 7, '#ffd23f') + ci(68, 60, 7, '#2fd45a'),
+  basketball: () => ci(50, 50, 38, '#ff8a2a') + '<path d="M50 12V88M12 50H88M20 20 Q50 50 20 80M80 20 Q50 50 80 80" fill="none" stroke="#5a2a0a" stroke-width="3"/>',
+  conebar: () => pa('M38 90 L46 22 L54 22 L62 90Z', '#ff6a1a', 2) + rc(30, 82, 40, 10, 3, '#ff6a1a') + rc(34, 58, 32, 8, 0, '#fff') + rc(40, 38, 20, 8, 0, '#fff'),
+  pirateflag: () => ln('M20 94V6', '#3b2a1a', 5) + pa('M20 10 H86 L72 30 L86 50 H20Z', '#1d1d2a', 1.5) + ci(53, 30, 12, '#f4f1e6') + '<path d="M44 46 L50 32 L56 46M34 24 L44 34M62 24 L52 34" stroke="#f4f1e6" stroke-width="3" fill="none" stroke-linecap="round"/>',
+  bolt: () => pa('M58 4 L26 54 L46 54 L40 96 L76 42 L54 42Z', '#ffd23f', 1.5),
+  speaker: () => rc(30, 16, 40, 68, 10, '#2c3252') + ci(50, 34, 10, '#8a93ad') + ci(50, 66, 16, '#8a93ad') + ci(50, 66, 8, '#2c3252') + hi(46, 30, 3, 3),
+  cauldron: () => pa('M18 44 Q18 88 50 94 Q82 88 82 44Z', '#2c3252', 2) + el(50, 44, 32, 8, '#1c2340') + ci(40, 42, 5, '#6cd98a') + ci(58, 40, 4, '#6cd98a') + ci(50, 36, 3, '#9af0b0') + ln('M14 40 Q10 30 18 24', '#4a4d63', 5) + ln('M86 40 Q90 30 82 24', '#4a4d63', 5),
 };
+
+// vehicle topper key (look.js) -> [sprite key in S, ...colour args]. Small roof-ornament art, drawn in
+// place of the raw emoji that used to sit on top of a bus.
+const TOPPER_ART = {
+  taxiSign: ['taxisign'], lightBar: ['lightbar'], rocket: ['rocket', '#ff4d4d'], horn: ['unicorn'], crown: ['crown', '#ffd23f'],
+  surfboard: ['board', '#3fc1ff'], flag: ['flag', '#2c3252'], snowCap: ['snowflake'],
+  antenna: ['dish'], lollipop: ['lolly', '#ff5a9a'], pumpkin: ['pumpkin', '#ff8a2a'], balloon: ['balloon', '#ff4d6d'], lifebuoy: ['buoy'], ladder: ['ladder'], planet: ['planet', '#ffb02a'], controller: ['pad'],
+  ball: ['basketball'], palm: ['palm', '#3fb04a'], trafficCone: ['conebar'], jollyFlag: ['pirateflag'], boltSign: ['bolt'], speaker: ['speaker'], bigTop: ['circus', '#e8453c'], flowerPot: ['flower', '#ffb0d0'],
+  umbrella: ['umbrella', '#ff5a5a'], leafPile: ['maple', '#e8531c'], snowman: ['snowman'], gifts: ['gift', '#e8453c'], cauldron: ['cauldron'], heart: ['heart', '#ff4d8a'], potOfGold: ['moneybag', '#d8b24a'], eggs: ['egg', '#ffb0d0'], rainbowArch: ['rainbow'],
+};
+const tcache = new Map(), turls = new Map(), timgs = new Map();
+export function topperSvg(key) {
+  if (tcache.has(key)) return tcache.get(key);
+  defs = []; const spec = TOPPER_ART[key];
+  const svg = spec ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${(() => { const b = S[spec[0]](...spec.slice(1)); return `<defs>${defs.join('')}</defs>${b}`; })()}</svg>` : '';
+  tcache.set(key, svg); return svg;
+}
+export function topperUrl(key) {
+  if (!turls.has(key)) turls.set(key, 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(topperSvg(key) || '<svg xmlns="http://www.w3.org/2000/svg"/>'));
+  return turls.get(key);
+}
+export function topperImg(key) {
+  if (!timgs.has(key)) { const im = new Image(); im.src = topperUrl(key); timgs.set(key, im); }
+  return timgs.get(key);
+}
+export const hasTopper = (key) => !!TOPPER_ART[key];
 
 // emoji (as the backdrop data writes it) -> [sprite, colour, ...]
 const M = {};
@@ -179,6 +218,7 @@ add('\u{1F682}', 'train', '#e8453c'); add('\u{1F69C}', 'tractor', '#3fb04a'); ad
 add('\u{1F982}', 'scorpion', '#c8761e'); add('\u{1F983}', 'turkey'); add('\u{1F984}', 'unicorn'); add('\u{1F985}', 'eagle', '#8a5a2b'); add('\u{1F98B}', 'butterfly', '#3fa7ff'); add('\u{1F98C}', 'deer'); add('\u{1F98E}', 'lizard', '#4cb04c'); add('\u{1F992}', 'giraffe', '#ffc41f'); add('\u{1F993}', 'zebra'); add('\u{1F994}', 'hedgehog', '#8a5a2b'); add('\u{1F996}', 'trex', '#4cb04c'); add('\u{1F99C}', 'parrot');
 add('\u{1F9E7}', 'envelope', '#e8453c'); add('\u{1F9E8}', 'firework', '#ff4d4d'); add('\u{1F9E9}', 'puzzle', '#3fa7ff'); add('\u{1F9ED}', 'compass', '#c8a24a'); add('\u{1F9F1}', 'brick', '#d2693a'); add('\u{1F9F8}', 'teddy', '#c8761e'); add('\u{1FA80}', 'yoyo', '#ff4d6d'); add('\u{1FA94}', 'diya', '#e8802a'); add('\u{1FAA8}', 'rock', '#9aa3b8'); add('\u{1FAB8}', 'coral', '#ff6a8a');
 add('\u{1F308}', 'rainbow'); add('\u{1F30A}', 'wave', '#3fa7ff'); add('\u{1F30B}', 'volcano', '#8a5a4a'); add('☘', 'herb', '#2fa34a'); add('\u{1F3F4}', 'flag', '#2c3252'); add('\u{1F1FA}\u{1F1F8}', 'flag', '#3a5ad8');
+add('☀', 'sun');
 
 const cache = new Map(), urls = new Map(), imgs = new Map();
 export function decorSvg(key) {
@@ -208,6 +248,7 @@ const ICONS = {
   bus: '<defs><radialGradient id="bgB" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#6cc4ff"/><stop offset="1" stop-color="#2a7bff"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgB)" stroke="#164aa8" stroke-width="4"/><path d="M18 56 V40 Q18 30 30 28 H62 Q74 28 78 40 L82 50 Q90 52 90 60 V70 H18Z" fill="#ffc41f" stroke="#a86a00" stroke-width="4" stroke-linejoin="round"/><path d="M30 30 L26 46 H46 V30Z" fill="#bfe9ff" stroke="#a86a00" stroke-width="2.5"/><rect x="50" y="34" width="24" height="12" rx="3" fill="#bfe9ff" stroke="#a86a00" stroke-width="2.5"/><circle cx="34" cy="74" r="10" fill="#2c3252" stroke="#14205a" stroke-width="3"/><circle cx="74" cy="74" r="10" fill="#2c3252" stroke="#14205a" stroke-width="3"/>',
   cart: '<defs><radialGradient id="bgC" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#6cd98a"/><stop offset="1" stop-color="#22b85a"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgC)" stroke="#13783a" stroke-width="4"/><path d="M22 28 H34 L42 62 H76 L86 38 H36" fill="none" stroke="#fff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="46" cy="76" r="8" fill="#fff" stroke="#13783a" stroke-width="3"/><circle cx="72" cy="76" r="8" fill="#fff" stroke="#13783a" stroke-width="3"/><circle cx="60" cy="48" r="7" fill="#ffd23f" stroke="#a86a00" stroke-width="2"/>',
   gear: '<defs><radialGradient id="bgG" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#c7aef5"/><stop offset="1" stop-color="#9a5af2"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgG)" stroke="#5a2ea8" stroke-width="4"/><g fill="#fff3d6" stroke="#5a2ea8" stroke-width="3"><path d="M50 16 l4 9 10 1 -7 7 2 10 -9-5 -9 5 2-10 -7-7 10-1Z" transform="translate(0 0)"/></g><circle cx="50" cy="50" r="20" fill="#fff3d6" stroke="#5a2ea8" stroke-width="4"/><circle cx="50" cy="50" r="9" fill="#9a5af2" stroke="#5a2ea8" stroke-width="3"/><g stroke="#5a2ea8" stroke-width="4" stroke-linecap="round"><path d="M50 30V22M50 78V70M30 50H22M78 50H70M36 36L30 30M70 70L64 64M64 36L70 30M30 70L36 64"/></g>',
+  rider: '<defs><radialGradient id="bgR" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ff9fc4"/><stop offset="1" stop-color="#ff5fa8"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgR)" stroke="#a81c5e" stroke-width="4"/><circle cx="50" cy="38" r="16" fill="#fff3d6" stroke="#a81c5e" stroke-width="4"/><path d="M22 86 Q22 58 50 58 Q78 58 78 86Z" fill="#fff3d6" stroke="#a81c5e" stroke-width="4"/>',
   heli: '<defs><radialGradient id="bgH" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ff8a6a"/><stop offset="1" stop-color="#e8453c"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgH)" stroke="#a82a1c" stroke-width="4"/><path d="M8 32 H92" stroke="#fff3e0" stroke-width="5" stroke-linecap="round" opacity=".85"/><path d="M48 32 V40" stroke="#5a2a1c" stroke-width="5" stroke-linecap="round"/><rect x="26" y="40" width="48" height="26" rx="13" fill="#fff3e0" stroke="#5a2a1c" stroke-width="4"/><rect x="32" y="46" width="16" height="12" rx="5" fill="#8ecfff" stroke="#5a2a1c" stroke-width="2.5"/><path d="M74 50 H90 M90 44 V58" stroke="#5a2a1c" stroke-width="5" stroke-linecap="round" fill="none"/><path d="M24 70 H64" stroke="#5a2a1c" stroke-width="4" stroke-linecap="round"/><circle cx="34" cy="78" r="5" fill="#5a2a1c"/><circle cx="54" cy="78" r="5" fill="#5a2a1c"/>',
   park: '<defs><radialGradient id="bgP" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#5fb0ff"/><stop offset="1" stop-color="#2a7bff"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgP)" stroke="#164aa8" stroke-width="4"/><path d="M30 76 V26 H52 Q70 26 70 44 Q70 60 52 60 H30" fill="none" stroke="#fff" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><circle cx="76" cy="26" r="13" fill="#2fd45a" stroke="#1a8a38" stroke-width="3.5"/><path d="M76 20 V32 M70 26 H82" stroke="#fff" stroke-width="4" stroke-linecap="round"/>',
   key: '<defs><radialGradient id="bgK" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#fff0a0"/><stop offset="1" stop-color="#e8a900"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgK)" stroke="#a86a00" stroke-width="4"/><circle cx="34" cy="38" r="17" fill="#ffe14d" stroke="#8a5600" stroke-width="4.5"/><circle cx="34" cy="38" r="6" fill="#8a5600"/><path d="M46 50 L80 84 M66 70 L74 62 M76 80 L84 72" stroke="#ffe14d" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/><path d="M46 50 L80 84" stroke="#8a5600" stroke-width="10.5" stroke-linecap="round" opacity="0"/><path d="M26 20 L30 26 M20 28 L28 30" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>',
@@ -224,6 +265,14 @@ const ICONS = {
   coin: '<circle cx="50" cy="50" r="38" fill="#ffc41f" stroke="#a86a00" stroke-width="5"/><circle cx="50" cy="50" r="28" fill="none" stroke="#fff3b0" stroke-width="4"/><path d="M50 30 V70 M40 40 Q50 32 60 40 Q40 50 40 56 Q50 72 60 60" fill="none" stroke="#a86a00" stroke-width="5" stroke-linecap="round"/>',
   flame: '<path d="M50 6 Q70 34 78 52 Q90 76 66 90 Q50 98 34 90 Q10 76 24 52 Q30 38 38 22 Q42 34 50 6Z" fill="#ff7a1a" stroke="#a84a00" stroke-width="3"/><path d="M50 44 Q62 62 64 74 Q66 88 50 90 Q34 88 36 74 Q38 62 50 44Z" fill="#ffd23f"/>',
   gift: '<rect x="14" y="40" width="72" height="48" rx="6" fill="#e8453c" stroke="#8f1c1c" stroke-width="4"/><rect x="10" y="28" width="80" height="16" rx="4" fill="#ff6a5a" stroke="#8f1c1c" stroke-width="4"/><rect x="44" y="28" width="12" height="60" fill="#ffd23f"/><ellipse cx="38" cy="20" rx="12" ry="8" fill="#ffd23f" transform="rotate(-25 38 20)"/><ellipse cx="62" cy="20" rx="12" ry="8" fill="#ffd23f" transform="rotate(25 62 20)"/>',
+  trophy: '<defs><radialGradient id="bgT" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffe17a"/><stop offset="1" stop-color="#ffac1f"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgT)" stroke="#a86a00" stroke-width="4"/><path d="M34 26h32v18q0 16-16 16t-16-16Z" fill="#fff3d6" stroke="#8a5600" stroke-width="3.5"/><path d="M34 30 Q18 30 20 44 Q22 54 34 52" fill="none" stroke="#fff3d6" stroke-width="4"/><path d="M66 30 Q82 30 80 44 Q78 54 66 52" fill="none" stroke="#fff3d6" stroke-width="4"/><rect x="44" y="60" width="12" height="10" fill="#fff3d6" stroke="#8a5600" stroke-width="3"/><rect x="34" y="70" width="32" height="8" rx="3" fill="#fff3d6" stroke="#8a5600" stroke-width="3"/>',
+  clock: '<defs><radialGradient id="bgCl" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#8fd8ff"/><stop offset="1" stop-color="#2a9bd8"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgCl)" stroke="#145a82" stroke-width="4"/><circle cx="50" cy="52" r="28" fill="#fff3d6" stroke="#145a82" stroke-width="4"/><path d="M50 36V52L64 60" fill="none" stroke="#145a82" stroke-width="5" stroke-linecap="round"/><path d="M40 16h20" stroke="#145a82" stroke-width="5" stroke-linecap="round"/>',
+  warning: '<defs><radialGradient id="bgW" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffd27a"/><stop offset="1" stop-color="#ff8a1f"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgW)" stroke="#a84a00" stroke-width="4"/><path d="M50 18 L86 82 H14Z" fill="#fff3d6" stroke="#8a3b00" stroke-width="4" stroke-linejoin="round"/><rect x="46" y="40" width="8" height="22" rx="3" fill="#8a3b00"/><circle cx="50" cy="70" r="4.5" fill="#8a3b00"/>',
+  full: '<defs><radialGradient id="bgFu" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ff8a8a"/><stop offset="1" stop-color="#e8453c"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgFu)" stroke="#8f1c1c" stroke-width="4"/><rect x="28" y="22" width="44" height="56" rx="8" fill="#fff3d6" stroke="#8f1c1c" stroke-width="4"/><text x="50" y="63" text-anchor="middle" font-family="Poppins,system-ui" font-weight="900" font-size="34" fill="#8f1c1c">P</text>',
+  cone: '<defs><radialGradient id="bgCn" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#ffb066"/><stop offset="1" stop-color="#ff8a1f"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgCn)" stroke="#a84a00" stroke-width="4"/><path d="M42 78 L48 26 L52 26 L58 78Z" fill="#fff3d6" stroke="#8a3b00" stroke-width="3.5" stroke-linejoin="round"/><rect x="34" y="72" width="32" height="10" rx="3" fill="#fff3d6" stroke="#8a3b00" stroke-width="3.5"/><rect x="40" y="52" width="20" height="7" fill="#8a3b00"/>',
+  mystery: '<defs><radialGradient id="bgMy" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#c7aef5"/><stop offset="1" stop-color="#9a5af2"/></radialGradient></defs><circle cx="50" cy="50" r="46" fill="url(#bgMy)" stroke="#5a2ea8" stroke-width="4"/><text x="50" y="68" text-anchor="middle" font-family="Poppins,system-ui" font-weight="900" font-size="48" fill="#fff3d6">?</text>',
+  starOn: '<path d="M50 8 L62 36 L92 40 L70 60 L76 90 L50 74 L24 90 L30 60 L8 40 L38 36Z" fill="#ffd23f" stroke="#a86a00" stroke-width="4" stroke-linejoin="round"/>',
+  starOff: '<path d="M50 8 L62 36 L92 40 L70 60 L76 90 L50 74 L24 90 L30 60 L8 40 L38 36Z" fill="#e7ecf7" stroke="#aab2c8" stroke-width="4" stroke-linejoin="round"/>',
 };
 export const iconSvg = (name, size = 24) => `<svg class="ic2" width="${size}" height="${size}" viewBox="0 0 100 100" aria-hidden="true">${ICONS[name] || ''}</svg>`;
 export const iconUrl = (name) => 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${ICONS[name] || ''}</svg>`);

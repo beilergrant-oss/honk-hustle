@@ -1,5 +1,6 @@
 // cartoon.js - small cartoon pictures of buses and riders for the Garage and the Shop (same colours and hats as in the game).
-import { TOPPER_EMOJI, COLOR_HEX, passengerPreview, paintFor, outfitFor } from './look.js';
+import { COLOR_HEX, passengerPreview, paintFor, outfitFor } from './look.js';
+import { topperUrl, hasTopper } from './decorArt.js';
 import { skinById } from './skinData.js';
 const INK = '#14205a';
 
@@ -21,7 +22,7 @@ export function miniBus(paint, hex, topper, uid = 'm') {
     <rect x="4" y="58" width="12" height="11" rx="4" fill="#fff7b8" ${sw}/><rect x="114" y="58" width="12" height="11" rx="4" fill="#ff5a5a" ${sw}/>
     <rect x="50" y="26" width="30" height="7" rx="3.5" fill="${hex}" stroke="${INK}" stroke-width="2"/>
     <circle cx="35" cy="72" r="10" fill="#2a2f4a" ${sw}/><circle cx="95" cy="72" r="10" fill="#2a2f4a" ${sw}/><circle cx="35" cy="72" r="3.6" fill="#dfe6ff"/><circle cx="95" cy="72" r="3.6" fill="#dfe6ff"/>
-    ${topper && TOPPER_EMOJI[topper] ? `<text x="65" y="15" text-anchor="middle" font-size="22">${TOPPER_EMOJI[topper]}</text>` : ''}</svg>`;
+    ${topper && hasTopper(topper) ? `<image href="${topperUrl(topper)}" x="52" y="2" width="26" height="26"/>` : ''}</svg>`;
 }
 export const busPic = (skinId) => { const sk = skinById(skinId); return miniBus(paintFor(skinId), '#2a7bff', sk && sk.style && sk.style.topper); };
 const RIDER_COLORS = Object.values(COLOR_HEX);
