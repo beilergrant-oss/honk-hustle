@@ -338,7 +338,7 @@ function coinsHtml() {
     + `<div style="text-align:center;margin:14px"><button class="btn ghost" data-act="restore">Restore purchases</button></div>`;
 }
 async function shopMoney(productId, label) {
-  try { toast('Contacting the App Store…'); await buyWithMoney(productId); S.profile = loadProfile(); sfx.coin(); toast(label + ' unlocked!'); renderShop(); }
+  try { toast(window.NativeIAP && window.NativeIAP.sandbox ? 'Test purchase…' : 'Contacting the App Store…'); await buyWithMoney(productId); S.profile = loadProfile(); sfx.coin(); toast(label + ' unlocked!'); renderShop(); }
   catch (e) { toast((e && e.message) || 'Purchase did not complete.'); }
 }
 
