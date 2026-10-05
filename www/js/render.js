@@ -422,14 +422,16 @@ export function createRenderer(canvas, opts = {}) {
   function drawGround(now) {
     const L = R.L, gm = R.game, W = L.W, H = L.H, bd = bdOf(), ground = bd.ground;
     const bg = g.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, bd.sky[0]); bg.addColorStop(1, bd.sky[1]); g.fillStyle = bg; g.fillRect(0, 0, W, H);
-    poly([[-60, 0, -8], [60, 0, -8], [60, 0, 80], [-60, 0, 80]]); g.fillStyle = ground; g.fill();
+    poly([[-60, 0, -8], [60, 0, -8], [60, 0, 80], [-60, 0, 80]]);
+    const gg = g.createLinearGradient(0, 0, 0, H); gg.addColorStop(0, bd.sky[1]); gg.addColorStop(0.3, ground); gg.addColorStop(1, shade(ground, -0.16)); g.fillStyle = gg; g.fill();
     for (const d of specksFor(L)) { const p = P(d.x, 0.002, d.z); if (p.x > -40 && p.x < W + 40 && p.y > -40 && p.y < H + 40) drawSpeck(bd.speck, p, d); }
     if (bd.crosswalk) { for (let i = -2; i < L.bw + 2; i += 0.8) poly([[i, 0.002, -1.45], [i + 0.45, 0.002, -1.45], [i + 0.45, 0.002, -0.8], [i, 0.002, -0.8]]), g.fillStyle = 'rgba(255,255,255,.8)', g.fill(); }
     const fog = g.createLinearGradient(0, 0, 0, H * 0.3); fog.addColorStop(0, rgba(bd.sky[0], 0.55)); fog.addColorStop(1, rgba(bd.sky[0], 0)); g.fillStyle = fog; g.fillRect(0, 0, W, H * 0.3);
     // board: a framed plate with a visible edge and a checker of two tile colours
     const bw = L.bw, bh = L.bh, edge = shade(bd.plate, -0.4);
     poly([[-0.2, -0.2, -0.2], [bw + 0.2, -0.2, -0.2], [bw + 0.2, 0, -0.2], [-0.2, 0, -0.2]]); g.fillStyle = edge; g.fill();
-    rpoly([[-0.2, 0.001, -0.2], [bw + 0.2, 0.001, -0.2], [bw + 0.2, 0.001, bh + 0.2], [-0.2, 0.001, bh + 0.2]], 12); g.fillStyle = bd.plate; g.fill(); g.strokeStyle = INK; g.lineWidth = 2.2; g.stroke();
+    rpoly([[-0.2, 0.001, -0.2], [bw + 0.2, 0.001, -0.2], [bw + 0.2, 0.001, bh + 0.2], [-0.2, 0.001, bh + 0.2]], 12);
+    const pg = g.createLinearGradient(0, 0, 0, H); pg.addColorStop(0, shade(bd.plate, 0.12)); pg.addColorStop(1, shade(bd.plate, -0.1)); g.fillStyle = pg; g.fill(); g.strokeStyle = INK; g.lineWidth = 2.2; g.stroke();
     for (let y = 0; y < bh; y++) for (let x = 0; x < bw; x++) { rpoly([[x + 0.04, 0.002, bh - y - 0.96], [x + 0.96, 0.002, bh - y - 0.96], [x + 0.96, 0.002, bh - y - 0.04], [x + 0.04, 0.002, bh - y - 0.04]], 6); g.fillStyle = (x + y) % 2 ? bd.tileA : bd.tileB; g.fill(); }
     // road with the parking bay
     const rx0 = L.roadX0 - 0.3, rx1 = L.roadX0 + L.roadW + 0.3;

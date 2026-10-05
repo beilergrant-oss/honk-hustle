@@ -4,15 +4,18 @@
 import { shade } from './busArt.js';
 
 let gid = 0, defs = [];
-const fl = (c) => { const id = 'g' + gid++; defs.push(`<linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${shade(c, 0.38)}"/><stop offset=".55" stop-color="${c}"/><stop offset="1" stop-color="${shade(c, -0.2)}"/></linearGradient>`); return `url(#${id})`; };
-const sk = (c, w = 2.4) => `stroke="${shade(c, -0.5)}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+// Radial "lit from above-left" fill instead of a flat top-to-bottom band, so shapes read as rendered
+// forms with volume rather than flat poster-colour icon shapes (the classic emoji/sticker look).
+const fl = (c) => { const id = 'g' + gid++; defs.push(`<radialGradient id="${id}" cx="30%" cy="22%" r="92%"><stop offset="0" stop-color="${shade(c, 0.46)}"/><stop offset=".42" stop-color="${shade(c, 0.1)}"/><stop offset=".78" stop-color="${c}"/><stop offset="1" stop-color="${shade(c, -0.3)}"/></radialGradient>`); return `url(#${id})`; };
+const sk = (c, w = 1.5) => `stroke="${shade(c, -0.42)}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
 const el = (cx, cy, rx, ry, c, rot = 0) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${fl(c)}" ${sk(c)} transform="rotate(${rot} ${cx} ${cy})"/>`;
 const ci = (cx, cy, r, c) => el(cx, cy, r, r, c);
 const rc = (x, y, w, h, r, c) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" fill="${fl(c)}" ${sk(c)}/>`;
 const pa = (d, c, w) => `<path d="${d}" fill="${fl(c)}" ${sk(c, w)}/>`;
 const ln = (d, c, w = 3) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
-const hi = (cx, cy, rx, ry, rot = -30) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="#fff" opacity=".45" transform="rotate(${rot} ${cx} ${cy})"/>`;
-const eyes = (cx, cy, d = 9, r = 4) => `<circle cx="${cx - d}" cy="${cy}" r="${r}" fill="#fff"/><circle cx="${cx + d}" cy="${cy}" r="${r}" fill="#fff"/><circle cx="${cx - d + 1}" cy="${cy + 0.5}" r="${r * 0.55}" fill="#1c2340"/><circle cx="${cx + d + 1}" cy="${cy + 0.5}" r="${r * 0.55}" fill="#1c2340"/>`;
+// Soft radial specular blob instead of a flat semi-opaque smear - a glassy catchlight, not a sticker gloss stripe.
+const hi = (cx, cy, rx, ry, rot = -30) => { const id = 'h' + gid++; defs.push(`<radialGradient id="${id}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#fff" stop-opacity=".8"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>`); return `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="url(#${id})" transform="rotate(${rot} ${cx} ${cy})"/>`; };
+const eyes = (cx, cy, d = 9, r = 4) => `<ellipse cx="${cx - d}" cy="${cy}" rx="${r}" ry="${r * 1.08}" fill="#fff"/><ellipse cx="${cx + d}" cy="${cy}" rx="${r}" ry="${r * 1.08}" fill="#fff"/><circle cx="${cx - d + 1}" cy="${cy + 0.6}" r="${r * 0.56}" fill="#1c2340"/><circle cx="${cx + d + 1}" cy="${cy + 0.6}" r="${r * 0.56}" fill="#1c2340"/><circle cx="${cx - d - 0.7}" cy="${cy - 0.9}" r="${r * 0.22}" fill="#fff"/><circle cx="${cx + d - 0.7}" cy="${cy - 0.9}" r="${r * 0.22}" fill="#fff"/>`;
 const star = (cx, cy, R, r, c) => { let d = ''; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 5, q = i % 2 ? r : R; d += (i ? 'L' : 'M') + (cx + Math.cos(a) * q).toFixed(1) + ' ' + (cy + Math.sin(a) * q).toFixed(1); } return pa(d + 'Z', c); };
 const TRUNK = '#8a5a2b';
 
@@ -182,7 +185,10 @@ export function decorSvg(key) {
   if (cache.has(key)) return cache.get(key);
   defs = []; const spec = M[[...key][0].codePointAt(0)] || ['rock', '#9aa3b8'];
   const body = S[spec[0]](...spec.slice(1));
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>${defs.join('')}</defs><ellipse cx="50" cy="94" rx="30" ry="4.5" fill="rgba(10,15,40,.18)"/>${body}</svg>`;
+  // A faint painted grain masked to the sprite's own silhouette breaks up the flat vector fill so it
+  // reads as a drawn/rendered asset instead of a clean flat-colour emoji glyph.
+  const grain = `<filter id="gr" x="-8%" y="-8%" width="116%" height="116%"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" seed="4" stitchTiles="stitch" result="n"/><feColorMatrix in="n" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .33 .33 .33 0 0"/></filter><mask id="am"><g>${body}</g></mask>`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs>${defs.join('')}${grain}</defs><ellipse cx="50" cy="94" rx="30" ry="4.5" fill="rgba(10,15,40,.18)"/>${body}<rect width="100" height="100" filter="url(#gr)" mask="url(#am)" opacity=".24"/></svg>`;
   cache.set(key, svg); return svg;
 }
 export function decorUrl(key) {
