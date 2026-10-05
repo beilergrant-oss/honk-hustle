@@ -46,10 +46,11 @@ function freeSlot(g) { for (let i = 0; i < g.bay; i++) if (g.slots[i] === null &
 // Which vehicle (or wall) is in the way? null if the exit is clear.
 export function blocker(g, v) {
   const path = pathOf(v, g.w, g.h);
-  for (const c of path) {
-    if (g.walls.some((wl) => wl.x === c.x && wl.y === c.y)) return { wall: c };
-    if (g.barriers.some((b) => b.x === c.x && b.y === c.y && g.departures < b.until)) return { wall: c, barrier: true };
-    for (const o of gridVehicles(g)) if (o.id !== v.id && cellsOf(o).some((k) => k.x === c.x && k.y === c.y)) return { vehicle: o.id };
+  for (let i = 0; i < path.length; i++) {
+    const c = path[i];   // i = how many free cells the vehicle can roll before it touches the blocker
+    if (g.walls.some((wl) => wl.x === c.x && wl.y === c.y)) return { wall: c, gap: i };
+    if (g.barriers.some((b) => b.x === c.x && b.y === c.y && g.departures < b.until)) return { wall: c, barrier: true, gap: i };
+    for (const o of gridVehicles(g)) if (o.id !== v.id && cellsOf(o).some((k) => k.x === c.x && k.y === c.y)) return { vehicle: o.id, gap: i };
   }
   return null;
 }
@@ -66,7 +67,7 @@ export function tapVehicle(g, id) {
   g.events.push({ t: 'moves', left: movesLeft(g.round) });
   if (isFrozen(v)) { v.ice--; g.events.push({ t: 'thaw', id, left: v.ice }); finish(g); return { result: 'frozen' }; }
   const b = blocker(g, v);
-  if (b) { g.events.push({ t: 'blocked', id, by: b.vehicle || null, wall: b.wall || null }); finish(g); return { result: 'blocked' }; }
+  if (b) { g.events.push({ t: 'blocked', id, by: b.vehicle || null, wall: b.wall || null, gap: b.gap }); finish(g); return { result: 'blocked' }; }
   depart(g, id, {});
   return { result: 'go' };
 }

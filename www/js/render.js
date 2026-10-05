@@ -35,7 +35,7 @@ export function createRenderer(canvas, opts = {}) {
   const g = canvas.getContext('2d');
   const R = {
     game: null, look: { vehicle: {}, accessory: null }, world: { sky: ['#35b6ff', '#d2f3ff'], ground: '#7f8cab' },
-    L: null, vq: [], vslots: [], movers: [], leavers: [], flyers: [], particles: [], floats: [], sched: [], fx: {},
+    L: null, vq: [], vslots: [], movers: [], leavers: [], flyers: [], particles: [], floats: [], sched: [], fx: {}, impacts: [], rings: [],
     timelineEnd: 0, shakeAt: 0, shakeAmt: 0, targeting: false, lastClear: 0, combo: 0, raf: 0, running: false,
   };
 
@@ -96,6 +96,10 @@ export function createRenderer(canvas, opts = {}) {
   const burst = (x, y, color, n = 14, speed = 160) => {
     for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, sp = speed * (0.4 + Math.random() * 0.8); R.particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, life: 0.6 + Math.random() * 0.4, t: 0, color: Array.isArray(color) ? color[i % color.length] : color, size: 3 + Math.random() * 4 }); }
   };
+  const puff = (x, y, n = 5, color = 'rgba(255,255,255,.75)', spread = 40, rise = 30) => {
+    for (let i = 0; i < n; i++) R.particles.push({ x: x + (Math.random() - 0.5) * spread * 0.5, y, vx: (Math.random() - 0.5) * spread, vy: -rise * (0.4 + Math.random() * 0.8), g: 0, life: 0.45 + Math.random() * 0.3, t: 0, color, size: 7 + Math.random() * 7, puff: true });
+  };
+  const ring = (x, y, color, max = 46, ms = 420) => R.rings.push({ x, y, color, max, t0: performance.now(), ms });
   const floatText = (text, x, y, color = '#fff') => R.floats.push({ text, x: clamp(x, 70, (R.L ? R.L.W : 400) - 70), y, t0: performance.now(), color });
   const shake = (amt = 5) => { R.shakeAt = performance.now(); R.shakeAmt = amt; };
   const slotScreen = (i) => { const c = slotC(i), p = P(c.x, 0.3, c.z); return { x: p.x, y: p.y, u: p.u }; };
@@ -104,7 +108,7 @@ export function createRenderer(canvas, opts = {}) {
   R.setLevel = (game, look, world) => {
     R.game = game; R.look = look || R.look; if (world) R.world = world;
     R.vq = [...game.queue]; R.vslots = Array(game.bay).fill(null);
-    R.movers = []; R.leavers = []; R.flyers = []; R.particles = []; R.floats = []; R.sched = []; R.fx = {}; R.timelineEnd = 0; R.combo = 0;
+    R.movers = []; R.leavers = []; R.flyers = []; R.particles = []; R.floats = []; R.sched = []; R.fx = {}; R.impacts = []; R.rings = []; R.timelineEnd = 0; R.combo = 0;
     layout();
   };
   R.setLook = (look) => { R.look = look; };
@@ -117,9 +121,11 @@ export function createRenderer(canvas, opts = {}) {
     for (const e of events) {
       if (e.t === 'moves') opts.onMoves && opts.onMoves(e.left);
       else if (e.t === 'blocked') {
-        R.fx[e.id] = { bump: now }; shake(3); sfx.blocked(); haptic('medium');
-        if (e.by) R.fx[e.by] = { ...(R.fx[e.by] || {}), flash: now };
-        const v = gm.vehicles.find((x) => x.id === e.id), c = vehCenter(v); floatText('Blocked!', c.x, c.y - R.L.cell * 0.4, '#ffd7d7');
+        // slide into whatever is in the way, hit it, and bounce back
+        const v = gm.vehicles.find((x) => x.id === e.id), gap = Math.max(0, (e.gap || 0) - 0.05), slide = Math.min(300, 110 + 55 * gap), dv = DIR_VEC[v.dir], c = vehCenter(v);
+        R.fx[e.id] = { bump: now, gap, slide }; haptic('light');
+        R.impacts.push({ at: now + slide, id: e.id, by: e.by, dv, gap, len: v.len, vid: v.id, text: c });
+        if (e.by) R.fx[e.by] = { ...(R.fx[e.by] || {}), flash: now + slide };
       } else if (e.t === 'locked') {
         R.fx[e.id] = { shake: now }; sfx.locked(); haptic('light');
         const v = gm.vehicles.find((x) => x.id === e.id), c = vehCenter(v); floatText(e.need > 0 ? e.need + ' more to go' : 'Locked', c.x, c.y - R.L.cell * 0.4, '#fff3b0');
@@ -136,10 +142,10 @@ export function createRenderer(canvas, opts = {}) {
         R.movers.push({ v: { ...v }, t0: now, dur: Math.min(dur, 520), heli: e.heli, slot: e.slot, dist: e.path.length + v.len + 1 });
         parked[e.id] = now + Math.min(dur, 520);
         const t = now - R.lastClear < 1500 ? R.combo + 1 : 1; R.combo = t; R.lastClear = now;
-        sfx.go(t); haptic('light');
+        { const c0 = vehW(v), p0 = P(c0.x, 0.1, c0.z); puff(p0.x, p0.y, 6, 'rgba(255,255,255,.8)', 70, 26); } sfx.go(t); haptic('light');
         at(parked[e.id], () => {
           R.vslots[e.slot] = { id: e.id, color: COLOR_HEX[v.color], seats: v.seats, filled: 0, pop: performance.now(), look: v };
-          const r = slotScreen(e.slot); burst(r.x, r.y, COLOR_HEX[v.color], 8, 100);
+          const r = slotScreen(e.slot); burst(r.x, r.y, COLOR_HEX[v.color], 12, 130); ring(r.x, r.y + r.u * 0.2, COLOR_HEX[v.color], r.u * 0.95, 460); puff(r.x, r.y + r.u * 0.25, 5, 'rgba(255,255,255,.8)', 90, 18); shake(2);
           if (t > 1) floatText('Combo x' + t + '!', r.x, r.y - r.u * 0.7, t > 3 ? '#ffd23f' : '#ffffff');
         });
       } else if (e.t === 'board') {
@@ -151,9 +157,9 @@ export function createRenderer(canvas, opts = {}) {
           R.flyers.push({ color: COLOR_HEX[col], from: queueW(0), to: seatW(e.slot, e.seat, seats), t0: performance.now(), dur: fd, slot: e.slot, id: e.id, seat: e.seat, n: e.n });
         });
       } else if (e.t === 'full') {
-        tl += tl - now > 700 ? 70 : 200; at(tl, () => { const s = R.vslots[e.slot]; if (s) { const r = slotScreen(e.slot); burst(r.x, r.y, ['#ffd23f', '#fff', COLOR_HEX[gm.vehicles.find((x) => x.id === e.id).color]], 22, 200); floatText('Full!', r.x, r.y - r.u * 0.7, '#ffd23f'); sfx.full(); haptic('medium'); } });
+        tl += tl - now > 700 ? 70 : 200; at(tl, () => { const s = R.vslots[e.slot]; if (s) { const r = slotScreen(e.slot); burst(r.x, r.y, ['#ffd23f', '#fff', COLOR_HEX[gm.vehicles.find((x) => x.id === e.id).color]], 34, 240); ring(r.x, r.y, '#ffd23f', r.u * 1.4, 520); shake(3); floatText('Full!', r.x, r.y - r.u * 0.7, '#ffd23f'); sfx.full(); haptic('medium'); } });
       } else if (e.t === 'leave') {
-        tl += tl - now > 700 ? 50 : 160; at(tl, () => { const s = R.vslots[e.slot]; if (s) { R.leavers.push({ s, slot: e.slot, t0: performance.now() }); R.vslots[e.slot] = null; } });
+        tl += tl - now > 700 ? 50 : 160; at(tl, () => { const s = R.vslots[e.slot]; if (s) { R.leavers.push({ s, slot: e.slot, t0: performance.now() }); R.vslots[e.slot] = null; const r = slotScreen(e.slot); puff(r.x, r.y + r.u * 0.25, 6, 'rgba(255,255,255,.8)', 90, 22); } });
       } else if (e.t === 'bay') {
         at(now, () => { while (R.vslots.length < gm.bay) R.vslots.push(null); layout(); sfx.power(); });
       } else if (e.t === 'won' || e.t === 'lost' || e.t === 'stuck') {
@@ -346,7 +352,7 @@ export function createRenderer(canvas, opts = {}) {
 
   // parked bus in the bay (nose toward the player)
   function drawParked(s, slot, alpha, dx, now) {
-    const c = slotC(slot), pop = s.pop ? clamp((now - s.pop) / 220, 0, 1) : 1, sc = 0.7 + 0.3 * ease(pop) + Math.sin(pop * Math.PI) * 0.08;
+    const c = slotC(slot), pop = s.pop ? clamp((now - s.pop) / 220, 0, 1) : 1, hop = s.hop ? clamp((now - s.hop) / 240, 0, 1) : 1, sc = 0.7 + 0.3 * ease(pop) + Math.sin(pop * Math.PI) * 0.08 + (hop < 1 ? Math.sin(hop * Math.PI) * 0.09 : 0);
     const cx = c.x + dx, hw = R.L.sw * 0.4 * sc, hl = 0.52 * sc;
     g.save(); g.globalAlpha = alpha;
     const paint = R.look.paint, edge = paint && paint.glow ? paint.trim : undefined;
@@ -465,20 +471,25 @@ export function createRenderer(canvas, opts = {}) {
     }
     decorKey = key; return decorList;
   }
-  // the world's name on a ribbon, top left
+  // the world's name, centred at the top: themed icon + outlined lettering, no box
   function drawRibbon() {
     const L = R.L, bd = bdOf(), name = (R.world.name || '').toUpperCase(); if (!name || L.H < 360) return;
-    g.save(); g.font = '900 15px Poppins, system-ui, sans-serif'; const tw = g.measureText(name).width, w = tw + 56, h = 32, x = 8, y = 8;
-    const gr = g.createLinearGradient(0, y, 0, y + h); gr.addColorStop(0, bd.band[0]); gr.addColorStop(1, bd.band[1]);
-    rr(g, x, y, w, h, 12); g.fillStyle = gr; g.fill(); g.lineWidth = 1.5; g.strokeStyle = shade(bd.band[1], -0.4); g.stroke();
-    g.fillStyle = 'rgba(255,255,255,.28)'; rr(g, x + 3, y + 3, w - 6, h * 0.38, 8); g.fill();
-    { const im = decorImg(bd.icon); if (im.complete && im.naturalWidth) g.drawImage(im, x + 6, y + 3, 28, 28); }
-    g.font = '900 15px Poppins, system-ui, sans-serif'; g.textAlign = 'left'; g.lineWidth = 4; g.strokeStyle = INK; g.strokeText(name, x + 38, y + h / 2 + 1); g.fillStyle = '#fff'; g.fillText(name, x + 38, y + h / 2 + 1);
+    g.save(); g.font = '900 17px Poppins, system-ui, sans-serif'; g.textAlign = 'left'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+    const tw = g.measureText(name).width, iw = 26, total = iw + 6 + tw, x0 = L.W / 2 - total / 2, y = 24;
+    g.shadowColor = 'rgba(0,0,0,.25)'; g.shadowBlur = 6; g.shadowOffsetY = 2;
+    { const im = decorImg(bd.icon); if (im.complete && im.naturalWidth) g.drawImage(im, x0, y - iw / 2, iw, iw); }
+    const tx = x0 + iw + 6; g.lineWidth = 5; g.strokeStyle = shade(bd.band[1], -0.55); g.strokeText(name, tx, y + 1);
+    g.shadowColor = 'transparent'; const gr = g.createLinearGradient(0, y - 9, 0, y + 9); gr.addColorStop(0, '#ffffff'); gr.addColorStop(1, shade(bd.band[0], 0.55)); g.fillStyle = gr; g.fillText(name, tx, y + 1);
     g.restore();
   }
   function vehFx(v, now) {
     const fx = R.fx[v.id] || {}, dv = DIR_VEC[v.dir], o = { dx: 0, dz: 0, sc: 1 };
-    if (fx.bump) { const t = (now - fx.bump) / 320; if (t < 1) { const k = Math.sin(t * Math.PI) * 0.18; o.dx = dv[0] * k; o.dz = -dv[1] * k; } }
+    if (fx.bump) {
+      const el = now - fx.bump, rec = 320, d = Math.max(fx.gap || 0, 0.14);
+      let k = 0; if (el < fx.slide) { const t = el / fx.slide; k = d * t * t; o.sy = 1 + 0.06 * t; } else if (el < fx.slide + rec) { const t = (el - fx.slide) / rec; k = d * (1 - Math.sin(t * Math.PI / 2)) - Math.sin(t * Math.PI) * 0.07; o.sy = 1 - 0.1 * (1 - t); }
+      o.dx = dv[0] * k; o.dz = -dv[1] * k;
+    }
+    if (fx.recoil) { const t = (now - fx.recoil) / 360; if (t >= 0 && t < 1) { const k = Math.sin(t * Math.PI) * 0.16 * (1 - t * 0.4); o.dx += fx.rv[0] * k; o.dz += -fx.rv[1] * k; } }
     if (fx.shake) { const t = (now - fx.shake) / 360; if (t < 1) o.dx += Math.sin(t * 40) * 0.08 * (1 - t); }
     if (fx.pop) { const t = (now - fx.pop) / 320; if (t < 1) o.sc = 1 + Math.sin(t * Math.PI) * 0.18; }
     return o;
@@ -489,6 +500,12 @@ export function createRenderer(canvas, opts = {}) {
     R.raf = requestAnimationFrame(frame);
     const L = R.L, gm = R.game; if (!L || !L.cx) { g.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight); return; }
     if (R.sched.length) { const due = R.sched.filter((s) => s.time <= now).sort((a, b) => a.time - b.time); if (due.length) { R.sched = R.sched.filter((s) => s.time > now); due.forEach((s) => s.fn()); } }
+    if (R.impacts.length) { const due = R.impacts.filter((m) => m.at <= now); if (due.length) { R.impacts = R.impacts.filter((m) => m.at > now); due.forEach((m) => {
+      const v = gm.vehicles.find((x) => x.id === m.vid); if (!v) return; const c0 = vehW(v), reach = m.len / 2 + m.gap, p = P(c0.x + m.dv[0] * reach, 0.25, c0.z - m.dv[1] * reach);
+      burst(p.x, p.y, ['#ffe14d', '#ffffff', '#ffb347'], 10, 150); ring(p.x, p.y, 'rgba(255,255,255,.9)', 30, 300); shake(4); sfx.blocked(); haptic('medium');
+      if (m.by) R.fx[m.by] = { ...(R.fx[m.by] || {}), recoil: now, rv: m.dv };
+      floatText('Blocked!', p.x, p.y - R.L.cell * 0.55, '#ffd7d7');
+    }); } }
     g.save();
     const sh = clamp(1 - (now - R.shakeAt) / 260, 0, 1); if (sh > 0) g.translate((Math.random() - 0.5) * R.shakeAmt * sh * 2, (Math.random() - 0.5) * R.shakeAmt * sh * 2);
     drawGround(now);
@@ -506,7 +523,7 @@ export function createRenderer(canvas, opts = {}) {
       items.push({ k: depthKey(b[0], b[1], b[2], b[3]), d: () => {
         drawCar(v, pose);
         const ring = (col, lw) => { g.save(); g.strokeStyle = col; g.lineWidth = lw; g.lineJoin = 'round'; const h = carHull(v, pose, 0.05); g.beginPath(); h.forEach((q, i) => (i ? g.lineTo(q[0], q[1]) : g.moveTo(q[0], q[1]))); g.closePath(); g.stroke(); g.restore(); };
-        if (fx.flash && now - fx.flash < 450) ring('rgba(255,70,70,' + (1 - (now - fx.flash) / 450) + ')', 4);
+        if (fx.flash && now >= fx.flash && now - fx.flash < 450) ring('rgba(255,70,70,' + (1 - (now - fx.flash) / 450) + ')', 4);
         if (R.targeting && v.lock === 0) ring('rgba(255,255,255,' + (0.55 + 0.45 * Math.sin(now / 160)) + ')', 3);
       } });
     }
@@ -515,6 +532,7 @@ export function createRenderer(canvas, opts = {}) {
       const c = vehW(m.v), dv = DIR_VEC[m.v.dir]; let pose;
       if (m.heli) { const s = slotC(m.slot), k = ease(t); pose = { cx: c.x + (s.x - c.x) * k, cz: c.z + (s.z - c.z) * k, sc: 1 - 0.4 * k, lift: Math.sin(t * Math.PI) * 1.4 }; }
       else { const k = ease(t) * m.dist; pose = { cx: c.x + dv[0] * k, cz: c.z - dv[1] * k, sc: 1, alpha: t > 0.6 ? 1 - (t - 0.6) / 0.4 : 1 }; }
+      if (!m.heli && Math.random() < 0.6) { const tp = P(pose.cx - dv[0] * m.v.len * 0.5, 0.12, pose.cz + dv[1] * m.v.len * 0.5); puff(tp.x, tp.y, 1, 'rgba(255,255,255,.7)', 24, 14); }
       const b = carFootprint(m.v, pose); items.push({ k: depthKey(b[0], b[1], b[2], b[3]) - 0.5, d: () => drawCar(m.v, pose) }); return true;
     });
     for (let i = 0; i < gm.bay; i++) { const s = R.vslots[i]; if (s) { const c = slotC(i); items.push({ k: dist2(c.x, c.z), d: () => drawParked(s, i, 1, 0, now) }); } }
@@ -523,8 +541,9 @@ export function createRenderer(canvas, opts = {}) {
     for (let i = shown - 1; i >= 0; i--) { const q = queueW(i), col = COLOR_HEX[R.vq[i]]; items.push({ k: dist2(q.x, q.z) + i * 0.001, d: () => person(q.x, 0, q.z, col, 0, i === 0 ? 1.18 : 1, true) }); }
     R.flyers = R.flyers.filter((f) => {
       const t = clamp((now - f.t0) / f.dur, 0, 1), k = ease(t);
-      if (t >= 1) { const s = R.vslots[f.slot]; if (s && s.id === f.id) { s.filled = Math.max(s.filled, f.seat + 1); (s.fills = s.fills || [])[f.seat] = f.color; } sfx.board(f.n || 0); const p = P(f.to.x, f.to.y, f.to.z); burst(p.x, p.y, f.color, 4, 60); return false; }
+      if (t >= 1) { const s = R.vslots[f.slot]; if (s && s.id === f.id) { s.filled = Math.max(s.filled, f.seat + 1); (s.fills = s.fills || [])[f.seat] = f.color; } if (s && s.id === f.id) s.hop = now; sfx.board(f.n || 0); const p = P(f.to.x, f.to.y, f.to.z); burst(p.x, p.y, f.color, 7, 90); for (let i = 0; i < 3; i++) R.particles.push({ x: p.x, y: p.y, vx: (Math.random() - 0.5) * 120, vy: -60 - Math.random() * 70, life: 0.45, t: 0, color: '#fff7c2', size: 8 + Math.random() * 4, star: true }); return false; }
       const x = f.from.x + (f.to.x - f.from.x) * k, z = f.from.z + (f.to.z - f.from.z) * k, y = (f.to.y - PASS_H * 0.5) * k + Math.sin(t * Math.PI) * 0.8;
+      if (Math.random() < 0.7) { const tp = P(x, Math.max(0, y) + 0.4, z); R.particles.push({ x: tp.x, y: tp.y, vx: (Math.random() - 0.5) * 20, vy: 10, g: 0, life: 0.3, t: 0, color: f.color, size: 3 + Math.random() * 3 }); }
       items.push({ k: dist2(x, z) - 4, d: () => person(x, Math.max(0, y), z, f.color, Math.sin(t * 12) * 0.2, 0.9) }); return true;
     });
     items.sort((a, b) => b.k - a.k).forEach((it) => it.d());
@@ -533,7 +552,8 @@ export function createRenderer(canvas, opts = {}) {
     drawRibbon();
     g.restore();
     const dt = 1 / 60;
-    R.particles = R.particles.filter((p) => { p.t += dt; if (p.t >= p.life) return false; p.vy += 420 * dt; p.x += p.vx * dt; p.y += p.vy * dt; g.globalAlpha = 1 - p.t / p.life; g.fillStyle = p.color; g.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size); g.globalAlpha = 1; return true; });
+    R.particles = R.particles.filter((p) => { p.t += dt; if (p.t >= p.life) return false; p.vy += (p.g === undefined ? 420 : p.g) * dt; p.x += p.vx * dt; p.y += p.vy * dt; const f = p.t / p.life; g.globalAlpha = (p.puff ? 0.7 : 1) * (1 - f); g.fillStyle = p.color; if (p.puff) { g.beginPath(); g.arc(p.x, p.y, p.size * (0.5 + f), 0, 7); g.fill(); } else if (p.star) { g.save(); g.translate(p.x, p.y); g.rotate(p.t * 6); g.fillRect(-p.size / 2, -1.2, p.size, 2.4); g.fillRect(-1.2, -p.size / 2, 2.4, p.size); g.restore(); } else g.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size); g.globalAlpha = 1; return true; });
+    R.rings = R.rings.filter((q) => { const t = Math.max(0, (now - q.t0) / q.ms); if (t >= 1) return false; g.save(); g.globalAlpha = 1 - t; g.strokeStyle = q.color; g.lineWidth = 4 * (1 - t) + 1; g.beginPath(); g.ellipse(q.x, q.y, q.max * ease(t), q.max * ease(t) * 0.42, 0, 0, 7); g.stroke(); g.restore(); return true; });
     R.floats = R.floats.filter((f) => { const t = (now - f.t0) / 800; if (t >= 1) return false; g.globalAlpha = 1 - t * t; g.font = '900 20px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineWidth = 4; g.strokeStyle = 'rgba(16,36,107,.75)'; g.strokeText(f.text, f.x, f.y - t * 38); g.fillStyle = f.color; g.fillText(f.text, f.x, f.y - t * 38); g.globalAlpha = 1; return true; });
   }
 
