@@ -1,3 +1,4 @@
+import seam
 from playwright.sync_api import sync_playwright
 import sys
 with sync_playwright() as p:

@@ -5,7 +5,7 @@ export const DEFAULTS = {
   ...DEFAULT_PROFILE,
   id: 'local',
   hemisphere: 'north',
-  settings: { sound: true, haptics: true, seasonal: true, openLevels: false },
+  settings: { sound: true, haptics: true, seasonal: true },
 };
 
 let memory = null; // used if localStorage is unavailable
@@ -26,9 +26,15 @@ export function loadProfile() {
   return {
     ...DEFAULTS, ...saved, id: 'local',
     powerups: { ...DEFAULTS.powerups, ...(saved.powerups || {}) },
-    settings: { ...DEFAULTS.settings, ...(saved.settings || {}) },
+    settings: { ...DEFAULTS.settings, ...(saved.settings || {}), seasonal: true },
     ownedSkins: saved.ownedSkins || [],
   };
 }
 export function saveProfile(p) { const next = { ...p, id: 'local' }; write(next); return next; }
 export function resetProfile() { write(null); try { localStorage.removeItem(PROFILE_CACHE_KEY); } catch (e) {} return loadProfile(); }
+
+// Which season is on depends on the hemisphere. No setting for it: it is read from the phone's time zone.
+const SOUTH_ZONES = /^(Australia|Antarctica|Pacific\/(Auckland|Fiji|Tongatapu|Apia|Noumea|Norfolk|Port_Moresby|Guadalcanal)|America\/(Sao_Paulo|Argentina|Buenos_Aires|Santiago|Montevideo|La_Paz|Lima|Asuncion|Cuiaba|Campo_Grande|Manaus|Bahia|Recife|Fortaleza)|Africa\/(Johannesburg|Maputo|Harare|Lusaka|Windhoek|Gaborone|Maseru|Mbabane|Luanda|Lubumbashi|Kinshasa|Blantyre)|Indian\/(Antananarivo|Mauritius|Reunion|Mayotte|Comoro))/;
+export function detectHemisphere() {
+  try { return SOUTH_ZONES.test(Intl.DateTimeFormat().resolvedOptions().timeZone || '') ? 'south' : 'north'; } catch (e) { return 'north'; }
+}

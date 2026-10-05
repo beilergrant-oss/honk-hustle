@@ -1,3 +1,4 @@
+import seam
 import json, sys
 from playwright.sync_api import sync_playwright
 BASE='http://localhost:8080/index.html'

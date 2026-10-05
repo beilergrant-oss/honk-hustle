@@ -25,6 +25,7 @@ import { skinById, isOwned, passengerFor } from './skinData.js';
 import { miniBus, riderPic, busPic } from './cartoon.js';
 import { BACKDROPS } from './backdrops.js';
 import { sceneSvgs } from './sceneArt.js';
+import { detectHemisphere } from './store.js';
 import { lookFor, BUS_STYLES } from './busStyles.js';
 import { configureSfx, sfx, haptic, unlockAudio } from './sfx.js';
 import { nextCombo, resetCombo, comboText, comboColor, floatText } from './juice.js';
@@ -33,7 +34,8 @@ import { CONFIG } from './config.js';
 import { $, esc, fmt, toast, modal, closeModal } from './ui.js';
 
 const S = { profile: loadProfile(), route: 'loading', level: null, game: null, round: null, renderer: null, attempts: 0, levelNo: 1, targeting: false, garage: null, shopTab: 'packs', areaView: 1, offline: false, seenHint: {} };
-window.__hh = S;   // handy for debugging and the automated tests
+const T = window.__HH_TEST__ || {};   // inert in the shipped app: only the automated tests define this before load
+if (window.__HH_TEST__) window.__hh = S;
 
 const save = (patch) => { S.profile = saveProfile({ ...S.profile, ...patch }); configureSfx(S.profile.settings); return S.profile; };
 const moneyOk = () => !!window.NativeIAP;                 // real-money buttons only exist when the StoreKit bridge is live
@@ -84,7 +86,7 @@ function homeArt(p, picked) {
   return sceneBg(picked) + `<div class="hhero lhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>`;
 }
 function renderHome() {
-  const p = S.profile, picked = pickTheme(new Date(), { hemisphere: p.hemisphere, seasonal: p.settings.seasonal });
+  const p = S.profile, picked = pickTheme(new Date(), { hemisphere: p.hemisphere, seasonal: true });
   const t = picked.theme, [w1, ...rest] = 'Honk Hustle'.split(' ');
   const next = nextLevelNo(), info = levelInfo(next), streak = p.winStreak || 0, festive = picked.reason === 'holiday';
   // The home screen is drawn in the same cartoon style as the game: your equipped bus and riders on the backdrop of the world you are in.
@@ -116,7 +118,7 @@ function renderLevels() {
   const first = (area - 1) * AREA_SIZE + 1, last = Math.min(TOTAL_LEVELS, area * AREA_SIZE), loc = locate(first), totalAreas = Math.ceil(TOTAL_LEVELS / AREA_SIZE);
   const cells = [];
   for (let n = first; n <= last; n++) {
-    const tier = levelInfo(n).tier, done = n <= hi, locked = n > hi + 1 && !S.profile.settings.openLevels, isCur = n === cur;
+    const tier = levelInfo(n).tier, done = n <= hi, locked = n > hi + 1, isCur = n === cur;
     cells.push(`<button class="lv ${done ? 'done' : ''} ${isCur ? 'current' : ''} ${locked ? 'locked' : ''}" data-lv="${n}" aria-label="Level ${n}${locked ? ', locked' : done ? ', completed' : ''}">${n}${tier !== 'easy' ? `<span class="t ${tier}">${tier === 'hard' ? 'HARD' : 'XHARD'}</span>` : ''}${done ? `<span class="ck">${'\u2B50'.repeat((S.profile.stars || {})[n] || 1)}</span>` : ''}</button>`);
   }
   $('#levels').innerHTML = `${backBar('Levels', coinsPill())}
@@ -150,7 +152,7 @@ function startLevel(n, { retry = false } = {}) {
   S.level = level; S.round = startRound(level, S.profile); S.game = createGame(level, S.round);
   S.targeting = false;
   go('game');
-  const th = pickTheme(new Date(), { hemisphere: S.profile.hemisphere, seasonal: S.profile.settings.seasonal }).theme;
+  const th = pickTheme(new Date(), { hemisphere: S.profile.hemisphere, seasonal: true }).theme;
   S.renderer.setLevel(S.game, resolveLook(S.profile), { ...level.info.world, decorTheme: th && th.id !== 'regular' ? th.id : null });
   S.renderer.setTargeting(false);
   $('#game').style.background = level.info.world.sky[0];
@@ -359,7 +361,7 @@ function coinsHtml() {
     + `<div style="text-align:center;margin:14px"><button class="btn ghost" data-act="restore">Restore purchases</button></div>`;
 }
 async function shopMoney(productId, label) {
-  try { toast(window.NativeIAP && window.NativeIAP.sandbox ? 'Test purchase…' : 'Contacting the App Store…'); await buyWithMoney(productId); S.profile = loadProfile(); sfx.coin(); toast(label + ' unlocked!'); renderShop(); }
+  try { toast('Contacting the App Store…'); await buyWithMoney(productId); S.profile = loadProfile(); sfx.coin(); toast(label + ' unlocked!'); renderShop(); }
   catch (e) { toast((e && e.message) || 'Purchase did not complete.'); }
 }
 
@@ -371,10 +373,6 @@ function renderSettings() {
     <div class="scroll">
       <div class="setrow"><div class="tx">Sound<small>Effects while you play</small></div>${sw('sound', s.sound)}</div>
       <div class="setrow"><div class="tx">Haptics<small>Little taps on your iPhone</small></div>${sw('haptics', s.haptics)}</div>
-      <div class="setrow"><div class="tx">Seasonal looks<small>Holiday and seasonal buses on the home screen</small></div>${sw('seasonal', s.seasonal)}</div>
-      <div class="setrow"><div class="tx">Open all levels<small>Play any level from the picker (for testing)</small></div>${sw('openLevels', s.openLevels)}</div>
-      <div class="setrow"><div class="tx">Test coins<small>Add 10,000 coins to try the Shop (for testing)</small></div><button class="btn" data-act="testcoins" style="padding:10px 14px">+10,000</button></div>
-      <div class="setrow"><div class="tx">Hemisphere<small>Decides which season is on</small></div><select class="sel" data-hemi aria-label="Hemisphere"><option value="north" ${S.profile.hemisphere === 'south' ? '' : 'selected'}>Northern</option><option value="south" ${S.profile.hemisphere === 'south' ? 'selected' : ''}>Southern</option></select></div>
       ${moneyOk() ? `<div class="setrow"><div class="tx">Restore purchases<small>Get back skins and sets you bought before</small></div><button class="btn" data-act="restore" style="padding:10px 14px">Restore</button></div>` : ''}
       <div class="setrow"><div class="tx">Privacy & terms<small>How your data is handled</small></div><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.PRIVACY_URL)}" target="_blank" rel="noopener">Privacy</a><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.TERMS_URL)}" target="_blank" rel="noopener">Terms</a></div>
       <div class="setrow"><div class="tx">Reset progress<small>Erase levels, coins and skins on this device</small></div><button class="btn red" data-act="reset" style="padding:10px 14px">Reset</button></div>
@@ -397,7 +395,6 @@ document.addEventListener('click', async (e) => {
   if (d.tab) { S.shopTab = d.tab; return renderShop(); }
   if (d.set) { save({ settings: { ...S.profile.settings, [d.set]: !S.profile.settings[d.set] } }); return renderSettings(); }
   if (d.act === 'restore') { try { const r = await restorePurchases(); S.profile = loadProfile(); toast('Purchases restored'); } catch (err) { toast('Nothing to restore'); } return; }
-  if (d.act === 'testcoins') { save({ coins: (S.profile.coins || 0) + 10000 }); sfx.coin(); toast('+10,000 coins'); return renderSettings(); }
   if (d.act === 'reset') return modal({ icon: 'warning', title: 'Reset everything?', body: 'This erases your levels, coins, power-ups and skins on this device.', actions: [{ label: 'Erase progress', cls: 'red', onClick: () => { S.profile = resetProfile(); S.areaView = 1; configureSfx(S.profile.settings); go('home'); } }, { label: 'Cancel', cls: 'ghost' }] });
   if (d.buyset) { const r = coinPurchase(S.profile, 'set', setById(d.buyset), { hemisphere: S.profile.hemisphere }); if (r.ok) { save(r.profile); sfx.coin(); toast('Set unlocked!'); } else toast({ 'not-enough-coins': 'Not enough coins yet.', 'not-in-shop': 'Not in the shop right now.', 'already-owned': 'You already own it.' }[r.reason] || 'Could not buy.'); return renderShop(); }
   if (d.buypack) { const r = coinPurchase(S.profile, 'pack', packById(d.buypack)); if (r.ok) { save(r.profile); sfx.coin(); toast('Pack unlocked!'); } else toast({ 'not-enough-coins': 'Not enough coins yet.', 'already-owned': 'You already own it.', 'not-in-shop': 'That pack just left the shop.' }[r.reason] || 'Could not buy.'); return renderShop(); }
@@ -410,7 +407,6 @@ document.addEventListener('click', async (e) => {
   if (d.moneybundle) return shopMoney(POWERUP_BUNDLES.find((x) => x.id === d.moneybundle).productId, 'Bundle');
   if (d.moneycoins) return shopMoney(COIN_PACKS.find((x) => x.id === d.moneycoins).productId, 'Coins');
 });
-document.addEventListener('change', (e) => { if (e.target.matches('[data-hemi]')) { save({ hemisphere: e.target.value }); } });
 document.addEventListener('pointerdown', unlockAudio, { once: true });
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
@@ -422,13 +418,14 @@ async function boot() {
   const cap = window.Capacitor && window.Capacitor.Plugins;
   try { if (cap && cap.SplashScreen) cap.SplashScreen.hide(); } catch (e) {}
   initIap();                                                    // no-op in the browser or without a RevenueCat key
-  const q = new URLSearchParams(location.search), result = {};
-  if (/^\d{4}-\d{2}-\d{2}$/.test(q.get('date') || '')) globalThis.__HH_DATE = q.get('date');   // preview any day's loading screen
+  const result = {};
+  if (T.date) globalThis.__HH_DATE = T.date;
+  const hemi = detectHemisphere(); if (S.profile.hemisphere !== hemi) save({ hemisphere: hemi });
   const boot = bootLoadingScreen($('#loading'), {
     tasks: makeBootTasks({ base44, pingUrl: null, result }),
-    canPlayOffline: true, embedded: true, hemisphere: S.profile.hemisphere, seasonal: S.profile.settings.seasonal,
-    artUrl: LOADING_ART, sceneHtml: () => homeArt(S.profile, pickTheme(new Date(), { hemisphere: S.profile.hemisphere, seasonal: S.profile.settings.seasonal })), forceTheme: q.get('theme') || null, minShowMs: q.get('fast') ? 0 : 1600,
-    onDone: () => { boot.destroy(); $('#loading').innerHTML = ''; S.profile = loadProfile(); const go2 = q.get('go'); if (go2 === 'game') startLevel(+q.get('level') || nextLevelNo()); else { go(go2 || 'home'); if (!go2 && !q.get('fast')) setTimeout(() => showDaily(true), 500); } },
+    canPlayOffline: true, embedded: true, hemisphere: S.profile.hemisphere, seasonal: true,
+    artUrl: LOADING_ART, sceneHtml: () => homeArt(S.profile, pickTheme(new Date(), { hemisphere: S.profile.hemisphere, seasonal: true })), forceTheme: T.theme || null, minShowMs: T.fast ? 0 : 1600,
+    onDone: () => { boot.destroy(); $('#loading').innerHTML = ''; S.profile = loadProfile(); const go2 = T.go; if (go2 === 'game') startLevel(+T.level || nextLevelNo()); else { go(go2 || 'home'); if (!go2 && !T.fast) setTimeout(() => showDaily(true), 500); } },
   });
 }
 boot();

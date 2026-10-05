@@ -1,3 +1,4 @@
+import seam
 import json
 from playwright.sync_api import sync_playwright
 exec(open('flows.py').read().split("with sync_playwright")[0])   # reuse helpers and SEED
@@ -28,7 +29,6 @@ with sync_playwright() as p:
     # settings
     pg.locator('[data-go=settings]:visible').first.click(); pg.wait_for_timeout(300); pg.screenshot(path='shots/26_settings.png')
     pg.click('[data-set=seasonal]'); pg.wait_for_timeout(200); print('seasonal', pg.evaluate('window.__hh.profile.settings.seasonal'))
-    pg.select_option('[data-hemi]','south'); print('hemisphere', pg.evaluate('window.__hh.profile.hemisphere'))
     pg.locator('[data-go=home]:visible').first.click(); pg.wait_for_timeout(500); pg.screenshot(path='shots/27_home_regular.png'); print('chip present', pg.locator('.home-chip').count())
     # reset
     pg.locator('[data-go=settings]:visible').first.click(); pg.click('[data-act=reset]'); pg.click('.dlg .btn.red'); pg.wait_for_timeout(400); print('after reset coins', pg.evaluate('window.__hh.profile.coins'), 'route', pg.evaluate('window.__hh.route'))

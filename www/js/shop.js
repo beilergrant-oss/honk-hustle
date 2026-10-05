@@ -3,7 +3,6 @@
 // iOS RULES (Apple guideline 3.1.1): coins, power-ups and skins are DIGITAL goods, so real-money purchases inside the
 // iOS app MUST use Apple In-App Purchase (StoreKit). Base44's wrapper has no StoreKit yet, and Stripe/Base44 Payments
 // inside the app gets rejected. So:
-//   - Browser build:                      real money via Stripe / Base44 Payments (webProvider)
 //   - iOS app WITH window.NativeIAP:      real money via StoreKit (nativeProvider, see nativeIap.js)
 //   - iOS app WITHOUT window.NativeIAP:   real-money buttons are hidden; coins earned in-game still work
 import { base44 } from './api/base44Client.js'; // adjust to your project's client import
@@ -11,32 +10,15 @@ import { PRODUCTS, coinPurchase, setUsd, setCoinPrice } from './catalog.js';
 import { ALL_PACKS } from './packs.js';
 import { shopOffers, isOffered, setProductId, vehicleSkinId, passengerSkinId } from './themes.js';
 
-const inNativeShell = () =>
-  !!(window.NativeIAP || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) || /GridlockApp/i.test(navigator.userAgent));
-
 const nativeProvider = {
   name: 'apple',
   prices: (ids) => window.NativeIAP.getPrices(ids),                 // localized prices from the App Store
   async purchase(productId) { return window.NativeIAP.purchase(productId); }, // -> { transactionId, productId }
   restore: () => window.NativeIAP.restore(),                        // -> [productId, ...] (non-consumables)
 };
-const webProvider = {
-  name: 'web',
-  prices: async () => ({}),
-  async purchase(productId) {
-    const res = await base44.functions.invoke('createCheckout', { productId }); // your Stripe / Base44 Payments checkout
-    window.location.href = res.data.url;
-    return { pending: true };
-  },
-  restore: async () => [],
-};
 
-// null = do not show real-money buttons.
-export function realMoneyProvider() {
-  if (window.NativeIAP) return nativeProvider;
-  if (inNativeShell()) return null;
-  return webProvider;
-}
+// null = do not show real-money buttons (no StoreKit bridge, e.g. no RevenueCat key yet). Coins earned by playing always work.
+export function realMoneyProvider() { return window.NativeIAP ? nativeProvider : null; }
 
 export async function buyWithMoney(productId) {
   const provider = realMoneyProvider();
