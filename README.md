@@ -67,3 +67,6 @@ Holidays: Christmas, Halloween, Valentine's, St. Patrick's, Easter, Pride. Previ
 
 ## Drawn scenery instead of emoji
 Scenery on the home screen, loading screen and in levels, the home buttons, the power-up bar, the top pills and the lock/ice badges are drawn vector graphics (`www/js/decorArt.js`). The backdrop data still names each sprite by an emoji key, but the emoji is never shown. Add a new scenery sprite by adding a template there and an `add('<emoji>', 'sprite', colour)` line.
+
+## Painted scenery art
+`www/img/bg/<theme>_l.png` and `_r.png` are the painted scenery columns for the 12 themes that have art (city, beach, forest, winter, halloween, space, autumn, jungle, candy, desert, ocean, spring); `www/img/ui/*.png` are the four home buttons. `js/sceneArt.js` looks them up and `build.py` inlines them. In a level the columns are drawn into the canvas under the board (`render.js`), and the drawn vector sprites in `decorArt.js` are used only for the 8 themes without painted art.
