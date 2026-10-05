@@ -103,7 +103,7 @@ function renderHome() {
     </div>
     <div class="hhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>
     <div class="home-bottom">
-      <div class="home-play"><button class="btn green big" data-act="play" style="width:100%">Play</button><small>Level ${next}${info.tier === 'hard' ? ' • Hard' : info.tier === 'extraHard' ? ' • Extra Hard' : ''} • ${esc(info.world.name)}</small></div>
+      <div class="home-play" style="--tc:${(festive ? t.title : bd.band)[0]}"><button class="btn green big" data-act="play" style="width:100%">Play</button><small>Level ${next}${info.tier === 'hard' ? ' • Hard' : info.tier === 'extraHard' ? ' • Extra Hard' : ''} • ${esc(info.world.name)}</small></div>
       <div class="home-row home-row3">
         <button data-go="levels"><span>${iconSvg('map', 30)}</span>Levels</button>
         <button data-go="garage"><span>${iconSvg('bus', 30)}</span>Garage</button>
