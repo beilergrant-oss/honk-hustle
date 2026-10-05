@@ -116,7 +116,7 @@ export function drawPassenger(g, x, y, s, hex, accessory, wobble = 0, cheer = fa
     for (const sx of [-1, 1]) { g.save(); g.translate(sx * w * 0.46, -s * 0.02); g.rotate(sx * (0.55 + (sx > 0 ? wig : -wig))); g.fillStyle = hex; g.beginPath(); g.ellipse(0, -s * 0.2, s * 0.1, s * 0.23, 0, 0, 7); g.fill(); g.stroke(); g.restore(); }
   }
   g.fillStyle = shade(hex, -0.3); for (const sx of [-1, 1]) { g.beginPath(); g.ellipse(sx * w * 0.2, s * 0.47, w * 0.17, s * 0.07, 0, 0, 7); g.fill(); g.stroke(); }
-  const grad = g.createLinearGradient(0, -s / 2, 0, s / 2); grad.addColorStop(0, shade(hex, 0.38)); grad.addColorStop(0.45, hex); grad.addColorStop(1, shade(hex, -0.14));
+  const grad = g.createRadialGradient(-w * 0.18, -s * 0.28, s * 0.04, 0, -s * 0.02, s * 0.75); grad.addColorStop(0, shade(hex, 0.5)); grad.addColorStop(0.4, hex); grad.addColorStop(1, shade(hex, -0.38));
   g.fillStyle = grad; rr(g, -w / 2, -s / 2, w, s, w / 2); g.fill();
   if (outfit) {   // vest in the matching bus colours
     g.save(); rr(g, -w / 2, -s / 2, w, s, w / 2); g.clip();
@@ -125,7 +125,8 @@ export function drawPassenger(g, x, y, s, hex, accessory, wobble = 0, cheer = fa
     g.restore();
   }
   rr(g, -w / 2, -s / 2, w, s, w / 2); g.stroke();
-  g.fillStyle = 'rgba(255,255,255,.55)'; g.beginPath(); g.ellipse(-w * 0.24, -s * 0.36, w * 0.14, s * 0.07, -0.6, 0, 7); g.fill();
+  g.fillStyle = 'rgba(255,255,255,.8)'; g.beginPath(); g.ellipse(-w * 0.24, -s * 0.36, w * 0.15, s * 0.075, -0.6, 0, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.4)'; g.beginPath(); g.arc(w * 0.3, -s * 0.28, s * 0.03, 0, 7); g.fill();
+  g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(0, s * 0.42, w * 0.4, s * 0.06, 0, 0, 7); g.fill();
   // eyes: big whites, dark pupils, a glint
   const blink = (t + x * 40) % 3200 < 110 ? 0.12 : 1;
   for (const sx of [-1, 1]) {

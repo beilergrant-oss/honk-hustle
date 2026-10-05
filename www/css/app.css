@@ -212,3 +212,9 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .hcrowd{display:flex;justify-content:center;margin-top:-14px;width:100%}
 .hr{display:block;width:17%;max-width:84px;margin:0 -2.5%;animation:hr-hop 1s ease-in-out infinite}.hr img{display:block;width:100%;height:auto}
 @keyframes hr-hop{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+
+/* 3D cartoon polish */
+.busimg{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 0 rgba(20,32,90,.22))}
+.gc .gp .busimg,.pkpic .busimg{filter:drop-shadow(0 3px 0 rgba(20,32,90,.2))}
+.home-logo .w,.hh-word{filter:drop-shadow(0 3px 0 #0b1c5c) drop-shadow(0 6px 0 #0b1c5c) drop-shadow(0 9px 6px rgba(0,0,0,.35))}
+.hbus .busimg,.gbus .busimg{border-radius:28px;border:4px solid #14205a;box-shadow:0 6px 0 rgba(20,32,90,.35),inset 0 0 0 3px #fff;filter:none}
