@@ -8,7 +8,6 @@ import { sfx, haptic } from './sfx.js';
 import { BACKDROPS } from './backdrops.js';
 import { blocker } from './game.js';
 import { decorImg, iconImg } from './decorArt.js';
-import { hasArt, artImg } from './sceneArt.js';
 
 const DIR_VEC = { E: [1, 0], S: [0, 1], W: [-1, 0], N: [0, -1] };       // grid directions (grid y grows toward the player)
 const ease = (t) => 1 - Math.pow(1 - t, 3);
@@ -427,11 +426,6 @@ export function createRenderer(canvas, opts = {}) {
     for (const d of specksFor(L)) { const p = P(d.x, 0.002, d.z); if (p.x > -40 && p.x < W + 40 && p.y > -40 && p.y < H + 40) drawSpeck(bd.speck, p, d); }
     if (bd.crosswalk) { for (let i = -2; i < L.bw + 2; i += 0.8) poly([[i, 0.002, -1.45], [i + 0.45, 0.002, -1.45], [i + 0.45, 0.002, -0.8], [i, 0.002, -0.8]]), g.fillStyle = 'rgba(255,255,255,.8)', g.fill(); }
     const fog = g.createLinearGradient(0, 0, 0, H * 0.3); fog.addColorStop(0, rgba(bd.sky[0], 0.55)); fog.addColorStop(1, rgba(bd.sky[0], 0)); g.fillStyle = fog; g.fillRect(0, 0, W, H * 0.3);
-    // the painted scenery columns down both edges (the board is drawn over them)
-    if (hasArt(R.world.bd)) {
-      const w = Math.min(CW * 0.26, 112);
-      for (const [side, x] of [['l', 0], ['r', CW - w]]) { const im = artImg(R.world.bd, side); if (im.complete && im.naturalWidth) g.drawImage(im, x, 0, w, CH); }
-    }
     // board: a framed plate with a visible edge and a checker of two tile colours
     const bw = L.bw, bh = L.bh, edge = shade(bd.plate, -0.4);
     poly([[-0.2, -0.2, -0.2], [bw + 0.2, -0.2, -0.2], [bw + 0.2, 0, -0.2], [-0.2, 0, -0.2]]); g.fillStyle = edge; g.fill();
@@ -455,7 +449,6 @@ export function createRenderer(canvas, opts = {}) {
     christmas: ['\u{1F384}', '\u{1F381}', '⛄'], halloween: ['\u{1F383}', '\u{1F987}', '\u{1F47B}'], valentine: ['\u{1F496}', '\u{1F339}', '\u{1F48C}'], stpatrick: ['☘️', '\u{1F308}', '\u{1F4B0}'], easter: ['\u{1F95A}', '\u{1F430}', '\u{1F337}'], pride: ['\u{1F308}', '\u{1F984}', '\u{1F496}'] };
   let decorKey = '', decorList = [];
   function decorFor(L) {
-    if (hasArt(R.world.bd)) return [];   // the painted side art already frames the board
     const dt = R.world.decorTheme, bd = bdOf(), key = (R.world.bd || '') + '|' + L.bw + 'x' + L.bh + '|' + L.bay + '|' + (dt || ''); if (key === decorKey) return decorList;
     const seas = SEASON_DECOR[dt];
     let seed = 7; for (const ch of key) seed = (seed * 31 + ch.charCodeAt(0)) % 9973; const rnd = () => ((seed = (seed * 9301 + 49297) % 233280) / 233280);

@@ -14,7 +14,6 @@ import { POWERUPS, usePowerup, availability } from './powerups.js';
 import { createGame, tapVehicle, drainEvents, failStuck } from './game.js';
 import { OBSTACLES } from './levelGen.js';
 import { decorHtml, iconSvg } from './decorArt.js';
-import { sideArt, hasArt, uiUrl } from './sceneArt.js';
 import { createRenderer } from './render.js';
 import { resolveLook, paintFor } from './look.js';
 import { mountGarage } from './garageScreen.js';
@@ -73,9 +72,9 @@ function homeArt(p, picked) {
   const bdKey = festive ? '' : info.world.bd, bd = BACKDROPS[info.world.bd] || BACKDROPS.city, vid = p.equippedVehicleSkin || 'v_classic', pid = p.equippedPassengerSkin || 'p_classic';
   const sky = festive ? t.sky : bd.sky, ground = festive ? t.ground : bd.ground, dset = (festive && FEST[t.id]) || bd.decor;
   const spots = [[4, 12, 62], [78, 9, 70], [-2, 32, 56], [86, 34, 60], [2, 56, 66], [84, 58, 64], [10, 80, 70], [70, 82, 72]];
-  const decor = hasArt(bdKey) ? '' : spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;width:${Math.round(sz * 1.15)}px;height:${Math.round(sz * 1.15)}px;animation-delay:${-i * 0.7}s">${decorHtml(dset[i % dset.length])}</span>`).join('');
+  const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;width:${Math.round(sz * 1.15)}px;height:${Math.round(sz * 1.15)}px;animation-delay:${-i * 0.7}s">${decorHtml(dset[i % dset.length])}</span>`).join('');
   const crowd = [0, 1, 2, 3, 4, 5].map((i) => `<span class="hr" style="animation-delay:${-i * 0.18}s">${riderPic(pid, i, 84)}</span>`).join('');
-  return `<div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)"><div class="hb-road"></div>${decor}${sideArt(bdKey)}</div><div class="hhero lhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>`;
+  return `<div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)"><div class="hb-road"></div>${decor}</div><div class="hhero lhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>`;
 }
 function renderHome() {
   const p = S.profile, picked = pickTheme(new Date(), { hemisphere: p.hemisphere, seasonal: p.settings.seasonal });
@@ -86,10 +85,10 @@ function renderHome() {
   const sky = festive ? t.sky : bd.sky, ground = festive ? t.ground : bd.ground;
   const spots = [[4, 12, 62], [78, 9, 70], [-2, 32, 56], [86, 34, 60], [2, 56, 66], [84, 58, 64], [10, 80, 70], [70, 82, 72]];
   const dset = (festive && FEST[t.id]) || bd.decor;
-  const decor = hasArt(bdKey) ? '' : spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;width:${Math.round(sz * 1.15)}px;height:${Math.round(sz * 1.15)}px;animation-delay:${-i * 0.7}s">${decorHtml(dset[i % dset.length])}</span>`).join('');
+  const decor = spots.map(([x, y, sz], i) => `<span class="hd" style="left:${x}%;top:${y}%;width:${Math.round(sz * 1.15)}px;height:${Math.round(sz * 1.15)}px;animation-delay:${-i * 0.7}s">${decorHtml(dset[i % dset.length])}</span>`).join('');
   const crowd = ['#ff3fa4', '#22c94a', '#ffd60a', '#2a7bff', '#ff3030', '#9345e8'].map((c, i) => `<span class="hr" style="animation-delay:${-i * 0.18}s">${riderPic(pid, i, 84)}</span>`).join('');
   $('#home').innerHTML = `
-    <div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)"><div class="hb-road"></div>${decor}${sideArt(bdKey)}</div>
+    <div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)"><div class="hb-road"></div>${decor}</div>
     <div class="home-fx">${festive || picked.reason === 'season' ? particlesHtml(t) : ''}</div>
     <div class="home-top">${coinsPill()}${flamePill(streak)}${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">' + iconSvg('gift', 20) + ' Daily</button>' : ''}</div>
     <div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
@@ -100,10 +99,10 @@ function renderHome() {
     <div class="home-bottom">
       <div class="home-play"><button class="btn green big" data-act="play" style="width:100%">Play</button><small>Level ${next}${info.tier === 'hard' ? ' • Hard' : info.tier === 'extraHard' ? ' • Extra Hard' : ''} • ${esc(info.world.name)}</small></div>
       <div class="home-row">
-        <button class="navb" data-go="levels" aria-label="Levels"><img src="${uiUrl('levels')}" alt="Levels"></button>
-        <button class="navb" data-go="garage" aria-label="Garage"><img src="${uiUrl('garage')}" alt="Garage"></button>
-        <button class="navb" data-go="shop" aria-label="Shop"><img src="${uiUrl('shop')}" alt="Shop"></button>
-        <button class="navb" data-go="settings" aria-label="Settings"><img src="${uiUrl('settings')}" alt="Settings"></button>
+        <button data-go="levels"><span>${iconSvg('map', 30)}</span>Levels</button>
+        <button data-go="garage"><span>${iconSvg('bus', 30)}</span>Garage</button>
+        <button data-go="shop"><span>${iconSvg('cart', 30)}</span>Shop</button>
+        <button data-go="settings"><span>${iconSvg('gear', 30)}</span>Settings</button>
       </div>
     </div>`;
   const bg = $('#home .home-bg'); bg.style.pointerEvents = 'none';
