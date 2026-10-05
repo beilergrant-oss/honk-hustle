@@ -344,13 +344,13 @@ function setsHtml() {
 }
 function powerHtml() {
   const own = S.profile.powerups || {};
-  const singles = ['heli', 'bay', 'key'].map((k) => `<div class="item"><div class="ic">${POWERUPS[k].icon}</div><div class="tx"><b>${POWERUPS[k].name} <small>(you have ${own[k] || 0})</small></b><small>${esc(POWERUPS[k].desc)}</small></div><button class="btn gold" data-buypu="${k}">\u{1FA99} ${fmt(SINGLE_POWERUP_COIN_PRICE[k])}</button></div>`).join('');
-  const bundles = POWERUP_BUNDLES.map((b) => `<div class="item"><div class="ic">\u{1F381}</div><div class="tx"><b>${esc(b.name)}</b><small>${b.items.heli} of each power-up</small></div><button class="btn gold" data-buybundle="${b.id}">\u{1FA99} ${fmt(b.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneybundle="${b.id}">${b.price}</button>` : ''}</div>`).join('');
+  const singles = ['heli', 'bay', 'key'].map((k) => `<div class="item"><div class="ic">${iconSvg({ heli: 'heli', bay: 'park', key: 'key' }[k], 42)}</div><div class="tx"><b>${POWERUPS[k].name} <small>(you have ${own[k] || 0})</small></b><small>${esc(POWERUPS[k].desc)}</small></div><button class="btn gold" data-buypu="${k}">\u{1FA99} ${fmt(SINGLE_POWERUP_COIN_PRICE[k])}</button></div>`).join('');
+  const bundles = POWERUP_BUNDLES.map((b) => `<div class="item"><div class="ic">${iconSvg(b.art || 'kit1', 46)}</div><div class="tx"><b>${esc(b.name)}</b><small>${b.items.heli} of each power-up</small></div><button class="btn gold" data-buybundle="${b.id}">\u{1FA99} ${fmt(b.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneybundle="${b.id}">${b.price}</button>` : ''}</div>`).join('');
   return `<div class="section">Single</div>${singles}<div class="section">Bundles</div>${bundles}<p class="muted" style="text-align:center;margin:12px auto;max-width:420px">Win streaks give free power-up uses each round: 1 free after a first-try win, 2 after three in a row.</p>`;
 }
 function coinsHtml() {
   if (!moneyOk()) return `<div class="card" style="max-width:420px;margin:20px auto;text-align:center"><div style="font-size:42px">\u{1FA99}</div><b>Earn coins by winning levels</b><p class="muted">Every level pays coins, and bonus coins for finishing an area or a world. Coin packs are not available in this build.</p></div>`;
-  return COIN_PACKS.map((c) => `<div class="item"><div class="ic">\u{1FA99}</div><div class="tx"><b>${fmt(c.coins)} coins ${c.badge ? `<small>(${c.badge})</small>` : ''}</b></div><button class="btn" data-moneycoins="${c.id}">${c.price}</button></div>`).join('')
+  return COIN_PACKS.map((c) => `<div class="item"><div class="ic">${iconSvg(c.art || 'coins1', 46)}</div><div class="tx"><b>${fmt(c.coins)} coins ${c.badge ? `<small>(${c.badge})</small>` : ''}</b></div><button class="btn" data-moneycoins="${c.id}">${c.price}</button></div>`).join('')
     + `<div style="text-align:center;margin:14px"><button class="btn ghost" data-act="restore">Restore purchases</button></div>`;
 }
 async function shopMoney(productId, label) {

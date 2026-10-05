@@ -70,3 +70,9 @@ Scenery on the home screen, loading screen and in levels, the home buttons, the 
 
 ## Painted scenery art
 `www/img/bg/<theme>_l.png` and `_r.png` are the painted scenery columns for the 12 themes that have art (city, beach, forest, winter, halloween, space, autumn, jungle, candy, desert, ocean, spring); `www/img/ui/*.png` are the four home buttons. `js/sceneArt.js` looks them up and `build.py` inlines them. In a level the columns are drawn into the canvas under the board (`render.js`), and the drawn vector sprites in `decorArt.js` are used only for the 8 themes without painted art.
+
+## Shop: more coin packs and power-up kits
+Coins now run $0.99-$49.99 across six packs (1,200 to 100,000 coins) and power-up bundles run $1.99-$19.99 across four kits (Starter 3x to Ultra 60x), each with its own drawn pile/kit-box art (`decorArt.js`) instead of a generic coin/gift symbol. New product IDs are in `store/iap_products.csv`.
+
+## Scenery blending
+The board, bay and ground colours for the 12 painted themes are sampled from the reference art, so the drawn board now matches the painted scenery instead of using its own separate palette. The painted side columns fade out well before the board edge and soften at the top/bottom of the screen, so there's no hard seam.

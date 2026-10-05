@@ -5,13 +5,18 @@ import { SETS, PRICES, BUNDLE_ID, setProductId, vehicleSkinId, passengerSkinId, 
 const P = BUNDLE_ID; // must match App Store Connect (change it in themes.js)
 
 export const COIN_PACKS = [   // consumables
-  { id: 'coins_s', productId: P + '.coins.s', coins: 1200,  price: '$0.99' },
-  { id: 'coins_m', productId: P + '.coins.m', coins: 7000,  price: '$4.99', badge: 'Popular' },
-  { id: 'coins_l', productId: P + '.coins.l', coins: 16000, price: '$9.99', badge: 'Best value' },
+  { id: 'coins_xs', productId: P + '.coins.xs', coins: 1200,   price: '$0.99', art: 'coins1' },
+  { id: 'coins_s',  productId: P + '.coins.s',  coins: 3200,   price: '$2.99', art: 'coins1' },
+  { id: 'coins_m',  productId: P + '.coins.m',  coins: 7000,   price: '$4.99', badge: 'Popular',    art: 'coins2' },
+  { id: 'coins_l',  productId: P + '.coins.l',  coins: 16000,  price: '$9.99', art: 'coins2' },
+  { id: 'coins_xl', productId: P + '.coins.xl', coins: 36000,  price: '$19.99', badge: 'Best value', art: 'coins3' },
+  { id: 'coins_xxl', productId: P + '.coins.xxl', coins: 100000, price: '$49.99', badge: 'Huge',     art: 'coins4' },
 ];
 export const POWERUP_BUNDLES = [ // consumables, also buyable with coins
-  { id: 'pu_starter', name: 'Starter Kit', items: { heli: 3,  bay: 3,  key: 3 },  coinPrice: 900,  productId: P + '.pu.starter', price: '$1.99' },
-  { id: 'pu_mega',    name: 'Mega Kit',    items: { heli: 10, bay: 10, key: 10 }, coinPrice: 2500, productId: P + '.pu.mega',    price: '$4.99' },
+  { id: 'pu_starter', name: 'Starter Kit', items: { heli: 3,  bay: 3,  key: 3 },  coinPrice: 900,   productId: P + '.pu.starter', price: '$1.99', art: 'kit1' },
+  { id: 'pu_mega',    name: 'Mega Kit',    items: { heli: 10, bay: 10, key: 10 }, coinPrice: 2500,  productId: P + '.pu.mega',    price: '$4.99', art: 'kit2' },
+  { id: 'pu_super',   name: 'Super Kit',   items: { heli: 25, bay: 25, key: 25 }, coinPrice: 5800,  productId: P + '.pu.super',   price: '$9.99', art: 'kit3' },
+  { id: 'pu_ultra',   name: 'Ultra Kit',   items: { heli: 60, bay: 60, key: 60 }, coinPrice: 13000, productId: P + '.pu.ultra',   price: '$19.99', art: 'kit4' },
 ];
 export const SINGLE_POWERUP_COIN_PRICE = { heli: 300, bay: 200, key: 250 };
 
