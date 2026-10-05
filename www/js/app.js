@@ -96,7 +96,7 @@ function renderHome() {
   $('#home').innerHTML = `
     <div class="home-bg hb" style="background:linear-gradient(${sky[0]},${sky[1]} 38%,${ground} 38%)"><div class="hb-road"></div>${decor}</div>
     <div class="home-fx">${festive || picked.reason === 'season' ? particlesHtml(t) : ''}</div>
-    <div class="home-top">${coinsPill()}${flamePill(streak)}${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">' + iconSvg('gift', 20) + ' Daily</button>' : ''}</div>
+    <div class="home-top">${coinsPill()}<div class="ht-right">${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">' + iconSvg('gift', 20) + ' Daily</button>' : ''}<button class="topbtn" data-go="settings" aria-label="Settings">${iconSvg('gear', 26)}</button></div></div>
     <div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
       <span class="w w1" data-t="${w1}">${w1}</span><span class="w w2" data-t="${rest.join(' ')}!">${rest.join(' ')}!</span>
       ${signChip(t, picked.reason)}
@@ -104,11 +104,10 @@ function renderHome() {
     <div class="hhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>
     <div class="home-bottom">
       <div class="home-play"><button class="btn green big" data-act="play" style="width:100%">Play</button><small>Level ${next}${info.tier === 'hard' ? ' • Hard' : info.tier === 'extraHard' ? ' • Extra Hard' : ''} • ${esc(info.world.name)}</small></div>
-      <div class="home-row">
+      <div class="home-row home-row3">
         <button data-go="levels"><span>${iconSvg('map', 30)}</span>Levels</button>
         <button data-go="garage"><span>${iconSvg('bus', 30)}</span>Garage</button>
         <button data-go="shop"><span>${iconSvg('cart', 30)}</span>Shop</button>
-        <button data-go="settings"><span>${iconSvg('gear', 30)}</span>Settings</button>
       </div>
     </div>`;
   const bg = $('#home .home-bg'); bg.style.pointerEvents = 'none';

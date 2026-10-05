@@ -41,7 +41,10 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .home-bg{position:absolute;inset:0}
 .home-bg .hh-scene{position:absolute;inset:0;width:100%;height:100%}
 .home-fx{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.home-top{position:relative;display:flex;gap:8px;justify-content:space-between;padding:calc(var(--sat) + 10px) calc(var(--sar) + 12px) 0 calc(var(--sal) + 12px)}
+.home-top{position:relative;display:flex;gap:8px;align-items:center;justify-content:space-between;padding:calc(var(--sat) + 10px) calc(var(--sar) + 12px) 0 calc(var(--sal) + 12px)}
+.ht-right{display:flex;align-items:center;gap:8px}
+.topbtn{background:none;border:0;padding:4px;margin:0;line-height:0;filter:drop-shadow(0 2px 4px rgba(10,20,55,.35))}
+.topbtn:active{transform:translateY(2px)}
 .home-logo{position:relative;text-align:center;margin-top:14px;line-height:.86}
 .home-logo .w{display:block;position:relative;isolation:isolate;color:transparent;font-weight:900;letter-spacing:0;text-transform:uppercase;text-shadow:0.055em 0.000em 0 #fff,0.053em 0.014em 0 #fff,0.048em 0.027em 0 #fff,0.039em 0.039em 0 #fff,0.028em 0.048em 0 #fff,0.014em 0.053em 0 #fff,0.000em 0.055em 0 #fff,-0.014em 0.053em 0 #fff,-0.027em 0.048em 0 #fff,-0.039em 0.039em 0 #fff,-0.048em 0.027em 0 #fff,-0.053em 0.014em 0 #fff,-0.055em 0.000em 0 #fff,-0.053em -0.014em 0 #fff,-0.048em -0.027em 0 #fff,-0.039em -0.039em 0 #fff,-0.028em -0.048em 0 #fff,-0.014em -0.053em 0 #fff,-0.000em -0.055em 0 #fff,0.014em -0.053em 0 #fff,0.028em -0.048em 0 #fff,0.039em -0.039em 0 #fff,0.048em -0.028em 0 #fff,0.053em -0.014em 0 #fff;animation:hh-bob 1.8s ease-in-out infinite}
 .home-logo .w2{animation-delay:-.45s}
@@ -60,6 +63,7 @@ button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 .home-play{width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:1px}
 .home-play small{font-weight:700;font-size:13px;opacity:.9}
 .home-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;width:100%;max-width:340px}
+.home-row3{grid-template-columns:repeat(3,1fr);max-width:280px}
 .home-row button{background:rgba(16,36,107,.24);border:0;border-radius:18px;padding:9px 4px 7px;font-weight:800;font-size:12px;color:#fff;text-shadow:0 1px 3px rgba(10,20,55,.7);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.4),0 3px 10px rgba(10,20,55,.22);display:flex;flex-direction:column;align-items:center;gap:2px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .home-row button span{font-size:24px;line-height:1}
 .home-row button:active{transform:translateY(2px)}
