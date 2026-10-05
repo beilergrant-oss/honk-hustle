@@ -219,26 +219,9 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .home-logo .w,.hh-word{filter:drop-shadow(0 3px 0 #0b1c5c) drop-shadow(0 6px 0 #0b1c5c) drop-shadow(0 9px 6px rgba(0,0,0,.35))}
 .hbus .busimg,.gbus .busimg{border-radius:28px;border:4px solid #14205a;box-shadow:0 6px 0 rgba(20,32,90,.35),inset 0 0 0 3px #fff;filter:none}
 
-/* ---- cleaner, softer "store-style" polish ---- */
+/* ---- softer buttons for the shop/garage screens (home screen keeps its original look) ---- */
 :root{--soft:0 6px 14px rgba(20,40,100,.18)}
-.btn,.btn.green,.btn.gold,.btn.red,.btn.ghost,.home-row button,.round-btn,.pill{border:0}
-.btn{border-radius:14px;box-shadow:0 3px 0 rgba(10,30,90,.28),0 8px 14px rgba(20,40,100,.16),inset 0 1px 0 rgba(255,255,255,.55);text-shadow:0 1px 0 rgba(0,0,0,.18)}
-.btn.green{background-image:linear-gradient(rgba(255,255,255,.3),rgba(255,255,255,0) 55%),linear-gradient(#46d985,#1fae58);box-shadow:0 3px 0 #11693a,0 8px 14px rgba(20,40,100,.16),inset 0 1px 0 rgba(255,255,255,.55)}
-.btn.big{font-size:19px;padding:12px 20px;border-radius:16px;box-shadow:0 4px 0 #11693a,0 8px 14px rgba(20,40,100,.2),inset 0 1px 0 rgba(255,255,255,.55)}
-.home-play{max-width:200px}
-.home-play small{-webkit-text-stroke:0;paint-order:normal;text-shadow:0 1px 3px rgba(10,30,90,.6);font-size:12px}
-.home-row{max-width:300px;gap:8px}
-.home-row button{border:0;border-radius:14px;padding:9px 4px 7px;font-size:11.5px;background:linear-gradient(rgba(255,255,255,.9),rgba(226,238,255,.95));box-shadow:0 3px 0 rgba(10,30,90,.22),0 8px 14px rgba(20,40,100,.14),inset 0 1px 0 #fff}
-.home-row button span{font-size:21px}
-.pill,.round-btn{box-shadow:0 2px 0 rgba(10,30,90,.2),0 5px 10px rgba(20,40,100,.14),inset 0 1px 0 #fff}
-/* logo: smooth gradient lettering, thin edge, soft depth */
-.home-logo .w{text-shadow:none}
-.home-logo .w::before{text-shadow:0.035em 0 0 #17327f,-0.035em 0 0 #17327f,0 0.035em 0 #17327f,0 -0.035em 0 #17327f,0.025em 0.025em 0 #17327f,-0.025em 0.025em 0 #17327f,0.025em -0.025em 0 #17327f,-0.025em -0.025em 0 #17327f,0 0.07em 0 #0f2260}
-.home-logo .w::after{background:linear-gradient(180deg,rgba(255,255,255,.45) 0,rgba(255,255,255,0) 45%),linear-gradient(180deg,var(--c1,#ffd23f) 0,var(--c2,#ff9a1f) 100%);-webkit-background-clip:text;background-clip:text}
-.home-logo .w,.hh-word{filter:drop-shadow(0 6px 6px rgba(10,30,90,.35))}
-.home-logo .tag{-webkit-text-stroke:0;text-shadow:0 1px 3px rgba(10,30,90,.6)}
-/* hero art: no frame, soft shadow */
-.hbus .busimg,.gbus .busimg{border:0;border-radius:24px;box-shadow:0 10px 24px rgba(10,30,90,.3)}
-.busimg{filter:none}
-
-.home-play{max-width:150px}.btn.big{font-size:17px;padding:10px 16px;border-radius:14px}
+/* home: original look, Play just smaller */
+.home-play .btn.big{width:150px!important;font-size:17px;padding:10px 16px;border-radius:16px;box-shadow:0 5px 0 #13783a,0 0 0 3px #bfffd4,inset 0 3px 0 rgba(255,255,255,.5)}
+.busimg{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 0 rgba(20,32,90,.22))}
+.hbus .busimg,.gbus .busimg{border-radius:28px;border:4px solid #14205a;box-shadow:0 6px 0 rgba(20,32,90,.35),inset 0 0 0 3px #fff;filter:none}
