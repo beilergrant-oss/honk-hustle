@@ -102,7 +102,7 @@ function renderHome() {
     </div>
     <div class="hhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>
     <div class="home-bottom">
-      <div class="home-play" style="--tc:${(festive ? t.title : bd.band)[0]}"><button class="btn green big" data-act="play" style="width:100%">Play</button><small>Level ${next}${info.tier === 'hard' ? ' • Hard' : info.tier === 'extraHard' ? ' • Extra Hard' : ''} • ${esc(info.world.name)}</small></div>
+      <div class="home-play"><button class="btn green big playbtn" data-act="play" aria-label="Play level ${next}"><span class="pl">Play</span><small>Level ${next}${info.tier === 'hard' ? ' • Hard' : info.tier === 'extraHard' ? ' • Extra hard' : ''}</small></button></div>
       <div class="home-row home-row3">
         <button data-go="levels"><span>${iconSvg('lvl3d', 46)}</span>Levels</button>
         <button data-go="garage"><span>${iconSvg('garage3d', 46)}</span>Garage</button>
@@ -119,7 +119,7 @@ function renderLevels() {
   const cells = [];
   for (let n = first; n <= last; n++) {
     const tier = levelInfo(n).tier, done = n <= hi, locked = n > hi + 1, isCur = n === cur;
-    cells.push(`<button class="lv ${done ? 'done' : ''} ${isCur ? 'current' : ''} ${locked ? 'locked' : ''}" data-lv="${n}" aria-label="Level ${n}${locked ? ', locked' : done ? ', completed' : ''}">${n}${tier !== 'easy' ? `<span class="t ${tier}">${tier === 'hard' ? 'HARD' : 'XHARD'}</span>` : ''}${done ? `<span class="ck">${'\u2B50'.repeat((S.profile.stars || {})[n] || 1)}</span>` : ''}</button>`);
+    cells.push(`<button class="lv ${done ? 'done' : ''} ${isCur ? 'current' : ''} ${locked ? 'locked' : ''}" data-lv="${n}" aria-label="Level ${n}${locked ? ', locked' : done ? ', completed' : ''}">${locked ? iconSvg('lock', 22) : `<span class="num">${n}</span>`}${tier !== 'easy' ? `<span class="t ${tier}">${tier === 'hard' ? 'Hard' : 'Extra'}</span>` : ''}${done ? `<span class="ck">${[0, 1, 2].map((i) => iconSvg(i < ((S.profile.stars || {})[n] || 1) ? 'starOn' : 'starOff', 13)).join('')}</span>` : ''}</button>`);
   }
   $('#levels').innerHTML = `${backBar('Levels', coinsPill())}
     <div class="areanav"><button class="round-btn" data-area="-1" ${area <= 1 ? 'disabled' : ''} aria-label="Previous area">‹</button>
@@ -184,7 +184,7 @@ function setMoves(left) { const m = $('[data-moves]'); if (!m) return; m.textCon
 function refreshPowerbar() {
   for (const k of ['heli', 'bay', 'key']) {
     const a = availability(k, S.game.round, S.profile.powerups || {}), btn = $(`[data-pw="${k}"]`), n = $('[data-n]', btn);
-    n.textContent = a.free > 0 ? 'FREE' : a.owned; n.classList.toggle('free', a.free > 0); btn.classList.toggle('none', !a.canUse); btn.classList.toggle('active', S.targeting && k === 'heli');
+    n.textContent = a.free > 0 ? 'Free' : a.owned > 0 ? a.owned : '+'; n.classList.toggle('free', a.free > 0); n.classList.toggle('buy', !(a.free > 0) && !(a.owned > 0)); btn.classList.toggle('none', !a.canUse); btn.classList.toggle('active', S.targeting && k === 'heli');
   }
   $$coins();
 }
@@ -339,7 +339,7 @@ function packsHtml() {
     const cells = [cell(vid, set.vehicle.name, paintFor(vid), set.vehicle.style.topper, own.has(vid), p.setId, passengerSkinId(p.setId), 0), ...p.variants.map((v, i) => cell(v.id, v.name, v.paint, v.topper, own.has(v.id), null, v.riderId, i + 1))].join('');
     const acts = c.ownsAll ? '<div class="muted" style="text-align:center">You own this pack</div>' : `<div class="acts"><button class="btn gold" data-buypack="${p.id}">${iconSvg('coin', 18)} ${fmt(p.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneypack="${p.id}">${p.usd}</button>` : ''}</div>`;
     const sub = c.kind === 'weekly' ? timeLeft(c.endsAt) : c.inSeason ? 'In season now' : 'Seasonal \u2022 any time', gl = p.glyphTopper ? topperSvg(p.glyphTopper) : decorHtml(p.glyph);
-    const head = (c.kind === 'weekly' && !weeklyHead++ ? '<div class="section">New this week \u2022 rotates every Monday</div>' : '') + (c.kind === 'season' && !seasonHead++ ? '<div class="section">Seasonal packs</div>' : '');
+    const head = (c.kind === 'weekly' && !weeklyHead++ ? '<div class="section">New this week</div>' : '') + (c.kind === 'season' && !seasonHead++ ? '<div class="section">Seasonal packs</div>' : '');
     return head + `<div class="pack" style="--s1:${p.sky[0]};--s2:${p.sky[1]}"><div class="packhd"><span class="gl">${gl}</span><div><h3>${esc(p.name)}</h3><small>${sub} \u2022 4 buses + outfits</small></div></div><div class="pkgrid">${cells}</div>${acts}</div>`;
   }).join('') + '<p class="muted" style="text-align:center;margin:16px auto;max-width:420px">Packs are yours forever. Each one unlocks a themed bus set plus three more buses with their own colours. Weekly packs change every Monday.</p>';
 }

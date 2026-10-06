@@ -257,3 +257,51 @@ select.sel{font:inherit;font-weight:800;border:2px solid #c5cef0;border-radius:1
 .hb-top{position:absolute;left:0;top:0;width:100%;height:46%;display:block}.hb-bot{position:absolute;left:0;top:76%;width:100%;height:24%;display:block}
 .hb-top .sc-cl{animation:sc-drift 38s ease-in-out infinite alternate}@keyframes sc-drift{from{transform:translateX(-14px)}to{transform:translateX(18px)}}
 .hc-ic{display:inline-flex;align-items:center}
+
+/* ===================================================================== App Store polish layer
+   One consistent "toy" material: white glass panels, chunky glossy buttons with a pressed lip, navy ink. */
+:root{--ink:#13245e;--glass:rgba(255,255,255,.78);--lip:0 4px 0 rgba(19,36,94,.2);--float:0 10px 24px rgba(10,20,55,.18)}
+.btn,.lv,.pw,.home-row button,.round-btn,.pill{-webkit-user-select:none;user-select:none}
+.btn:active,.lv:active,.pw:active,.home-row button:active{transform:translateY(3px) scale(.98)}
+@media (prefers-reduced-motion:reduce){.lv.current::after,.playbtn{animation:none!important}}
+
+/* home: one hero Play button with the level inside, frosted shortcuts under it */
+.home-bottom{gap:14px}
+.home-play{max-width:320px}
+.home-play .btn.big.playbtn{width:100%!important;display:flex;flex-direction:column;align-items:center;gap:0;padding:12px 20px 11px;border-radius:24px;
+  box-shadow:0 6px 0 #13783a,0 14px 26px rgba(19,120,58,.35),inset 0 3px 0 rgba(255,255,255,.5);animation:play-breathe 2.6s ease-in-out infinite}
+.playbtn .pl{font-size:28px;line-height:1.05;letter-spacing:.3px}
+.playbtn small{font-size:13px;font-weight:800;opacity:.92;text-shadow:none;color:#eaffef}
+@keyframes play-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.025)}}
+.home-play .btn.big.playbtn:active{animation:none;transform:translateY(4px);box-shadow:0 2px 0 #13783a,inset 0 3px 0 rgba(255,255,255,.5)}
+.home-row{max-width:320px;gap:12px}
+.home-row button{background:var(--glass);-webkit-backdrop-filter:blur(14px) saturate(1.5);backdrop-filter:blur(14px) saturate(1.5);color:var(--ink);text-shadow:none;
+  font-size:13px;font-weight:900;border-radius:22px;padding:8px 4px 9px;box-shadow:var(--lip),var(--float),inset 0 1px 0 #fff}
+
+/* game: frosted power-up tray with solid tiles */
+.powerbar{background:rgba(255,255,255,.6);-webkit-backdrop-filter:blur(18px) saturate(1.5);backdrop-filter:blur(18px) saturate(1.5);border-top:1px solid rgba(255,255,255,.85);gap:12px;padding-top:12px}
+.pw{background:#fff;color:var(--ink);border-radius:20px;padding:8px 4px 7px;font-size:12px;font-weight:900;box-shadow:var(--lip),0 6px 14px rgba(10,20,55,.12)}
+.pw.none{opacity:1}.pw.none .i{filter:saturate(.35) opacity(.75)}
+.pw .n{background:var(--ink);border:2.5px solid #fff;box-shadow:0 2px 4px rgba(10,20,55,.25)}
+.pw .n.free{background:#22b85a}.pw .n.buy{background:linear-gradient(#ffd23a,#ffa800);color:#3a2600;font-size:15px}
+.pw.active{box-shadow:0 0 0 3px #ffd23a,0 0 0 7px rgba(255,210,58,.35),var(--float)}
+
+/* level picker: glossy tiles - done (green), current (gold, pulsing), locked (quiet, with a lock) */
+.lvgrid{gap:10px;padding-bottom:calc(var(--sab) + 16px)}
+.lv{border-radius:18px;font-size:20px;background:#fff;box-shadow:var(--lip),inset 0 2px 0 #fff;overflow:visible}
+.lv .num{line-height:1;margin-top:-4px}
+.lv.done{background:linear-gradient(rgba(255,255,255,.35),rgba(255,255,255,0) 55%),linear-gradient(#5ee48f,#22b85a);color:#fff;box-shadow:0 4px 0 #13783a,inset 0 2px 0 rgba(255,255,255,.5);text-shadow:0 1px 0 rgba(0,0,0,.18)}
+.lv.current{background:linear-gradient(rgba(255,255,255,.45),rgba(255,255,255,0) 55%),linear-gradient(#ffd84a,#ffaa00);color:#3a2600;outline:0;box-shadow:0 4px 0 #b87400,inset 0 2px 0 rgba(255,255,255,.6)}
+.lv.current::after{content:"";position:absolute;inset:-5px;border-radius:22px;border:3px solid #fff;animation:lv-ring 1.6s ease-out infinite;pointer-events:none}
+@keyframes lv-ring{0%{opacity:.95;transform:scale(.96)}100%{opacity:0;transform:scale(1.14)}}
+.lv.locked{opacity:1;background:rgba(255,255,255,.55);box-shadow:0 3px 0 rgba(19,36,94,.12);pointer-events:none}
+.lv.locked .ic2{opacity:.55}
+.lv .t{top:-7px;right:50%;transform:translateX(50%);font-size:9px;letter-spacing:.2px;border-radius:999px;padding:2px 6px;border:2px solid #fff;white-space:nowrap}
+.lv .ck{bottom:5px;display:flex;gap:1px}.lv .ck .ic2{display:block}
+.areanav .mid{background:var(--glass);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);box-shadow:var(--lip)}
+
+/* section headings: sentence case, quieter */
+.section{text-transform:none;letter-spacing:0;font-size:16px}
+.home-play .btn.big.playbtn small{-webkit-text-stroke:0;color:#eaffef;font-size:13px;text-shadow:0 1px 0 rgba(0,0,0,.15)}
+#levels .scroll.sky{background:none}
+.lv.locked{background:#e8f0ff}
