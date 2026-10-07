@@ -32,6 +32,9 @@ SETS.forEach((s) => { PRODUCTS[setProductId(s.id)] = { kind: 'set', setId: s.id,
 // Season Packs: ONE non-consumable product per season unlocks the season's set (bus + outfit) and its three extra buses.
 export const packSkinIds = (p) => [vehicleSkinId(p.setId), passengerSkinId(p.setId), ...p.variants.flatMap((v) => [v.id, v.riderId])];
 ALL_PACKS.forEach((p) => { PRODUCTS[p.productId] = { kind: 'pack', packId: p.id, skinIds: packSkinIds(p) }; });
+// Remove ads: ONE non-consumable product. Turns off the between-level ads for good (restorable).
+export const NO_ADS_PRODUCT = P + '.noads';
+PRODUCTS[NO_ADS_PRODUCT] = { kind: 'noads' };
 export const setUsd = (set) => PRICES[set.price].usd;
 export const setCoinPrice = (set) => PRICES[set.price].set;
 
@@ -48,6 +51,7 @@ export function grantProduct(profile, productId, transactionId) {
     Object.entries(prod.items).forEach(([k, n]) => { next.powerups[k] = (next.powerups[k] || 0) + n; });
   }
   if (prod.kind === 'skin') next.ownedSkins = [...new Set([...(profile.ownedSkins || []), prod.skinId])];
+  if (prod.kind === 'noads') next.noAds = true;
   if (prod.kind === 'set' || prod.kind === 'pack') next.ownedSkins = [...new Set([...(profile.ownedSkins || []), ...prod.skinIds])];
   return { granted: true, profile: next };
 }
@@ -55,7 +59,8 @@ export function grantProduct(profile, productId, transactionId) {
 // Restore = re-grant non-consumables only (single skins and themed sets). Consumables (coins, bundles) are never restored.
 export function restoreSkins(profile, productIds) {
   const ids = productIds.map((id) => PRODUCTS[id]).filter(Boolean).flatMap((p) => (p.kind === 'skin' ? [p.skinId] : p.kind === 'set' || p.kind === 'pack' ? p.skinIds : []));
-  return { ...profile, ownedSkins: [...new Set([...(profile.ownedSkins || []), ...ids])] };
+  const noAds = productIds.some((id) => PRODUCTS[id] && PRODUCTS[id].kind === 'noads');
+  return { ...profile, ...(noAds ? { noAds: true } : {}), ownedSkins: [...new Set([...(profile.ownedSkins || []), ...ids])] };
 }
 
 // Spending EARNED coins (no payment processor involved, so this is fine on iOS). Pure: returns the new profile.

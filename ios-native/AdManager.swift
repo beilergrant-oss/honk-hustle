@@ -1,3 +1,5 @@
+// SUPERSEDED: the game now shows AdMob ads through the @capacitor-community/admob plugin (www/js/ads.js), which also handles
+// consent and the tracking prompt. Do not add this file to the Xcode project as well - it would start a second copy of the Ads SDK.
 //
 //  AdManager.swift
 //  Honk Hustle

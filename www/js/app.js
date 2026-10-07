@@ -27,6 +27,8 @@ import { BACKDROPS } from './backdrops.js';
 import { sceneSvgs } from './sceneArt.js';
 import { detectHemisphere } from './store.js';
 import { storeName, isAndroid } from './platform.js';
+import { initAds, levelFinished, adBreak, rewardedReady, showRewarded, privacyChoicesNeeded, showPrivacyChoices } from './ads.js';
+import { NO_ADS_PRODUCT } from './catalog.js';
 import { lookFor, BUS_STYLES } from './busStyles.js';
 import { configureSfx, sfx, haptic, unlockAudio } from './sfx.js';
 import { nextCombo, resetCombo, comboText, comboColor, floatText } from './juice.js';
@@ -139,6 +141,7 @@ function buildGameDom() {
 }
 
 function startLevel(n, { retry = false } = {}) {
+  if (S.adBreakDue) { S.adBreakDue = false; adBreak(); }   // between-level ad (skipped with Remove ads, see ads.js)
   n = Math.max(1, Math.min(TOTAL_LEVELS, n));
   if (!retry) S.attempts = 0;
   S.levelNo = n;
@@ -219,6 +222,7 @@ function offerBuy(type) {
   const price = SINGLE_POWERUP_COIN_PRICE[type], p = POWERUPS[type], can = S.profile.coins >= price;
   modal({ icon: { heli: 'heli', bay: 'park', key: 'key' }[type], title: p.name, body: esc(p.desc) + '<br>You have none left.', dismissible: true, actions: [
     { label: `Buy 1 for ${fmt(price)} coins`, cls: 'gold', disabled: !can, onClick: () => { const r = coinPurchase(S.profile, 'powerup', type); if (r.ok) { save(r.profile); refreshPowerbar(); sfx.coin(); toast('Bought ' + p.name); } return true; } },
+    ...(rewardedReady() ? [{ label: 'Watch a video: get 1 free', cls: 'green', onClick: () => { showRewarded().then((ok) => { if (ok) { save({ powerups: { ...(S.profile.powerups || {}), [type]: ((S.profile.powerups || {})[type] || 0) + 1 } }); refreshPowerbar(); sfx.coin(); toast('Got 1 ' + p.name); } else toast('Watch the whole video to get it'); }); } }] : []),
     { label: can ? 'Not now' : 'Not enough coins yet. Win levels to earn more.', cls: 'ghost' },
   ] });
 }
@@ -245,11 +249,21 @@ function handleWin() {
   save(p);
   lines.push(['Win streak', { html: iconSvg('flame', 18) + ' ' + p.winStreak + (firstTry ? '' : ' (retries reset it)') }]);
   sfx.win(); haptic('success'); $$coins();
-  const last = n >= TOTAL_LEVELS;
+  levelFinished(); S.adBreakDue = true;
+  const last = n >= TOTAL_LEVELS, bonus = reward;
+  const watch = rewardedReady() ? [{ label: 'Watch a video: +' + fmt(bonus) + ' coins', cls: 'gold', onClick: () => { watchForCoins(bonus); return false; } }] : [];
   modal({ icon: 'trophy', title: 'Level ' + n + ' cleared!', lines, actions: [
     last ? { label: 'You finished the game!', cls: 'green', onClick: () => go('home') } : { label: 'Next level', cls: 'green', onClick: () => { startLevel(n + 1); } },
+    ...watch,
     { label: 'Home', cls: 'ghost', onClick: () => go('home') },
   ] });
+}
+// Rewarded video on the win popup: the button turns into a confirmation once the reward is in.
+async function watchForCoins(bonus) {
+  const b = document.querySelector('#modalHost .btn.gold'); if (b) b.disabled = true;
+  const ok = await showRewarded();
+  if (ok) { save({ coins: (S.profile.coins || 0) + bonus }); $$coins(); sfx.coin(); toast('+' + fmt(bonus) + ' coins'); if (b) b.textContent = 'Coins doubled!'; }
+  else if (b) { b.disabled = false; toast('Watch the whole video to get the coins'); }
 }
 
 function handleStuck() {
@@ -264,6 +278,7 @@ function handleStuck() {
 
 function handleLose(reason) {
   const n = S.levelNo; let p = applyResult(S.profile, 'lose'); p = save(p);
+  levelFinished(); S.adBreakDue = true;
   sfx.lose(); haptic('error');
   const can = p.coins >= SKIP_COST;
   modal({ icon: reason === 'out-of-moves' ? 'clock' : 'full', title: reason === 'out-of-moves' ? 'Out of moves' : 'Bay full', body: 'Your win streak was reset. Try a different order!', actions: [
@@ -352,8 +367,12 @@ function powerHtml() {
 }
 function coinsHtml() {
   if (!moneyOk()) return `<div class="card" style="max-width:420px;margin:20px auto;text-align:center">${iconSvg('coin', 42)}<b>Earn coins by winning levels</b><p class="muted">Every level pays coins, and bonus coins for finishing an area or a world. Coin packs are not available in this build.</p></div>`;
-  return COIN_PACKS.map((c) => `<div class="item"><div class="ic">${iconSvg(c.art || 'coins1', 46)}</div><div class="tx"><b>${fmt(c.coins)} coins ${c.badge ? `<small>(${c.badge})</small>` : ''}</b></div><button class="btn" data-moneycoins="${c.id}">${c.price}</button></div>`).join('')
+  return noAdsCard() + COIN_PACKS.map((c) => `<div class="item"><div class="ic">${iconSvg(c.art || 'coins1', 46)}</div><div class="tx"><b>${fmt(c.coins)} coins ${c.badge ? `<small>(${c.badge})</small>` : ''}</b></div><button class="btn" data-moneycoins="${c.id}">${c.price}</button></div>`).join('')
     + `<div style="text-align:center;margin:14px"><button class="btn ghost" data-act="restore">Restore purchases</button></div>`;
+}
+function noAdsCard() {
+  return S.profile.noAds ? `<div class="item noads"><div class="ic">${iconSvg('noads', 46)}</div><div class="tx"><b>Ads removed</b><small>Thanks for supporting Honk Hustle!</small></div></div>`
+    : `<div class="item noads"><div class="ic">${iconSvg('noads', 46)}</div><div class="tx"><b>Remove ads</b><small>No more ads between levels, forever. Optional reward videos stay.</small></div><button class="btn gold" data-act="noads">${esc(CONFIG.NO_ADS_PRICE)}</button></div>`;
 }
 async function shopMoney(productId, label) {
   try { toast('Contacting ' + storeName() + '…'); await buyWithMoney(productId); S.profile = loadProfile(); sfx.coin(); toast(label + ' unlocked!'); renderShop(); }
@@ -369,6 +388,8 @@ function renderSettings() {
       <div class="setrow"><div class="tx">Sound<small>Effects while you play</small></div>${sw('sound', s.sound)}</div>
       <div class="setrow"><div class="tx">Haptics<small>Little buzzes as you play</small></div>${sw('haptics', s.haptics)}</div>
       ${moneyOk() ? `<div class="setrow"><div class="tx">Restore purchases<small>Get back skins and sets you bought before</small></div><button class="btn" data-act="restore" style="padding:10px 14px">Restore</button></div>` : ''}
+      ${moneyOk() && !S.profile.noAds ? `<div class="setrow"><div class="tx">Remove ads<small>No ads between levels, forever</small></div><button class="btn gold" data-act="noads" style="padding:10px 14px">${esc(CONFIG.NO_ADS_PRICE)}</button></div>` : ''}
+      ${privacyChoicesNeeded() ? `<div class="setrow"><div class="tx">Ad privacy choices<small>Change what you agreed to for ads</small></div><button class="btn ghost" data-act="privacy" style="padding:10px 14px">Change</button></div>` : ''}
       <div class="setrow"><div class="tx">Privacy & terms<small>How your data is handled</small></div><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.PRIVACY_URL)}" target="_blank" rel="noopener">Privacy</a><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.TERMS_URL)}" target="_blank" rel="noopener">Terms</a></div>
       <div class="setrow"><div class="tx">Reset progress<small>Erase levels, coins and skins on this device</small></div><button class="btn red" data-act="reset" style="padding:10px 14px">Reset</button></div>
       <p class="muted" style="text-align:center">Honk Hustle ${CONFIG.VERSION} • Levels ${fmt(TOTAL_LEVELS)} • Best streak ${S.profile.bestStreak || 0}</p>
@@ -389,6 +410,8 @@ document.addEventListener('click', async (e) => {
   if (d.pw) return pressPower(d.pw);
   if (d.tab) { S.shopTab = d.tab; return renderShop(); }
   if (d.set) { save({ settings: { ...S.profile.settings, [d.set]: !S.profile.settings[d.set] } }); return renderSettings(); }
+  if (d.act === 'noads') return shopMoney(NO_ADS_PRODUCT, 'Ad-free play');
+  if (d.act === 'privacy') return showPrivacyChoices();
   if (d.act === 'restore') { try { const r = await restorePurchases(); S.profile = loadProfile(); toast('Purchases restored'); } catch (err) { toast('Nothing to restore'); } return; }
   if (d.act === 'reset') return modal({ icon: 'warning', title: 'Reset everything?', body: 'This erases your levels, coins, power-ups and skins on this device.', actions: [{ label: 'Erase progress', cls: 'red', onClick: () => { S.profile = resetProfile(); S.areaView = 1; configureSfx(S.profile.settings); go('home'); } }, { label: 'Cancel', cls: 'ghost' }] });
   if (d.buyset) { const r = coinPurchase(S.profile, 'set', setById(d.buyset), { hemisphere: S.profile.hemisphere }); if (r.ok) { save(r.profile); sfx.coin(); toast('Set unlocked!'); } else toast({ 'not-enough-coins': 'Not enough coins yet.', 'not-in-shop': 'Not in the shop right now.', 'already-owned': 'You already own it.' }[r.reason] || 'Could not buy.'); return renderShop(); }
@@ -432,6 +455,7 @@ async function boot() {
   const cap = window.Capacitor && window.Capacitor.Plugins;
   try { if (cap && cap.SplashScreen) cap.SplashScreen.hide(); } catch (e) {}
   initIap();
+  initAds({ noAds: () => !!S.profile.noAds, level: () => S.profile.highestLevel || 0 });
   hookBackButton();                                                    // no-op in the browser or without a RevenueCat key
   const result = {};
   if (T.date) globalThis.__HH_DATE = T.date;

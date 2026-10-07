@@ -19,5 +19,5 @@ Traffic is a mess and only you can fix it! Tap buses and cars to honk them out o
 - Plays fully offline, no account needed
 
 **Age rating:** 4+ (no violence, no web access, no gambling). Answer "None" to all, and "No" to unrestricted web access. In-app purchases do not use random loot boxes.
-**Privacy nutrition label:** Data Not Collected (verify if you add analytics or ads).
+**Privacy nutrition label:** the app shows Google AdMob ads, so declare what Google lists for the Mobile Ads SDK (Identifiers › Device ID, Usage Data › Advertising Data and Product Interaction, Location › Coarse Location, Diagnostics) as used for Third-Party Advertising / Analytics, and "Used to track you" if the player allows tracking. Check https://developers.google.com/admob/ios/privacy/data-disclosure before submitting.
 **Screenshots:** capture from the simulator at 6.9" (1320x2868) and 6.5" (1284x2778).

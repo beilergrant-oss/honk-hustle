@@ -46,7 +46,8 @@ bash scripts/setup_android.sh          # npm install, cap add android, icons, sy
 - Release build (signed .aab): create the upload key once with the `keytool` line in `scripts/build_android_release.sh`, then
   `KEYSTORE_PASS=... KEY_PASS=... VERSION_CODE=1 bash scripts/build_android_release.sh`. Raise `VERSION_CODE` for every upload. Never commit the .jks (it is in .gitignore) and back it up.
 - The Android Back button closes popups, pauses a level, goes back to Home, and on Home sends the app to the background.
-- Ads: `ios-native/AdManager.swift` is iOS only and not wired to the game. No ads run on Android.
+- Ads: Google AdMob through `@capacitor-community/admob` on both Android and iOS (`www/js/ads.js`). Interstitials between levels (from level 5, at most every 3 levels and 90 s), optional reward videos (2x coins on a win, a free power-up), Google's consent form where required. A $4.99 non-consumable `<bundle id>.noads` removes the interstitials. Test ad ids are used until you set yours in `config.js`; setup steps in `store/GOOGLE_PLAY_LISTING.md`.
+- `ios-native/AdManager.swift` is superseded by the plugin - do not add it to the Xcode project as well (it would start a second copy of the Ads SDK).
 
 ## Season Packs
 Four packs (Spring, Summer, Autumn, Winter) each unlock the season set plus three extra buses. Coin price 9,000 or $4.99. Product ids are `<bundle id>.pack.spring` etc. and are in `store/iap_products.csv`.
