@@ -21,7 +21,7 @@ The buses are throwing a party and the lot is jammed! Tap buses to honk them out
 **Privacy policy URL:** required because the app has purchases – host `store/privacy-policy-template.md` and use that URL.
 
 ## Logo and graphics (in `store/google-play/` and `assets/`)
-The logo is a yellow bus character in a party hat on a purple-blue sunburst with confetti. Source layers for the phone icons are in
+The logo is the yellow party bus (big eyes, party hat) with three of the game's riders - pink, blue (cheering) and green - crowding in front of it, on a purple-blue sunburst with confetti. Source layers for the phone icons are in
 `assets/`: `icon-foreground.png` + `icon-background.png` (Android adaptive icon - the bus sits inside the 66% safe zone so circle,
 squircle and teardrop masks never cut it), `icon-only.png` (iOS / legacy), `splash.png`. `npm run assets` turns them into every size.
 | Asset | File | Play requirement |
