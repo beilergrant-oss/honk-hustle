@@ -41,7 +41,10 @@ const T = window.__HH_TEST__ || {};   // inert in the shipped app: only the auto
 if (window.__HH_TEST__) window.__hh = S;
 
 const save = (patch) => { S.profile = saveProfile({ ...S.profile, ...patch }); configureSfx(S.profile.settings); return S.profile; };
-const moneyOk = () => !!window.NativeIAP;                 // real-money buttons only exist when the StoreKit bridge is live
+const moneyOk = () => !!window.NativeIAP;
+// a price button only for products that exist in the store (see iap.js)
+const sells = (productId) => !!(window.NativeIAP && window.NativeIAP.available && window.NativeIAP.available.has(productId));
+window.addEventListener('iap-ready', () => { if (S.route === 'shop') renderShop(); if (S.route === 'settings') renderSettings(); });                 // real-money buttons only exist when the StoreKit bridge is live
 const nextLevelNo = () => Math.min(TOTAL_LEVELS, (S.profile.highestLevel || 0) + 1);
 
 // ======================================================================= navigation
@@ -332,7 +335,7 @@ function setCard(c) {
   const pic = st ? `<img src="img/buses/${st.id}.png" alt="${esc(set.name)} bus" loading="lazy">` : `<div class="big">${topperSvg(vs.style.topper) || iconSvg('bus', 64)}</div>`;
   const equipped = S.profile.equippedVehicleSkin === vs.id;
   const acts = c.ownsAll ? `<button class="btn ${equipped ? 'ghost' : 'green'}" data-equipset="${set.id}" ${equipped ? 'disabled' : ''}>${equipped ? 'Equipped' : 'Equip set'}</button>`
-    : `<button class="btn gold" data-buyset="${set.id}">${iconSvg('coin', 18)} ${fmt(c.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneyset="${set.id}">${c.usd}</button>` : ''}`;
+    : `<button class="btn gold" data-buyset="${set.id}">${iconSvg('coin', 18)} ${fmt(c.coinPrice)}</button>${sells(c.productId) ? `<button class="btn" data-moneyset="${set.id}">${c.usd}</button>` : ''}`;
   return `<div class="set"><div class="pic">${pic}<span class="tagl">${c.tag}${c.endsAt ? ' • ' + timeLeft(c.endsAt) : ''}</span></div>
     <div class="body"><h3>${esc(set.name)}</h3><div class="muted">Bus: ${esc(set.vehicle.name)} • Outfit: ${esc(set.passenger.name)}</div><div class="acts">${acts}</div></div></div>`;
 }
@@ -347,7 +350,7 @@ function packsHtml() {
   return packs.map((c) => {
     const p = c.pack, set = setById(p.setId), vid = vehicleSkinId(p.setId), own = c.owned;
     const cells = [cell(vid, set.vehicle.name, paintFor(vid), set.vehicle.style.topper, own.has(vid), p.setId, passengerSkinId(p.setId), 0), ...p.variants.map((v, i) => cell(v.id, v.name, v.paint, v.topper, own.has(v.id), null, v.riderId, i + 1))].join('');
-    const acts = c.ownsAll ? '<div class="muted" style="text-align:center">You own this pack</div>' : `<div class="acts"><button class="btn gold" data-buypack="${p.id}">${iconSvg('coin', 18)} ${fmt(p.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneypack="${p.id}">${p.usd}</button>` : ''}</div>`;
+    const acts = c.ownsAll ? '<div class="muted" style="text-align:center">You own this pack</div>' : `<div class="acts"><button class="btn gold" data-buypack="${p.id}">${iconSvg('coin', 18)} ${fmt(p.coinPrice)}</button>${sells(p.productId) ? `<button class="btn" data-moneypack="${p.id}">${p.usd}</button>` : ''}</div>`;
     const sub = c.kind === 'weekly' ? timeLeft(c.endsAt) : c.inSeason ? 'In season now' : 'Seasonal \u2022 any time', gl = p.glyphTopper ? topperSvg(p.glyphTopper) : decorHtml(p.glyph);
     const head = (c.kind === 'weekly' && !weeklyHead++ ? '<div class="section">New this week</div>' : '') + (c.kind === 'season' && !seasonHead++ ? '<div class="section">Seasonal packs</div>' : '');
     return head + `<div class="pack" style="--s1:${p.sky[0]};--s2:${p.sky[1]}"><div class="packhd"><span class="gl">${gl}</span><div><h3>${esc(p.name)}</h3><small>${sub} \u2022 4 buses + outfits</small></div></div><div class="pkgrid">${cells}</div>${acts}</div>`;
@@ -362,17 +365,17 @@ function setsHtml() {
 function powerHtml() {
   const own = S.profile.powerups || {};
   const singles = ['heli', 'bay', 'key'].map((k) => `<div class="item"><div class="ic">${iconSvg({ heli: 'heli', bay: 'park', key: 'key' }[k], 42)}</div><div class="tx"><b>${POWERUPS[k].name} <small>(you have ${own[k] || 0})</small></b><small>${esc(POWERUPS[k].desc)}</small></div><button class="btn gold" data-buypu="${k}">${iconSvg('coin', 18)} ${fmt(SINGLE_POWERUP_COIN_PRICE[k])}</button></div>`).join('');
-  const bundles = POWERUP_BUNDLES.map((b) => `<div class="item"><div class="ic">${iconSvg(b.art || 'kit1', 46)}</div><div class="tx"><b>${esc(b.name)}</b><small>${b.items.heli} of each power-up</small></div><button class="btn gold" data-buybundle="${b.id}">${iconSvg('coin', 18)} ${fmt(b.coinPrice)}</button>${moneyOk() ? `<button class="btn" data-moneybundle="${b.id}">${b.price}</button>` : ''}</div>`).join('');
+  const bundles = POWERUP_BUNDLES.map((b) => `<div class="item"><div class="ic">${iconSvg(b.art || 'kit1', 46)}</div><div class="tx"><b>${esc(b.name)}</b><small>${b.items.heli} of each power-up</small></div><button class="btn gold" data-buybundle="${b.id}">${iconSvg('coin', 18)} ${fmt(b.coinPrice)}</button>${sells(b.productId) ? `<button class="btn" data-moneybundle="${b.id}">${b.price}</button>` : ''}</div>`).join('');
   return `<div class="section">Single</div>${singles}<div class="section">Bundles</div>${bundles}<p class="muted" style="text-align:center;margin:12px auto;max-width:420px">Win streaks give free power-up uses each round: 1 free after a first-try win, 2 after three in a row.</p>`;
 }
 function coinsHtml() {
   if (!moneyOk()) return `<div class="card" style="max-width:420px;margin:20px auto;text-align:center">${iconSvg('coin', 42)}<b>Earn coins by winning levels</b><p class="muted">Every level pays coins, and bonus coins for finishing an area or a world. Coin packs are not available in this build.</p></div>`;
-  return noAdsCard() + COIN_PACKS.map((c) => `<div class="item"><div class="ic">${iconSvg(c.art || 'coins1', 46)}</div><div class="tx"><b>${fmt(c.coins)} coins ${c.badge ? `<small>(${c.badge})</small>` : ''}</b></div><button class="btn" data-moneycoins="${c.id}">${c.price}</button></div>`).join('')
+  return noAdsCard() + COIN_PACKS.filter((c) => sells(c.productId)).map((c) => `<div class="item"><div class="ic">${iconSvg(c.art || 'coins1', 46)}</div><div class="tx"><b>${fmt(c.coins)} coins ${c.badge ? `<small>(${c.badge})</small>` : ''}</b></div><button class="btn" data-moneycoins="${c.id}">${c.price}</button></div>`).join('')
     + `<div style="text-align:center;margin:14px"><button class="btn ghost" data-act="restore">Restore purchases</button></div>`;
 }
 function noAdsCard() {
   return S.profile.noAds ? `<div class="item noads"><div class="ic">${iconSvg('noads', 46)}</div><div class="tx"><b>Ads removed</b><small>Thanks for supporting Bus Blitz Party!</small></div></div>`
-    : `<div class="item noads"><div class="ic">${iconSvg('noads', 46)}</div><div class="tx"><b>Remove ads</b><small>No more ads between levels, forever. Optional reward videos stay.</small></div><button class="btn gold" data-act="noads">${esc(CONFIG.NO_ADS_PRICE)}</button></div>`;
+    : !sells(NO_ADS_PRODUCT) ? '' : `<div class="item noads"><div class="ic">${iconSvg('noads', 46)}</div><div class="tx"><b>Remove ads</b><small>No more ads between levels, forever. Optional reward videos stay.</small></div><button class="btn gold" data-act="noads">${esc(CONFIG.NO_ADS_PRICE)}</button></div>`;
 }
 async function shopMoney(productId, label) {
   try { toast('Contacting ' + storeName() + '…'); await buyWithMoney(productId); S.profile = loadProfile(); sfx.coin(); toast(label + ' unlocked!'); renderShop(); }
@@ -388,7 +391,7 @@ function renderSettings() {
       <div class="setrow"><div class="tx">Sound<small>Effects while you play</small></div>${sw('sound', s.sound)}</div>
       <div class="setrow"><div class="tx">Haptics<small>Little buzzes as you play</small></div>${sw('haptics', s.haptics)}</div>
       ${moneyOk() ? `<div class="setrow"><div class="tx">Restore purchases<small>Get back skins and sets you bought before</small></div><button class="btn" data-act="restore" style="padding:10px 14px">Restore</button></div>` : ''}
-      ${moneyOk() && !S.profile.noAds ? `<div class="setrow"><div class="tx">Remove ads<small>No ads between levels, forever</small></div><button class="btn gold" data-act="noads" style="padding:10px 14px">${esc(CONFIG.NO_ADS_PRICE)}</button></div>` : ''}
+      ${sells(NO_ADS_PRODUCT) && !S.profile.noAds ? `<div class="setrow"><div class="tx">Remove ads<small>No ads between levels, forever</small></div><button class="btn gold" data-act="noads" style="padding:10px 14px">${esc(CONFIG.NO_ADS_PRICE)}</button></div>` : ''}
       ${privacyChoicesNeeded() ? `<div class="setrow"><div class="tx">Ad privacy choices<small>Change what you agreed to for ads</small></div><button class="btn ghost" data-act="privacy" style="padding:10px 14px">Change</button></div>` : ''}
       <div class="setrow"><div class="tx">Privacy & terms<small>How your data is handled</small></div><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.PRIVACY_URL)}" target="_blank" rel="noopener">Privacy</a><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.TERMS_URL)}" target="_blank" rel="noopener">Terms</a></div>
       <div class="setrow"><div class="tx">Reset progress<small>Erase levels, coins and skins on this device</small></div><button class="btn red" data-act="reset" style="padding:10px 14px">Reset</button></div>

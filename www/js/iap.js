@@ -6,6 +6,7 @@
 // If a call name differs in the version you install, adjust it here: this is the only file that talks to the plugin.
 import { CONFIG } from './config.js';
 import { isAndroid } from './platform.js';
+import { PRODUCTS } from './catalog.js';
 
 const plugin = () => window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Purchases;
 const cache = new Map();
@@ -34,6 +35,9 @@ export async function initIap() {
       },
       async restore() { const { customerInfo } = await P.restorePurchases(); return customerInfo.allPurchasedProductIdentifiers || []; },
     };
+    // Which products exist in the store right now: the shop only shows a price for these, so you can create
+    // products in Play Console / App Store Connect a few at a time.
+    loadProducts(Object.keys(PRODUCTS)).catch(() => {}).finally(() => { window.NativeIAP.available = new Set(cache.keys()); window.dispatchEvent(new Event('iap-ready')); });
     return true;
   } catch (e) { console.warn('IAP unavailable:', e); return false; }
 }
