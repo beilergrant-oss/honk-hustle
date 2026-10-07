@@ -13,7 +13,7 @@ const cache = new Map();
 async function loadProducts(ids) {
   const P = plugin(), missing = ids.filter((id) => !cache.has(id));
   if (missing.length) {
-    const { products } = await P.getProducts({ productIdentifiers: missing, type: 'inapp' });   // 'inapp' = one-time purchases
+    const { products } = await P.getProducts({ productIdentifiers: missing, type: 'NON_SUBSCRIPTION' });   // one-time purchases (RevenueCat's PRODUCT_CATEGORY.NON_SUBSCRIPTION)
     (products || []).forEach((p) => cache.set(p.identifier, p));
   }
 }

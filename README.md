@@ -39,8 +39,12 @@ Coins, power-ups and skins bought with coins work with no setup. Real-money butt
 ## Android / Google Play
 Full submission checklist, listing text, Data safety and content-rating answers: `store/GOOGLE_PLAY_LISTING.md`. Graphics: `store/google-play/`.
 ```
-bash scripts/setup_android.sh          # npm install, cap add android, icons, sync, portrait lock, opens Android Studio
+npm install
+npm run configure      # asks for package name, support email, AdMob ids, RevenueCat key, version code
+npm run android        # creates/updates the Android Studio project and opens it (Windows, Mac, Linux)
 ```
+(`scripts/setup_android.sh` / `build_android_release.sh` are the older bash versions, kept for Mac/Linux.)
+Privacy policy and terms pages live in `docs/` and are served by GitHub Pages.
 - The Android package name comes from `appId` in `capacitor.config.json` (it cannot change after your first upload) - set it before `cap add android`.
 - Capacitor 8 targets API 36 (Android 16), which Google Play requires for new apps and updates from Aug 31, 2026.
 - Release build (signed .aab): create the upload key once with the `keytool` line in `scripts/build_android_release.sh`, then

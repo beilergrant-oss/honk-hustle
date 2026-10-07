@@ -5,11 +5,13 @@
   "description": "Bus Blitz Party - bus puzzle game (iOS and Android via Capacitor)",
   "type": "module",
   "scripts": {
+    "configure": "node scripts/configure.mjs",
+    "android": "node scripts/android.mjs",
     "serve": "python3 -m http.server 8080 --directory www",
     "ios:add": "cap add ios",
     "ios:sync": "cap sync ios",
     "ios:open": "cap open ios",
-    "assets": "capacitor-assets generate --ios --android --iconBackgroundColor '#5b55ff' --splashBackgroundColor '#5b55ff'",
+    "assets": "capacitor-assets generate --ios --android --iconBackgroundColor \"#5b55ff\" --splashBackgroundColor \"#5b55ff\"",
     "android:add": "cap add android",
     "android:sync": "cap sync android",
     "android:open": "cap open android",
@@ -25,7 +27,8 @@
     "@capacitor/network": "^8.0.0",
     "@capacitor/preferences": "^8.0.0",
     "@capacitor/splash-screen": "^8.0.0",
-    "@capacitor/status-bar": "^8.0.0"
+    "@capacitor/status-bar": "^8.0.0",
+    "@revenuecat/purchases-capacitor": "^13.7.0"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

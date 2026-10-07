@@ -11,3 +11,6 @@ android/app/build/
 android/.gradle/
 android/build/
 android/local.properties
+
+# your answers from npm run configure (not secret, but personal)
+app-settings.json
