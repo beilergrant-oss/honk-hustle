@@ -2,27 +2,35 @@
   "name": "honk-hustle",
   "version": "1.0.0",
   "private": true,
-  "description": "Honk Hustle - bus puzzle game (iOS via Capacitor)",
+  "description": "Honk Hustle - bus puzzle game (iOS and Android via Capacitor)",
   "type": "module",
   "scripts": {
     "serve": "python3 -m http.server 8080 --directory www",
     "ios:add": "cap add ios",
     "ios:sync": "cap sync ios",
     "ios:open": "cap open ios",
-    "assets": "capacitor-assets generate --ios --iconBackgroundColor '#35b6ff' --splashBackgroundColor '#0e1730'"
+    "assets": "capacitor-assets generate --ios --android --iconBackgroundColor '#35b6ff' --splashBackgroundColor '#0e1730'",
+    "android:add": "cap add android",
+    "android:sync": "cap sync android",
+    "android:open": "cap open android",
+    "android:release": "bash scripts/build_android_release.sh"
   },
   "dependencies": {
-    "@capacitor/app": "^6.0.0",
-    "@capacitor/core": "^6.0.0",
-    "@capacitor/haptics": "^6.0.0",
-    "@capacitor/ios": "^6.0.0",
-    "@capacitor/network": "^6.0.0",
-    "@capacitor/splash-screen": "^6.0.0",
-    "@capacitor/status-bar": "^6.0.0",
-    "@capacitor/preferences": "^6.0.0"
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capacitor/network": "^8.0.0",
+    "@capacitor/preferences": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
-    "@capacitor/cli": "^6.0.0"
+    "@capacitor/cli": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

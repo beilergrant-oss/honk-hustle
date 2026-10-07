@@ -2,3 +2,12 @@ node_modules/
 ios/App/Pods/
 ios/App/build/
 .DS_Store
+
+# Android signing - never commit
+*.jks
+*.keystore
+keystore.properties
+android/app/build/
+android/.gradle/
+android/build/
+android/local.properties

@@ -18,6 +18,17 @@
     "StatusBar": {
       "style": "LIGHT",
       "overlaysWebView": true
+    },
+    "SystemBars": {
+      "insetsHandling": "css"
+    }
+  },
+  "android": {
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false,
+    "buildOptions": {
+      "releaseType": "AAB"
     }
   }
 }

@@ -172,7 +172,7 @@ export function createScreen(root, opts = {}) {
     const home = !!opts.sceneHtml, art = !home && !!(opts.artUrl && (t.id === 'regular' || reason === 'season')); root.classList.toggle('has-art', art); root.classList.toggle('has-home', home);   // ordinary days use the key art, which already has the logo
     el.box.innerHTML = home ? opts.sceneHtml() : art ? `<img class="hh-art art-${t.id}" src="${opts.artUrl}" alt="">` : sceneSvg(t); el.fx.innerHTML = home || (art && t.id === 'regular') ? '' : particlesHtml(t);
     for (const [n, w] of [[1, el.w1], [2, el.w2]]) if (w) { const cc = n === 1 ? t.title : t.title2; w.style.setProperty('--c1', cc[0]); w.style.setProperty('--c2', cc[1]); }
-    const showChip = reason && reason !== 'regular'; el.chip.hidden = !showChip; el.chip.textContent = showChip ? t.name : '';
+    const showChip = false;   // no season / holiday sign el.chip.hidden = !showChip; el.chip.textContent = showChip ? t.name : '';
     root.setAttribute('data-theme', t.id);
     clearInterval(destTimer); let di = 0; const dest = q(root, '#hh-dest'); if (dest) destTimer = setInterval(() => { di = (di + 1) % t.sign.length; dest.textContent = t.sign[di]; }, 2200);
   }

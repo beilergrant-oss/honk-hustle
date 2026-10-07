@@ -1,11 +1,12 @@
-# Honk Hustle – iOS project (Capacitor)
+# Honk Hustle – iOS and Android project (Capacitor 8)
 
-A complete, offline 2D puzzle game (11,200 levels, loading screen, Garage, Shop, skins, streaks, power-ups) wrapped for iOS.
-I could not compile or run it on an iPhone from my Linux workspace. The game itself was tested in a headless browser; the Xcode steps below are untested.
+A complete, offline 2D puzzle game (11,200 levels, loading screen, Garage, Shop, skins, streaks, power-ups) wrapped for iOS and Android.
+I could not compile or run it on a phone from my Linux workspace. The game itself was tested in a headless browser; the Xcode and Android Studio steps below are untested.
 
 ## You need
-- A Mac with Xcode 15+ and Node.js 18+
-- An Apple Developer account ($99/yr) to run on a device or ship to the App Store
+- Node.js 22+ (Capacitor 8)
+- iOS: a Mac with the current Xcode, and an Apple Developer account ($99/yr)
+- Android: Android Studio Otter (2025.2.1) or newer on Mac, Windows or Linux, and a Google Play Console account ($25 one-time)
 
 ## Quick start (Mac)
 ```
@@ -24,7 +25,7 @@ Manual equivalent: `npm install`, `npx cap add ios`, `npm run assets`, `npx cap 
 ## Real-money purchases (optional)
 Coins, power-ups and skins bought with coins work with no setup. Real-money buttons stay hidden until a StoreKit bridge exists (Apple rule 3.1.1).
 1. `npm i @revenuecat/purchases-capacitor` then `npx cap sync ios`
-2. Create a RevenueCat project, add your iOS app, and put the public key in `www/js/config.js` (`REVENUECAT_PUBLIC_KEY`).
+2. Create a RevenueCat project, add your iOS and Android apps, and put the public keys in `www/js/config.js` (`REVENUECAT_IOS_KEY`, `REVENUECAT_ANDROID_KEY`). Run `npx cap sync` for both platforms.
 3. In App Store Connect create the 31 products from `store/iap_products.csv` (consumable vs non-consumable is listed). Add the same ids in RevenueCat.
 4. Test with a Sandbox tester. `www/js/iap.js` was never run against the real plugin, so expect to debug it.
 
@@ -34,6 +35,18 @@ Coins, power-ups and skins bought with coins work with no setup. Real-money butt
 - Age rating questionnaire, screenshots (6.9" and 6.5" iPhone), and the listing text are in `store/APP_STORE_LISTING.md`.
 - `ITSAppUsesNonExemptEncryption` is set to false by `configure_ios.sh`.
 - The app collects no data and makes no network calls except purchases.
+
+## Android / Google Play
+Full submission checklist, listing text, Data safety and content-rating answers: `store/GOOGLE_PLAY_LISTING.md`. Graphics: `store/google-play/`.
+```
+bash scripts/setup_android.sh          # npm install, cap add android, icons, sync, portrait lock, opens Android Studio
+```
+- The Android package name comes from `appId` in `capacitor.config.json` (it cannot change after your first upload) - set it before `cap add android`.
+- Capacitor 8 targets API 36 (Android 16), which Google Play requires for new apps and updates from Aug 31, 2026.
+- Release build (signed .aab): create the upload key once with the `keytool` line in `scripts/build_android_release.sh`, then
+  `KEYSTORE_PASS=... KEY_PASS=... VERSION_CODE=1 bash scripts/build_android_release.sh`. Raise `VERSION_CODE` for every upload. Never commit the .jks (it is in .gitignore) and back it up.
+- The Android Back button closes popups, pauses a level, goes back to Home, and on Home sends the app to the background.
+- Ads: `ios-native/AdManager.swift` is iOS only and not wired to the game. No ads run on Android.
 
 ## Season Packs
 Four packs (Spring, Summer, Autumn, Winter) each unlock the season set plus three extra buses. Coin price 9,000 or $4.99. Product ids are `<bundle id>.pack.spring` etc. and are in `store/iap_products.csv`.
@@ -45,7 +58,7 @@ Four packs (Spring, Summer, Autumn, Winter) each unlock the season set plus thre
 - Save data is in localStorage, mirrored to Capacitor Preferences.
 
 ## Testing in a browser
-`npm run serve` then open http://localhost:8080. Useful URL params: `?fast=1&go=game&level=N`.
+`npm run serve` then open http://localhost:8080. The app has no URL test switches; the Playwright tests in `tests/` set `window.__HH_TEST__` before load (see `tests/seam.py`).
 
 ## Loading screen by holiday or event
 `www/js/loadingThemes.js` picks the loading and home look by the player's local date: **special event > holiday > season > regular**.

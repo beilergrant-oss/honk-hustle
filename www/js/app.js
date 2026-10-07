@@ -26,6 +26,7 @@ import { miniBus, riderPic, busPic } from './cartoon.js';
 import { BACKDROPS } from './backdrops.js';
 import { sceneSvgs } from './sceneArt.js';
 import { detectHemisphere } from './store.js';
+import { storeName, isAndroid } from './platform.js';
 import { lookFor, BUS_STYLES } from './busStyles.js';
 import { configureSfx, sfx, haptic, unlockAudio } from './sfx.js';
 import { nextCombo, resetCombo, comboText, comboColor, floatText } from './juice.js';
@@ -73,11 +74,6 @@ function sceneBg(picked) {
   const sc = sceneSvgs(picked.theme);
   return `<div class="home-bg hb" style="background:${sc.ground}">${sc.top}<div class="hb-road"></div>${sc.bottom}</div>`;
 }
-// A little hanging signpost that names the season or world, styled in that theme's own colours and icon (instead of plain text on a dark pill).
-function signChip(t, reason) {
-  if (reason === 'regular') return '';
-    return `<div class="home-chip" style="--b1:${t.title[0]};--b2:${t.title2[1]}"><span class="hc-ic">${iconSvg('starOn', 18)}</span><span class="hc-tx">${esc(t.name)}</span></div>`;
-}
 // The same scene as the home screen (backdrop of your world, your bus, your riders), reused by the loading screen so the two match.
 function homeArt(p, picked) {
   const t = picked.theme, festive = picked.reason === 'holiday', info = levelInfo(nextLevelNo());
@@ -98,7 +94,6 @@ function renderHome() {
     <div class="home-top">${coinsPill()}<div class="ht-right">${dailyState(p).claimable ? '<button class="pill daily-btn" data-act="daily">' + iconSvg('gift', 20) + ' Daily</button>' : ''}<button class="topbtn" data-go="settings" aria-label="Settings">${iconSvg('gear', 26)}</button></div></div>
     <div class="home-logo" style="--c1:${t.title[0]};--c2:${t.title2[0]}">
       <span class="w w1" data-t="${w1}">${w1}</span><span class="w w2" data-t="${rest.join(' ')}!">${rest.join(' ')}!</span>
-      ${signChip(t, picked.reason)}
     </div>
     <div class="hhero"><div class="hbus">${busPic(vid)}</div><div class="hcrowd">${crowd}</div></div>
     <div class="home-bottom">
@@ -361,7 +356,7 @@ function coinsHtml() {
     + `<div style="text-align:center;margin:14px"><button class="btn ghost" data-act="restore">Restore purchases</button></div>`;
 }
 async function shopMoney(productId, label) {
-  try { toast('Contacting the App Store…'); await buyWithMoney(productId); S.profile = loadProfile(); sfx.coin(); toast(label + ' unlocked!'); renderShop(); }
+  try { toast('Contacting ' + storeName() + '…'); await buyWithMoney(productId); S.profile = loadProfile(); sfx.coin(); toast(label + ' unlocked!'); renderShop(); }
   catch (e) { toast((e && e.message) || 'Purchase did not complete.'); }
 }
 
@@ -372,7 +367,7 @@ function renderSettings() {
   $('#settings').innerHTML = `${backBar('Settings')}
     <div class="scroll">
       <div class="setrow"><div class="tx">Sound<small>Effects while you play</small></div>${sw('sound', s.sound)}</div>
-      <div class="setrow"><div class="tx">Haptics<small>Little taps on your iPhone</small></div>${sw('haptics', s.haptics)}</div>
+      <div class="setrow"><div class="tx">Haptics<small>Little buzzes as you play</small></div>${sw('haptics', s.haptics)}</div>
       ${moneyOk() ? `<div class="setrow"><div class="tx">Restore purchases<small>Get back skins and sets you bought before</small></div><button class="btn" data-act="restore" style="padding:10px 14px">Restore</button></div>` : ''}
       <div class="setrow"><div class="tx">Privacy & terms<small>How your data is handled</small></div><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.PRIVACY_URL)}" target="_blank" rel="noopener">Privacy</a><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.TERMS_URL)}" target="_blank" rel="noopener">Terms</a></div>
       <div class="setrow"><div class="tx">Reset progress<small>Erase levels, coins and skins on this device</small></div><button class="btn red" data-act="reset" style="padding:10px 14px">Reset</button></div>
@@ -410,6 +405,25 @@ document.addEventListener('click', async (e) => {
 document.addEventListener('pointerdown', unlockAudio, { once: true });
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 
+
+// ======================================================================= Android Back button
+// Back closes whatever is on top: a dismissible popup, then Heli targeting, then pauses a level, then returns to Home;
+// on Home it sends the app to the background (Google Play expects Back to never trap the player).
+function onBack() {
+  const ov = document.querySelector('#modalHost .overlay');
+  if (ov) { if (ov.dataset.dismissible) closeModal(); return; }   // results popups need a choice
+  if (S.route === 'loading') return;
+  if (S.route === 'game') { if (S.targeting) { S.targeting = false; if (S.renderer) S.renderer.setTargeting(false); refreshPowerbar(); return; } return openPause(); }
+  if (S.route !== 'home') return go('home');
+  const A = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (A && A.minimizeApp) A.minimizeApp();
+}
+function hookBackButton() {
+  const A = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (!A || !isAndroid()) return;
+  try { A.addListener('backButton', onBack); } catch (e) { /* plugin missing */ }
+}
+
 // ======================================================================= boot
 async function boot() {
   await restoreIfMissing(); S.profile = loadProfile();
@@ -417,7 +431,8 @@ async function boot() {
   buildGameDom();
   const cap = window.Capacitor && window.Capacitor.Plugins;
   try { if (cap && cap.SplashScreen) cap.SplashScreen.hide(); } catch (e) {}
-  initIap();                                                    // no-op in the browser or without a RevenueCat key
+  initIap();
+  hookBackButton();                                                    // no-op in the browser or without a RevenueCat key
   const result = {};
   if (T.date) globalThis.__HH_DATE = T.date;
   const hemi = detectHemisphere(); if (S.profile.hemisphere !== hemi) save({ hemisphere: hemi });

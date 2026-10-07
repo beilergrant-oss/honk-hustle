@@ -8,10 +8,11 @@
 import { base44 } from './api/base44Client.js'; // adjust to your project's client import
 import { PRODUCTS, coinPurchase, setUsd, setCoinPrice } from './catalog.js';
 import { ALL_PACKS } from './packs.js';
+import { isAndroid } from './platform.js';
 import { shopOffers, isOffered, setProductId, vehicleSkinId, passengerSkinId } from './themes.js';
 
 const nativeProvider = {
-  name: 'apple',
+  get name() { return isAndroid() ? 'google' : 'apple'; },
   prices: (ids) => window.NativeIAP.getPrices(ids),                 // localized prices from the App Store
   async purchase(productId) { return window.NativeIAP.purchase(productId); }, // -> { transactionId, productId }
   restore: () => window.NativeIAP.restore(),                        // -> [productId, ...] (non-consumables)

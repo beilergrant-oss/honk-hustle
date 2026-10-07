@@ -17,7 +17,7 @@ export function toast(msg, ms = 2200) {
 // Returns { close }. An action's onClick may return false to keep the modal open.
 export function modal({ icon = '', title = '', body = '', lines = [], actions = [], dismissible = false }) {
   const host = $('#modalHost'); host.innerHTML = '';
-  const o = document.createElement('div'); o.className = 'overlay';
+  const o = document.createElement('div'); o.className = 'overlay'; if (dismissible) o.dataset.dismissible = '1';
   o.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="${esc(title)}">
     ${icon ? `<div class="big" aria-hidden="true">${iconSvg(icon, 72)}</div>` : ''}<h2>${esc(title)}</h2>${body ? `<p>${body}</p>` : ''}
     ${lines.length ? `<div class="lines">${lines.map(([a, b]) => `<div class="line"><span>${esc(a)}</span><span>${b && typeof b === 'object' ? b.html : esc(b)}</span></div>`).join('')}</div>` : ''}

@@ -3,7 +3,7 @@ _Last updated: [DATE]. Replace bracketed text, then host this page and put its U
 
 Honk Hustle does not collect, store on our servers, or share personal information. Your progress, coins and settings are saved only on your device.
 
-**Purchases.** If you buy items with real money, Apple processes the payment. [If you use RevenueCat: RevenueCat receives an anonymous app user ID and purchase receipts to verify your purchases. See https://www.revenuecat.com/privacy.]
+**Purchases.** If you buy items with real money, Apple (App Store) or Google (Google Play) processes the payment. [If you use RevenueCat: RevenueCat receives an anonymous app user ID and purchase receipts to verify your purchases. See https://www.revenuecat.com/privacy.]
 
 **Children.** The app is suitable for all ages and does not knowingly collect data from anyone.
 
