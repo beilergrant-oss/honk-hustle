@@ -2,7 +2,7 @@
 // consent and the tracking prompt. Do not add this file to the Xcode project as well - it would start a second copy of the Ads SDK.
 //
 //  AdManager.swift
-//  Honk Hustle
+//  Bus Blitz Party
 //
 //  Handles the App Tracking Transparency prompt, starts the Google Mobile Ads SDK, and keeps one
 //  rewarded video ad preloaded and ready to show at all times.

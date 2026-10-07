@@ -1,4 +1,4 @@
-# Honk Hustle – iOS and Android project (Capacitor 8)
+# Bus Blitz Party – iOS and Android project (Capacitor 8)
 
 A complete, offline 2D puzzle game (11,200 levels, loading screen, Garage, Shop, skins, streaks, power-ups) wrapped for iOS and Android.
 I could not compile or run it on a phone from my Linux workspace. The game itself was tested in a headless browser; the Xcode and Android Studio steps below are untested.
@@ -10,7 +10,7 @@ I could not compile or run it on a phone from my Linux workspace. The game itsel
 
 ## Quick start (Mac)
 ```
-unzip honk_hustle_ios.zip && cd hh_app
+# from the root of this repository
 bash scripts/setup.sh
 ```
 That installs packages, creates the Xcode project (`npx cap add ios`), generates icon and launch images, copies the game in, sets portrait-only, and opens Xcode.

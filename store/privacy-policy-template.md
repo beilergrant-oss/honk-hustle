@@ -1,7 +1,7 @@
-# Privacy Policy – Honk Hustle
+# Privacy Policy – Bus Blitz Party
 _Last updated: [DATE]. Replace bracketed text, then host this page and put its URL in config.js._
 
-Honk Hustle does not collect, store on our servers, or share personal information. Your progress, coins and settings are saved only on your device.
+Bus Blitz Party does not collect, store on our servers, or share personal information. Your progress, coins and settings are saved only on your device.
 
 **Purchases.** If you buy items with real money, Apple (App Store) or Google (Google Play) processes the payment. [If you use RevenueCat: RevenueCat receives an anonymous app user ID and purchase receipts to verify your purchases. See https://www.revenuecat.com/privacy.]
 

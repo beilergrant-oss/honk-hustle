@@ -1,4 +1,4 @@
-// app.js - Honk Hustle: boot, screens and the play loop.
+// app.js - Bus Blitz Party: boot, screens and the play loop.
 import { bootLoadingScreen } from './loadingScreen.js';
 import { makeBootTasks } from './bootTasks.js';
 import { pickTheme } from './loadingThemes.js';
@@ -85,7 +85,7 @@ function homeArt(p, picked) {
 }
 function renderHome() {
   const p = S.profile, picked = pickTheme(new Date(), { hemisphere: p.hemisphere, seasonal: true });
-  const t = picked.theme, [w1, ...rest] = 'Honk Hustle'.split(' ');
+  const t = picked.theme, [w1, ...rest] = ['Bus Blitz', 'Party'];
   const next = nextLevelNo(), info = levelInfo(next), streak = p.winStreak || 0, festive = picked.reason === 'holiday';
   // The home screen is drawn in the same cartoon style as the game: your equipped bus and riders on the backdrop of the world you are in.
   const bdKey = festive ? '' : info.world.bd, bd = BACKDROPS[info.world.bd] || BACKDROPS.city, vid = p.equippedVehicleSkin || 'v_classic', pid = p.equippedPassengerSkin || 'p_classic';
@@ -371,7 +371,7 @@ function coinsHtml() {
     + `<div style="text-align:center;margin:14px"><button class="btn ghost" data-act="restore">Restore purchases</button></div>`;
 }
 function noAdsCard() {
-  return S.profile.noAds ? `<div class="item noads"><div class="ic">${iconSvg('noads', 46)}</div><div class="tx"><b>Ads removed</b><small>Thanks for supporting Honk Hustle!</small></div></div>`
+  return S.profile.noAds ? `<div class="item noads"><div class="ic">${iconSvg('noads', 46)}</div><div class="tx"><b>Ads removed</b><small>Thanks for supporting Bus Blitz Party!</small></div></div>`
     : `<div class="item noads"><div class="ic">${iconSvg('noads', 46)}</div><div class="tx"><b>Remove ads</b><small>No more ads between levels, forever. Optional reward videos stay.</small></div><button class="btn gold" data-act="noads">${esc(CONFIG.NO_ADS_PRICE)}</button></div>`;
 }
 async function shopMoney(productId, label) {
@@ -392,7 +392,7 @@ function renderSettings() {
       ${privacyChoicesNeeded() ? `<div class="setrow"><div class="tx">Ad privacy choices<small>Change what you agreed to for ads</small></div><button class="btn ghost" data-act="privacy" style="padding:10px 14px">Change</button></div>` : ''}
       <div class="setrow"><div class="tx">Privacy & terms<small>How your data is handled</small></div><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.PRIVACY_URL)}" target="_blank" rel="noopener">Privacy</a><a class="btn ghost" style="padding:10px 14px;text-decoration:none" href="${esc(CONFIG.TERMS_URL)}" target="_blank" rel="noopener">Terms</a></div>
       <div class="setrow"><div class="tx">Reset progress<small>Erase levels, coins and skins on this device</small></div><button class="btn red" data-act="reset" style="padding:10px 14px">Reset</button></div>
-      <p class="muted" style="text-align:center">Honk Hustle ${CONFIG.VERSION} • Levels ${fmt(TOTAL_LEVELS)} • Best streak ${S.profile.bestStreak || 0}</p>
+      <p class="muted" style="text-align:center">Bus Blitz Party ${CONFIG.VERSION} • Levels ${fmt(TOTAL_LEVELS)} • Best streak ${S.profile.bestStreak || 0}</p>
     </div>`;
 }
 

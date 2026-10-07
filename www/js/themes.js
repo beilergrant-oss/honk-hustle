@@ -3,7 +3,7 @@
 // RULE (unchanged): skins never change a vehicle's or passenger's base colour. They only add patterns and accessories.
 import { rng, shuffled } from './levelGen.js';
 
-export const BUNDLE_ID = 'com.yourname.honkhustle'; // <- your bundle id. Change it HERE ONLY (must match App Store Connect).
+export const BUNDLE_ID = 'com.yourname.busblitzparty'; // <- your bundle id. Change it HERE ONLY (must match App Store Connect).
 
 export const PRICES = {   // coins for each piece, coins for the full set (discounted), and the real-money price for the full set
   standard: { vehicle: 3000, passenger: 2000, set: 4000, usd: '$1.99', rarity: 'rare' },

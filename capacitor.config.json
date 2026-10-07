@@ -1,8 +1,8 @@
 {
-  "appId": "com.yourname.honkhustle",
-  "appName": "Honk Hustle",
+  "appId": "com.yourname.busblitzparty",
+  "appName": "Bus Blitz Party",
   "webDir": "www",
-  "backgroundColor": "#0e1730",
+  "backgroundColor": "#5b55ff",
   "ios": {
     "contentInset": "never",
     "limitsNavigationsToAppBoundDomains": false,
@@ -13,7 +13,7 @@
     "SplashScreen": {
       "launchAutoHide": true,
       "launchShowDuration": 0,
-      "backgroundColor": "#0e1730"
+      "backgroundColor": "#5b55ff"
     },
     "StatusBar": {
       "style": "LIGHT",

@@ -1,15 +1,15 @@
 {
-  "name": "honk-hustle",
+  "name": "bus-blitz-party",
   "version": "1.0.0",
   "private": true,
-  "description": "Honk Hustle - bus puzzle game (iOS and Android via Capacitor)",
+  "description": "Bus Blitz Party - bus puzzle game (iOS and Android via Capacitor)",
   "type": "module",
   "scripts": {
     "serve": "python3 -m http.server 8080 --directory www",
     "ios:add": "cap add ios",
     "ios:sync": "cap sync ios",
     "ios:open": "cap open ios",
-    "assets": "capacitor-assets generate --ios --android --iconBackgroundColor '#35b6ff' --splashBackgroundColor '#0e1730'",
+    "assets": "capacitor-assets generate --ios --android --iconBackgroundColor '#5b55ff' --splashBackgroundColor '#5b55ff'",
     "android:add": "cap add android",
     "android:sync": "cap sync android",
     "android:open": "cap open android",

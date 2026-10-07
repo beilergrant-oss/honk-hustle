@@ -2,7 +2,7 @@
 // Priority: holiday > season > regular. Dates come from themes.js so the shop and the loading screen always agree.
 import { SETS, activeWindow, easterSunday } from './themes.js';
 
-export const APP_NAME = 'Honk Hustle';
+export const APP_NAME = 'Bus Blitz Party';
 export const APP_TAGLINE = 'Unjam the traffic. Fill the buses.';
 
 const DAY = 86400000;

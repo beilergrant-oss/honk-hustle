@@ -3,7 +3,7 @@
 P="ios/App/App/Info.plist"
 [ -f "$P" ] || { echo "No $P yet. Run: npx cap add ios"; exit 0; }
 pb() { /usr/libexec/PlistBuddy -c "$1" "$P" 2>/dev/null || true; }
-pb "Set :CFBundleDisplayName Honk Hustle"
+pb "Set :CFBundleDisplayName Bus Blitz Party"
 pb "Delete :UISupportedInterfaceOrientations"
 pb "Add :UISupportedInterfaceOrientations array"
 pb "Add :UISupportedInterfaceOrientations:0 string UIInterfaceOrientationPortrait"
@@ -20,7 +20,7 @@ pb "Add :ITSAppUsesNonExemptEncryption bool false"
 pb "Delete :GADApplicationIdentifier"
 pb "Add :GADApplicationIdentifier string ${ADMOB_APP_ID_IOS:-ca-app-pub-3940256099942544~1458002511}"
 pb "Delete :NSUserTrackingUsageDescription"
-pb "Add :NSUserTrackingUsageDescription string Your choice lets us show ads that fit you better. Honk Hustle works the same either way."
+pb "Add :NSUserTrackingUsageDescription string Your choice lets us show ads that fit you better. Bus Blitz Party works the same either way."
 pb "Delete :SKAdNetworkItems"
 pb "Add :SKAdNetworkItems array"
 pb "Add :SKAdNetworkItems:0 dict"

@@ -1,9 +1,9 @@
-// bootTasks.js - the REAL work that drives the loading bar in Honk Hustle.
+// bootTasks.js - the REAL work that drives the loading bar in Bus Blitz Party.
 // Each task's weight decides how much of the bar it fills. Adjust the Base44 calls to match your project.
 import { trackedFetch } from './loader.js';
 import { getLevel, prefetch, TOTAL_LEVELS } from './campaign.js';
 
-export const PROFILE_CACHE_KEY = 'honkhustle_profile_v1';
+export const PROFILE_CACHE_KEY = 'honkhustle_profile_v1';   // old internal name, kept so existing saves still load
 export const DEFAULT_PROFILE = { coins: 0, highestLevel: 0, winStreak: 0, bestStreak: 0, powerups: { heli: 0, bay: 0, key: 0 }, ownedSkins: [], equippedVehicleSkin: 'v_classic', equippedPassengerSkin: 'p_classic', processedTransactions: [], hemisphere: 'north', seasonalLooks: true };
 
 const store = {

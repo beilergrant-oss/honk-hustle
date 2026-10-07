@@ -1,13 +1,13 @@
-# Google Play listing and submission – Honk Hustle
+# Google Play listing and submission – Bus Blitz Party
 
 Everything here is a draft for you to paste into Play Console and check. Answers assume the build as shipped: Google AdMob ads (between levels, plus optional reward videos), a $4.99 "Remove ads"
 purchase, no accounts, no analytics, progress saved only on the device, real-money purchases through Google Play Billing (via RevenueCat).
 
 ## Store listing
-**App name (30):** Honk Hustle: Bus Jam Puzzle
+**App name (30):** Bus Blitz Party: Jam Puzzle   (or just "Bus Blitz Party")
 **Short description (80):** Tap buses out of the jam and fill them with the right riders. 11,200 levels!
 **Full description (4000):**
-Traffic is a mess and only you can fix it! Tap buses to honk them out of the lot, park them in the bay, and watch the waiting riders hop on the bus that matches their colour.
+The buses are throwing a party and the lot is jammed! Tap buses to honk them out of the lot, park them in the bay, and watch the waiting riders hop on the bus that matches their colour.
 
 • 11,200 hand-balanced levels across 56 worlds – every one can be solved
 • Locked, frozen and mystery buses, barriers and tight parking bays
@@ -20,10 +20,13 @@ Traffic is a mess and only you can fix it! Tap buses to honk them out of the lot
 **Contact email:** your support email (same as `SUPPORT_EMAIL` in `www/js/config.js`)
 **Privacy policy URL:** required because the app has purchases – host `store/privacy-policy-template.md` and use that URL.
 
-## Graphics (in `store/google-play/`)
+## Logo and graphics (in `store/google-play/` and `assets/`)
+The logo is a yellow bus character in a party hat on a purple-blue sunburst with confetti. Source layers for the phone icons are in
+`assets/`: `icon-foreground.png` + `icon-background.png` (Android adaptive icon - the bus sits inside the 66% safe zone so circle,
+squircle and teardrop masks never cut it), `icon-only.png` (iOS / legacy), `splash.png`. `npm run assets` turns them into every size.
 | Asset | File | Play requirement |
 |---|---|---|
-| App icon | `icon-512.png` | 512×512 PNG |
+| App icon | `icon-512.png` | 512×512 PNG, full square (Play rounds the corners itself) |
 | Feature graphic | `feature-graphic-1024x500.png` | 1024×500 PNG/JPG, required |
 | Phone screenshots | `phone-1-home.png` … `phone-5-shop.png` | 2–8 shots, 1080×1920 (9:16) |
 For a better "Games" listing, also add 7" and 10" tablet screenshots (capture the same screens at 1200×1920 / 1600×2560).

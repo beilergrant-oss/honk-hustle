@@ -1,4 +1,4 @@
-// loadingScreen.js - the Honk Hustle loading screen. Plain DOM (works inside React via a ref, or on its own).
+// loadingScreen.js - the Bus Blitz Party loading screen. Plain DOM (works inside React via a ref, or on its own).
 //
 //   const screen = bootLoadingScreen(rootElement, { tasks, pingUrl, onDone });
 //
@@ -35,13 +35,13 @@ const CSS = `
 .hh-word::before{z-index:-1;color:#10246b;text-shadow:0.130em 0.000em 0 #10246b,0.126em 0.034em 0 #10246b,0.113em 0.065em 0 #10246b,0.092em 0.092em 0 #10246b,0.065em 0.113em 0 #10246b,0.034em 0.126em 0 #10246b,0.000em 0.130em 0 #10246b,-0.034em 0.126em 0 #10246b,-0.065em 0.113em 0 #10246b,-0.092em 0.092em 0 #10246b,-0.113em 0.065em 0 #10246b,-0.126em 0.034em 0 #10246b,-0.130em 0.000em 0 #10246b,-0.126em -0.034em 0 #10246b,-0.113em -0.065em 0 #10246b,-0.092em -0.092em 0 #10246b,-0.065em -0.113em 0 #10246b,-0.034em -0.126em 0 #10246b,-0.000em -0.130em 0 #10246b,0.034em -0.126em 0 #10246b,0.065em -0.113em 0 #10246b,0.092em -0.092em 0 #10246b,0.113em -0.065em 0 #10246b,0.126em -0.034em 0 #10246b,0 .2em 0 #0a1745,0 .26em .12em rgba(0,0,0,.4)}
 .hh-word::after{background:linear-gradient(180deg,rgba(255,255,255,.62) 0,rgba(255,255,255,.62) 13%,rgba(255,255,255,0) 14%),linear-gradient(180deg,var(--c1) 0%,var(--c1) 40%,var(--c2) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:0;text-shadow:none}
 @keyframes hh-bob{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-3%) scale(1.025,.975)}}
-.hh-w1{--s:clamp(70px,22vw,112px);font-size:var(--s)}
-.hh-w2{--s:clamp(50px,15.5vw,80px);font-size:var(--s);margin-top:calc(var(--s) * -.04)}
+.hh-w1{--s:clamp(48px,14vw,80px);font-size:var(--s)}
+.hh-w2{--s:clamp(56px,18vw,100px);font-size:var(--s);margin-top:calc(var(--s) * -.04)}
 .hh-tag{margin-top:clamp(14px,3vw,22px);font-size:clamp(13px,3.6vw,16px);letter-spacing:.04em;color:#fff;text-shadow:0 2px 0 rgba(10,23,69,.8),0 0 8px rgba(10,23,69,.6);transform:rotate(3deg)}
 .hh-chip{margin-top:6px;padding:3px 12px;border-radius:999px;background:rgba(10,23,69,.55);font-size:12px;letter-spacing:.08em;text-transform:uppercase;transform:rotate(3deg);backdrop-filter:blur(3px)}
 @supports (width:1cqw){
-.hh-w1{--s:clamp(56px,min(25cqw,11cqh),112px)}
-.hh-w2{--s:clamp(40px,min(17.5cqw,7.7cqh),80px)}
+.hh-w1{--s:clamp(40px,min(15cqw,8cqh),80px)}
+.hh-w2{--s:clamp(48px,min(20cqw,9cqh),100px)}
 .hh-badge{width:clamp(36px,min(12cqw,5.5cqh),62px)}
 .hh-tag{font-size:clamp(12px,min(3.8cqw,1.9cqh),16px)}
 }
@@ -143,7 +143,7 @@ export function connectionLabel(c, measuredMbps) {
 export function createScreen(root, opts = {}) {
   injectCss();
   const { appName = APP_NAME, tagline = APP_TAGLINE, tips = [], minShowMs = 1600, onDone = () => {}, embedded = false, onCheck = () => {}, onPlayOffline = () => {}, onRetry = () => {} } = opts;
-  const [w1, ...rest] = appName.split(' '); const w2 = rest.join(' ');
+  const words = appName.split(' '), w2 = words.length > 1 ? words.pop() : '', w1 = words.join(' ');   // last word on its own line
   root.classList.add('hh-root'); if (embedded) root.classList.add('hh-embedded');
   root.innerHTML = `
     <div class="hh-screen" role="progressbar" aria-label="Loading ${appName}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">

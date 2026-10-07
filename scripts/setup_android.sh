@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 command -v node >/dev/null || { echo "Install Node.js 22+ first: https://nodejs.org"; exit 1; }
 echo "==> Installing packages"; npm install
 if [ ! -d android ]; then echo "==> Creating the Android Studio project"; npx cap add android; fi
-echo "==> Generating the adaptive app icon and splash from assets/"; npx capacitor-assets generate --android --iconBackgroundColor '#35b6ff' --splashBackgroundColor '#0e1730' || echo "(icon step failed - you can use Android Studio > New > Image Asset with assets/icon.png instead)"
+echo "==> Generating the adaptive app icon and splash from assets/"; npx capacitor-assets generate --android --iconBackgroundColor '#5b55ff' --splashBackgroundColor '#5b55ff' || echo "(icon step failed - you can use Android Studio > New > Image Asset with assets/icon-foreground.png + icon-background.png instead)"
 echo "==> Copying the game into the Android project"; npx cap sync android
 bash scripts/configure_android.sh
 echo "==> Opening Android Studio"; npx cap open android

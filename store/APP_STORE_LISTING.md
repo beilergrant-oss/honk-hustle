@@ -1,6 +1,6 @@
-# App Store listing – Honk Hustle
+# App Store listing – Bus Blitz Party
 
-**Name (30):** Honk Hustle: Bus Jam Puzzle
+**Name (30):** Bus Blitz Party: Jam Puzzle
 **Subtitle (30):** Clear the lot. Beat the traffic.
 **Category:** Games > Puzzle (secondary: Casual)
 **Keywords (100):** bus,jam,puzzle,parking,traffic,car,brain,logic,fever,escape,passenger,casual,offline

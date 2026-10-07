@@ -6,7 +6,7 @@ cd "$(dirname "$0")/.."
 M="android/app/src/main/AndroidManifest.xml"; G="android/app/build.gradle"; S="android/app/src/main/res/values/strings.xml"
 [ -f "$M" ] || { echo "No $M yet. Run: npx cap add android"; exit 0; }
 grep -q 'android:screenOrientation' "$M" || perl -pi -e 's#android:name="\.MainActivity"#android:name=".MainActivity"\n            android:screenOrientation="portrait"#' "$M"
-[ -f "$S" ] && sed -i.bak -E 's#(<string name="app_name">)[^<]*#\1Honk Hustle#; s#(<string name="title_activity_main">)[^<]*#\1Honk Hustle#' "$S"
+[ -f "$S" ] && sed -i.bak -E 's#(<string name="app_name">)[^<]*#\1Bus Blitz Party#; s#(<string name="title_activity_main">)[^<]*#\1Bus Blitz Party#' "$S"
 VN=$(node -p "require('./package.json').version"); VC=${VERSION_CODE:-$(grep -Eo 'versionCode [0-9]+' "$G" | grep -Eo '[0-9]+' || echo 1)}
 sed -i.bak -E "s/versionCode [0-9]+/versionCode $VC/; s/versionName \"[^\"]*\"/versionName \"$VN\"/" "$G"
 # AdMob App ID (required by the Google Mobile Ads SDK, or the app crashes on launch)
@@ -17,4 +17,4 @@ if [ -f "$S" ]; then
 fi
 grep -q 'com.google.android.gms.ads.APPLICATION_ID' "$M" || perl -0pi -e 's#(<application\b[^>]*>)#$1\n        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="\@string/admob_app_id"/>#' "$M"
 rm -f "$M.bak" "$G.bak" "$S.bak"
-echo "Android project configured: portrait, Honk Hustle, version $VN ($VC), AdMob app $AID."
+echo "Android project configured: portrait, Bus Blitz Party, version $VN ($VC), AdMob app $AID."
